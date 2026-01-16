@@ -102,11 +102,14 @@ const fields: FieldDescription[] = [
 ]
 ```
 
-**Key properties**
-- `name` – field key in form data
-- `type` – renderer key
-- `appearCondition` – runtime visibility condition
-- No domain-specific typing enforced
+**Common Properties**
+| Property	| Description |
+|------|------------|
+| name	| Field key in form data |
+| type	| Field renderer key |
+| label	| UI label |
+| value	| Default value |
+| appearCondition	| Runtime visibility condition |
 
 **Field Registry (Render Layer)**
 The library does **not** ship UI components.
