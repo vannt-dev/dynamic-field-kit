@@ -1,2 +1,2 @@
 export * from "./types"
-// export { default as FieldRegistry } from "./FieldRegistry"
+export * from "./fieldRegistry"

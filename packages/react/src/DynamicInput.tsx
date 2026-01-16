@@ -1,27 +1,29 @@
-import { getField } from "./FieldRegistry"
+import { fieldRegistry, FieldTypeKey } from "@dynamic-field-kit/core"
 
-interface Props {
-    type: string
-    value?: unknown
-    onValueChange?: (value: unknown) => void
-    isInvalid?: boolean
-    messageError?: string
+interface Props<T extends FieldTypeKey> {
+    type: T
+    value?: any
+    onChange?: (value: any) => void
+    label?: string
 }
 
-const DynamicInput = (props: Props) => {
-    const Component = getField(props.type)
+const DynamicInput = <T extends FieldTypeKey>({
+    type,
+    value,
+    onChange,
+    label,
+}: Props<T>) => {
+    const Renderer = fieldRegistry.get(type)
 
-    if (!Component) {
-        console.warn(`No renderer registered for field type "${props.type}"`)
-        return null
+    if (!Renderer) {
+        return <div>Unknown field type: {type}</div>
     }
 
     return (
-        <Component
-            value={props.value}
-            onChange={props.onValueChange}
-            isInvalid={props.isInvalid}
-            messageError={props.messageError}
+        <Renderer
+            value={value}
+            onValueChange={onChange}
+            label={label}
         />
     )
 }

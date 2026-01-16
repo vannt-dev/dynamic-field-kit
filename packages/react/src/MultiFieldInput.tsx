@@ -2,42 +2,40 @@ import { FieldDescription, Properties } from "@dynamic-field-kit/core"
 import { Fragment, useEffect, useMemo, useState } from "react"
 import FieldInput from "./FieldInput"
 
-interface Props<T = any> {
-  fields: FieldDescription<T>[]
-  value?: Properties
+interface Props {
+  fieldDescriptions: FieldDescription[]
+  properties?: Properties
   onChange?: (data: Properties) => void
 }
 
-const MultiFieldInput = <T,>({ fields, value, onChange }: Props<T>) => {
+const MultiFieldInput = ({
+  fieldDescriptions,
+  properties,
+  onChange,
+}: Props) => {
   const [data, setData] = useState<Properties>({})
 
   useEffect(() => {
-    if (value) setData(value)
-  }, [value])
+    if (properties) setData(properties)
+  }, [properties])
 
   const visibleFields = useMemo(
     () =>
-      fields.filter(
-        f => !f.appearCondition || f.appearCondition(data)
+      fieldDescriptions.filter(
+        (f) => !f.appearCondition || f.appearCondition(data)
       ),
-    [fields, data]
+    [fieldDescriptions, data]
   )
-
-  const handleChange = (fieldValue: unknown, key: string) => {
-    const next = { ...data, [key]: fieldValue }
-    setData(next)
-    onChange?.(next)
-  }
 
   return (
     <>
-      {visibleFields.map(f => (
-        <Fragment key={String(f.name)}>
+      {visibleFields.map((f) => (
+        <Fragment key={f.name}>
           <FieldInput
-            field={f}
-            data={data}
-            onChange={(v: any, k: any) => {
-              const next = { ...data, [k]: v }
+            fieldDescription={f}
+            renderInfos={data}
+            onValueChangeField={(value, key) => {
+              const next = { ...data, [key]: value }
               setData(next)
               onChange?.(next)
             }}

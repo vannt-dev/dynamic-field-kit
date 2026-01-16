@@ -1,20 +1,21 @@
-import type { ComponentType } from "react"
-import type { FieldTypeKey } from "./types"
+import { JSX } from "react"
+import { FieldRendererProps, FieldTypeKey } from "./types"
+
+type Renderer = (props: FieldRendererProps<any>) => JSX.Element
 
 class FieldRegistry {
-    private static map = new Map<FieldTypeKey, ComponentType<any>>()
+    private map = new Map<FieldTypeKey, Renderer>()
 
-    static register(type: FieldTypeKey, component: ComponentType<any>) {
-        this.map.set(type, component)
+    register<T extends FieldTypeKey>(
+        type: T,
+        renderer: (props: FieldRendererProps) => JSX.Element
+    ) {
+        this.map.set(type, renderer)
     }
 
-    static get(type?: FieldTypeKey) {
-        return type ? this.map.get(type) : undefined
-    }
-
-    static has(type: FieldTypeKey) {
-        return this.map.has(type)
+    get(type: FieldTypeKey) {
+        return this.map.get(type)
     }
 }
 
-export default FieldRegistry
+export const fieldRegistry = new FieldRegistry()

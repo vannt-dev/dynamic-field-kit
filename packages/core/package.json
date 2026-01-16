@@ -1,16 +1,24 @@
 {
     "name": "@dynamic-field-kit/core",
-    "version": "0.1.0",
+    "version": "1.0.1",
+    "description": "Core types and field registry for dynamic-field-kit",
+    "license": "MIT",
     "main": "dist/index.cjs",
     "module": "dist/index.mjs",
     "types": "dist/index.d.ts",
+    "sideEffects": false,
     "files": [
         "dist"
     ],
-    "scripts": {
-        "build": "tsup"
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "require": "./dist/index.cjs"
+        }
     },
-    "peerDependencies": {
-        "react": ">=17"
+    "scripts": {
+        "build": "tsup",
+        "clean": "rm -rf dist"
     }
 }
