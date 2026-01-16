@@ -1,0 +1,17 @@
+{
+    "name": "@dynamic-field-kit/react",
+    "version": "0.1.0",
+    "main": "dist/index.cjs",
+    "module": "dist/index.mjs",
+    "types": "dist/index.d.ts",
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsup"
+    },
+    "peerDependencies": {
+        "react": ">=17",
+        "@dynamic-field-kit/core": "0.1.0"
+    }
+}
