@@ -1,6 +1,6 @@
 {
     "name": "@dynamic-field-kit/react",
-    "version": "1.0.4",
+    "version": "1.0.6",
     "description": "React renderer for dynamic-field-kit",
     "license": "MIT",
     "main": "dist/index.cjs",

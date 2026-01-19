@@ -9,7 +9,7 @@ interface Props {
 
 
 const FieldInput = ({ fieldDescription, renderInfos, onValueChangeField }: Props) => {
-  const { name, type, label } = fieldDescription
+  const { name, type, label, options, className, description } = fieldDescription
 
 
   return (
@@ -17,6 +17,9 @@ const FieldInput = ({ fieldDescription, renderInfos, onValueChangeField }: Props
       type={type}
       label={label}
       value={renderInfos[name]}
+      options={options}
+      className={className}
+      description={description}
       onChange={(v) => onValueChangeField(v, name)}
     />
   )
