@@ -7,12 +7,10 @@ interface Props {
   onValueChangeField: (value: any, key: string) => void
 }
 
-const FieldInput = ({
-  fieldDescription,
-  renderInfos,
-  onValueChangeField,
-}: Props) => {
+
+const FieldInput = ({ fieldDescription, renderInfos, onValueChangeField }: Props) => {
   const { name, type, label } = fieldDescription
+
 
   return (
     <DynamicInput
@@ -23,5 +21,6 @@ const FieldInput = ({
     />
   )
 }
+
 
 export default FieldInput

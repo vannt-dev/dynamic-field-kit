@@ -1,22 +1,26 @@
 import { FieldDescription, Properties } from "@dynamic-field-kit/core"
 import { Fragment, useEffect, useMemo, useState } from "react"
 import FieldInput from "./FieldInput"
+import { layoutRegistry } from "../layout"
+import { LayoutConfig } from "../types/layout"
 
-type Layout = "row" | "column" | "grid"
 
 interface Props {
   fieldDescriptions: FieldDescription[]
   properties?: Properties
   onChange?: (data: Properties) => void
-  layout?: Layout
+  layout?: LayoutConfig
 }
 
-const MultiFieldInput = ({
-  fieldDescriptions,
-  properties,
-  onChange,
-  layout = "column",
-}: Props) => {
+
+function resolveLayout(layout?: LayoutConfig) {
+  if (!layout) return { type: "column", config: {} }
+  if (typeof layout === "string") return { type: layout, config: {} }
+  return { type: layout.type, config: layout }
+}
+
+
+const MultiFieldInput = ({ fieldDescriptions, properties, onChange, layout }: Props) => {
   const [data, setData] = useState<Properties>({})
 
   useEffect(() => {
@@ -24,24 +28,20 @@ const MultiFieldInput = ({
   }, [properties])
 
   const visibleFields = useMemo(
-    () =>
-      fieldDescriptions.filter(
-        (f) => !f.appearCondition || f.appearCondition(data)
-      ),
+    () => fieldDescriptions.filter((f) => !f.appearCondition || f.appearCondition(data)),
     [fieldDescriptions, data]
   )
 
-  const containerStyle: React.CSSProperties = {
-    display: layout === "grid" ? "grid" : "flex",
-    flexDirection: layout === "row" ? "row" : "column",
-    gap: 12,
-    ...(layout === "grid" && {
-      gridTemplateColumns: "repeat(2, 1fr)",
-    }),
+  const { type, config } = resolveLayout(layout)
+  
+  const Layout = layoutRegistry.get(type)
+
+  if (!Layout) {
+    throw new Error(`Unknown layout: ${type}`)
   }
 
   return (
-    <div style={containerStyle}>
+    <Layout config={config}>
       {visibleFields.map((f) => (
         <FieldInput
           key={f.name}
@@ -54,8 +54,9 @@ const MultiFieldInput = ({
           }}
         />
       ))}
-    </div>
+    </Layout>
   )
 }
+
 
 export default MultiFieldInput

@@ -130,7 +130,7 @@ The library does **not** ship UI components.
 Instead, applications register their own renderers.
 
 ```ts
-import { fieldRegistry } from "@dynamic-field-kit/core"
+import { fieldRegistry } from "@dynamic-field-kit/react"
 
 fieldRegistry.register("text", ({ value, onValueChange, label }) => (
   <div>
@@ -202,7 +202,7 @@ You **do not** need to modify the library.
 Just extend `FieldTypeMap`:
 
 ```ts
-declare module "@dynamic-field-kit/react" {
+declare module "@dynamic-field-kit/core" {
   interface FieldTypeMap {
     date: Date
   }
@@ -296,4 +296,4 @@ This library intentionally does not include:
 It is a **form engine**, not a full form framework.
 
 ## 📄 License
-MIT © vannt-dev
+MIT © [vannt-dev](https://github.com/vannt-dev)
