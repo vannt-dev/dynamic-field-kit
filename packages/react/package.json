@@ -1,6 +1,6 @@
 {
     "name": "@dynamic-field-kit/react",
-    "version": "1.0.1",
+    "version": "1.0.4",
     "description": "React renderer for dynamic-field-kit",
     "license": "MIT",
     "main": "dist/index.cjs",
@@ -10,11 +10,8 @@
     "files": [
         "dist"
     ],
-    "peerDependencies": {
-        "react": ">=17"
-    },
     "dependencies": {
-        "@dynamic-field-kit/core": "^0.1.0"
+        "@dynamic-field-kit/core": "^1.0.3"
     },
     "exports": {
         ".": {

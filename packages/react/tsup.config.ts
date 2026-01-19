@@ -6,5 +6,14 @@ export default defineConfig({
     dts: true,
     clean: true,
     sourcemap: true,
-    external: ["react", "@dynamic-field-kit/core"]
+    // QUAN TRỌNG
+    external: [
+        'react',
+        'react/jsx-runtime'
+    ],
+
+    // BẮT BUỘC
+    noExternal: [
+        '@dynamic-field-kit/core'
+    ]
 })
