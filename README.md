@@ -45,7 +45,7 @@ react >= 17
 
 The library **does NOT define field types** like:
 ```ts
-"text" | "number" | "select"
+"text" | "number"
 ```
 
 Instead, it exposes an **extendable interface** that applications can augment:
@@ -65,9 +65,9 @@ This pattern is used by mature libraries like **MUI, React Hook Form,** and **Re
 Create a `.d.ts` file in your app (e.g. src/types/dynamic-field.d.ts):
 
 ```ts
-import "@dynamic-field-kit/react"
+import "@dynamic-field-kit/core"
 
-declare module "@dynamic-field-kit/react" {
+declare module "@dynamic-field-kit/core" {
   interface FieldTypeMap {
     text: string
     number: number
@@ -77,6 +77,19 @@ declare module "@dynamic-field-kit/react" {
 }
 ```
 ⚠️ Make sure this file is included in tsconfig.json.
+
+---
+
+## FieldRendererProps
+
+```ts
+export interface FieldRendererProps<T = any> {
+  value?: T
+  onValueChange?: (value: T) => void
+  label?: string
+}
+```
+👉 A common contract for all field renderers
 
 ---
 
@@ -257,6 +270,10 @@ Renders a single field with value binding.
   onChange={(value, key) => {}}
 />
 ```
+
+## Demo
+- [Examples](https://github.com/vannt-dev/dynamic-field-kit-demo)
+
 ---
 
 ## 🏗 Architecture
@@ -277,3 +294,6 @@ This library intentionally does not include:
 -Form state management library
 
 It is a **form engine**, not a full form framework.
+
+## 📄 License
+MIT © vannt-dev

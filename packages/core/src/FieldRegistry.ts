@@ -1,20 +1,24 @@
 import { JSX } from "react"
-import { FieldRendererProps, FieldTypeKey } from "./types"
+import type { FieldRendererProps, FieldTypeMap } from "./types"
 
-type Renderer = (props: FieldRendererProps<any>) => JSX.Element
+export type FieldRenderer<T = any> = (props: FieldRendererProps<T>) => JSX.Element
 
-class FieldRegistry {
-    private map = new Map<FieldTypeKey, Renderer>()
+export class FieldRegistry {
+    // ❗ INTERNAL = string, KHÔNG constrain
+    private registry: Record<string, FieldRenderer<any>> = {}
 
-    register<T extends FieldTypeKey>(
-        type: T,
-        renderer: (props: FieldRendererProps) => JSX.Element
+    // ✅ Type safety ở API
+    register<K extends keyof FieldTypeMap>(
+        type: K,
+        renderer: FieldRenderer<FieldTypeMap[K]>
     ) {
-        this.map.set(type, renderer)
+        this.registry[type as string] = renderer
     }
 
-    get(type: FieldTypeKey) {
-        return this.map.get(type)
+    get<K extends keyof FieldTypeMap>(
+        type: K
+    ): FieldRenderer<FieldTypeMap[K]> | undefined {
+        return this.registry[type as string]
     }
 }
 

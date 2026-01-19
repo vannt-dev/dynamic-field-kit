@@ -14,7 +14,7 @@
         "react": ">=17"
     },
     "dependencies": {
-        "@dynamic-field-kit/core": "^1.0.0"
+        "@dynamic-field-kit/core": "^0.1.0"
     },
     "exports": {
         ".": {

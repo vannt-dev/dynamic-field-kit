@@ -6,5 +6,5 @@ export default defineConfig({
     dts: true,
     clean: true,
     sourcemap: true,
-    external: ["react"]
+    external: ["react", "@dynamic-field-kit/core"]
 })
