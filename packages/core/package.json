@@ -20,5 +20,11 @@
     "scripts": {
         "build": "tsup",
         "clean": "rm -rf dist"
-    }
+    },
+    "repository": "https://github.com/vannt-dev/dynamic-field-kit.git",
+    "keywords": [
+        "dynamic-field",
+        "dynamic-field-kit",
+        "dynamic-field-kit/core"
+    ]
 }
