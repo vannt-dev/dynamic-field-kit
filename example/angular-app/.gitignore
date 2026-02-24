@@ -1,0 +1,17 @@
+node_modules/
+dist/
+out-tsc/
+.angular/
+*.local
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Dependencies
+package-lock.json
+yarn.lock
