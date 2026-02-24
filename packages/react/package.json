@@ -1,6 +1,6 @@
 {
     "name": "@dynamic-field-kit/react",
-    "version": "1.0.6",
+    "version": "1.0.7",
     "description": "React renderer for dynamic-field-kit",
     "license": "MIT",
     "main": "dist/index.cjs",
@@ -22,9 +22,16 @@
     },
     "scripts": {
         "build": "tsup",
-        "clean": "rm -rf dist"
+        "clean": "rm -rf dist",
+        "prepublishOnly": "npm run clean && npm run build",
+        "release:patch": "npm version patch && npm publish",
+        "release:minor": "npm version minor && npm publish",
+        "release:major": "npm version major && npm publish"
     },
-    "repository": "https://github.com/vannt-dev/dynamic-field-kit.git",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/vannt-dev/dynamic-field-kit.git"
+    },
     "keywords": [
         "dynamic-field",
         "dynamic-field-kit",

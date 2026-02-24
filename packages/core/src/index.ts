@@ -1,2 +1,2 @@
 export * from "./types"
-export * from "./fieldRegistry"
+export * from "./FieldRegistry"
