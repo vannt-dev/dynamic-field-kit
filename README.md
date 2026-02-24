@@ -1,8 +1,8 @@
 # Dynamic Field Kit
 
-A lightweight, extensible **dynamic form engine** for React, built for scalable applications and design systems.
+A lightweight, extensible **dynamic form engine** for React and Angular, built for scalable applications and design systems.
 
-`dynamic-field-kit` lets you define forms using **configuration objects** instead of hard-coded UI, and allows applications to **freely extend field types** (`text`, `number`, `checkbox`, `select`, `date`, `custom`, …) without modifying the library.
+`dynamic-field-kit` lets you define forms using **configuration objects** instead of hard-coded UI, and allows applications to **freely extend field types** across frameworks without modifying the library. Register custom renderers in React, Angular, or vanilla JS using a shared field registry.
 
 ---
 
@@ -10,10 +10,10 @@ A lightweight, extensible **dynamic form engine** for React, built for scalable 
 
 - Schema-driven dynamic forms
 - Extensible field types (no enums, no hard-coded unions)
-- Pluggable field renderers via registry
+- Pluggable field renderers via shared registry
 - Runtime conditional fields (`appearCondition`)
 - Clean TypeScript declarations (DTS-safe)
-- Core logic separated from React rendering
+- Framework-agnostic core (works with React, Angular, Vue, or vanilla JS)
 - Ideal for form builders & design systems
 
 ---
@@ -22,21 +22,22 @@ A lightweight, extensible **dynamic form engine** for React, built for scalable 
 
 | Package | Description |
 |------|------------|
-| `@dynamic-field-kit/core` | Core types and field registry |
+| `@dynamic-field-kit/core` | Core types and shared field registry |
 | `@dynamic-field-kit/react` | React components (FieldInput, MultiFieldInput, DynamicInput) |
+| `@dynamic-field-kit/angular` | Angular components and module (standalone + NgModule) |
 
 ---
 
 ## 📥 Installation
 
+**For React:**
 ```bash
 npm install @dynamic-field-kit/core @dynamic-field-kit/react
 ```
 
-**Peer dependency**
-
-```txt
-react >= 17
+**For Angular:**
+```bash
+npm install @dynamic-field-kit/core @dynamic-field-kit/angular
 ```
 
 ---
@@ -125,110 +126,51 @@ const fields: FieldDescription[] = [
 | appearCondition	| Runtime visibility condition |
 
 **Field Registry (Render Layer)**
-The library does **not** ship UI components.
 
-Instead, applications register their own renderers.
+The library does **not** ship UI components. Instead, applications register their own renderers using the `fieldRegistry` from the framework adapter (`@dynamic-field-kit/react`, `@dynamic-field-kit/angular`, etc.).
 
 ```ts
-import { fieldRegistry } from "@dynamic-field-kit/react"
+import { fieldRegistry } from "@dynamic-field-kit/react" // or /angular
 
-fieldRegistry.register("text", ({ value, onValueChange, label }) => (
-  <div>
-    <label>{label}</label>
-    <input
-      value={value ?? ""}
-      onChange={(e) => onValueChange?.(e.target.value)}
-    />
-  </div>
-))
-
-fieldRegistry.register("checkbox", ({ value, onValueChange, label }) => (
-  <label>
-    <input
-      type="checkbox"
-      checked={!!value}
-      onChange={(e) => onValueChange?.(e.target.checked)}
-    />
-    {label}
-  </label>
-))
-
+fieldRegistry.register("text", myTextRenderer)
+fieldRegistry.register("checkbox", myCheckboxRenderer)
 ```
 
 ---
 
-## ⚛️ React Usage
+## 📖 Framework-Specific Usage
 
-**MultiFieldInput (Main Form Engine)**
+For detailed setup and component API:
 
-```tsx
-import { MultiFieldInput } from "@dynamic-field-kit/react"
-import { FieldDescription } from "@dynamic-field-kit/core"
-
-const fields: FieldDescription[] = [
-  { name: "email", type: "text", label: "Email" },
-  { name: "age", type: "number", label: "Age" }
-]
-
-const Example = () => {
-  return (
-    <MultiFieldInput
-      fieldDescriptions={fields}
-      onChange={(data) => {
-        console.log("Form data:", data)
-      }}
-    />
-  )
-}
-```
-
-**Controlled Form**
-```tsx
-const [formData, setFormData] = useState({})
-
-<MultiFieldInput
-  fieldDescriptions={fields}
-  properties={formData}
-  onChange={setFormData}
-/>
-```
+- **React**: See [`packages/react/README.md`](packages/react/README.md)
+- **Angular**: See [`packages/angular/README.md`](packages/angular/README.md)
+- **Core concepts**: See [`packages/core/README.md`](packages/core/README.md)
 
 ---
 
 ## ➕ Adding a New Field Type
 
-You **do not** need to modify the library.
-
-Just extend `FieldTypeMap`:
+You **do not** need to modify the library. Just extend `FieldTypeMap` in your application:
 
 ```ts
 declare module "@dynamic-field-kit/core" {
   interface FieldTypeMap {
     date: Date
+    myCustom: any
   }
 }
 ```
 
-Then register a renderer:
+Then register renderers using the framework-specific adapter:
+- React: `import { fieldRegistry } from "@dynamic-field-kit/react"`
+- Angular: `import { fieldRegistry } from "@dynamic-field-kit/angular"`
 
-```ts
-fieldRegistry.register("date", ({ value, onValueChange }) => (
-  <input
-    type="date"
-    value={value ? value.toISOString().slice(0, 10) : ""}
-    onChange={(e) =>
-      onValueChange?.(new Date(e.target.value))
-    }
-  />
-))
-```
-
-Now `"date"` is fully type-safe everywhere.
+Now your custom types are fully type-safe throughout the codebase.
 
 ---
 ## 🧠 Domain Typing (Optional)
-The library intentionally avoids enforcing domain types.
-If you want strict typing, cast inside your app:
+
+The library intentionally avoids enforcing domain types. If you want strict typing, cast inside your app:
 
 ```ts
 interface UserForm {
@@ -244,56 +186,42 @@ const fields: FieldDescription[] = [
   }
 ]
 ```
+
 This keeps the library generic while allowing strict typing in the app.
-
----
-
-## 🧩 Components API
-
-**<DynamicInput />**
-
-Resolves and renders a field based on its type.
-
-```tsx
-<DynamicInput type="text" value="hello" />
-```
----
-
-**<FieldInput />**
-
-Renders a single field with value binding.
-
-```tsx
-<FieldInput
-  fieldDescription={field}
-  renderInfos={formData}
-  onChange={(value, key) => {}}
-/>
-```
-
-## Demo
-- [Examples](https://github.com/vannt-dev/dynamic-field-kit-demo)
 
 ---
 
 ## 🏗 Architecture
 
+The monorepo contains framework-agnostic core and framework-specific adapters:
+
 ```
-dynamic-field-kit
+dynamic-field-kit (monorepo)
 ├─ packages/
-│  ├─ core    # framework-agnostic types
-│  └─ react   # React renderer + registry
+│  ├─ core        # Framework-agnostic types and registry
+│  ├─ react       # React components & DynamicInput
+│  └─ angular     # Angular components & DynamicFieldKitModule
+├─ example/       # Demo apps and integration guides
+└─ .github/       # Copilot AI agent instructions
 ```
+
+All packages share the same `fieldRegistry` instance, so registrations are visible across frameworks (in the same process).
 
 ---
 
 ## 🚫 Non-Goals
+
 This library intentionally does not include:
--Built-in UI components
--Built-in UI components
--Form state management library
+- Built-in UI components (bring your own renderers)
+- Form state management
+- Validation logic
 
 It is a **form engine**, not a full form framework.
 
 ## 📄 License
+
 MIT © [vannt-dev](https://github.com/vannt-dev)
+
+## 🤝 Contributing
+
+Contributions welcome! Please see individual package READMEs for setup and development instructions.

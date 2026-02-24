@@ -1,0 +1,21 @@
+{
+  "name": "example-angular-app",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "start": "ng serve --open",
+    "build": "ng build"
+  },
+  "dependencies": {
+    "@angular/core": "^15.0.0",
+    "@angular/common": "^15.0.0",
+    "zone.js": "^0.12.0",
+    "@dynamic-field-kit/core": "file:../../packages/core",
+    "@dynamic-field-kit/angular": "file:../../packages/angular"
+  },
+  "devDependencies": {
+    "@angular/cli": "^15.0.0",
+    "@angular/compiler-cli": "^15.0.0",
+    "typescript": "^4.9.5"
+  }
+}

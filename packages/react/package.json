@@ -22,7 +22,7 @@
     },
     "scripts": {
         "build": "tsup",
-        "clean": "rm -rf dist",
+        "clean": "rimraf dist",
         "prepublishOnly": "npm run clean && npm run build",
         "release:patch": "npm version patch && npm publish",
         "release:minor": "npm version minor && npm publish",

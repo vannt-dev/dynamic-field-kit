@@ -1,6 +1,6 @@
 {
     "name": "@dynamic-field-kit/core",
-    "version": "1.0.7",
+    "version": "1.0.9",
     "description": "Core types and field registry for dynamic-field-kit",
     "license": "MIT",
     "main": "dist/index.cjs",
@@ -19,7 +19,7 @@
     },
     "scripts": {
         "build": "tsup",
-        "clean": "rm -rf dist",
+        "clean": "rimraf dist",
         "prepublishOnly": "npm run clean && npm run build",
         "release:patch": "npm version patch && npm publish",
         "release:minor": "npm version minor && npm publish",
@@ -33,5 +33,8 @@
         "dynamic-field",
         "dynamic-field-kit",
         "dynamic-field-kit/core"
-    ]
+    ],
+    "devDependencies": {
+        "rimraf": "^6.1.3"
+    }
 }

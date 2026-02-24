@@ -1,3 +1,17 @@
+# Example demo
+
+This folder contains a minimal demo script that demonstrates registering example renderers from both the React and Angular example code and inspecting the shared `fieldRegistry`.
+
+Run the demo (developer machine) with `ts-node`:
+
+```bash
+# from repository root
+npx ts-node --esm example/registry-demo.ts
+```
+
+Notes:
+- This script only demonstrates registration and retrieval of values in `fieldRegistry`.
+- It does not execute React or Angular renderers inside their frameworks — to see UI rendering, run the Next.js `example/` site for React or create an Angular app and register the Angular example component.
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
