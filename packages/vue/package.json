@@ -1,0 +1,50 @@
+{
+    "name": "@dynamic-field-kit/vue",
+    "version": "1.0.0",
+    "description": "Vue 3 renderer for dynamic-field-kit",
+    "license": "MIT",
+    "main": "dist/index.cjs",
+    "module": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "sideEffects": false,
+    "files": [
+        "dist"
+    ],
+    "peerDependencies": {
+        "vue": "^3.0.0",
+        "@dynamic-field-kit/core": "*"
+    },
+    "dependencies": {
+        "@dynamic-field-kit/core": "^1.0.7"
+    },
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "require": "./dist/index.cjs"
+        }
+    },
+    "scripts": {
+        "build": "tsup",
+        "clean": "rimraf dist",
+        "prepublishOnly": "npm run clean && npm run build",
+        "release:patch": "npm version patch && npm publish",
+        "release:minor": "npm version minor && npm publish",
+        "release:major": "npm version major && npm publish"
+    },
+    "devDependencies": {
+        "rimraf": "^6.0.0",
+        "vue": "^3.4.0",
+        "@types/node": "^20.0.0",
+        "vue-loader": "^17.4.0"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/vannt-dev/dynamic-field-kit.git"
+    },
+    "keywords": [
+        "dynamic-field",
+        "dynamic-field-kit",
+        "dynamic-field-kit/vue"
+    ]
+}
