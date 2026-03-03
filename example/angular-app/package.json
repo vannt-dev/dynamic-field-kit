@@ -9,6 +9,8 @@
   "dependencies": {
     "@angular/core": "^15.0.0",
     "@angular/common": "^15.0.0",
+    "@angular/platform-browser": "^15.0.0",
+    "@angular/platform-browser-dynamic": "^15.0.0",
     "zone.js": "^0.12.0",
     "@dynamic-field-kit/core": "file:../../packages/core",
     "@dynamic-field-kit/angular": "file:../../packages/angular"
@@ -16,6 +18,7 @@
   "devDependencies": {
     "@angular/cli": "^15.0.0",
     "@angular/compiler-cli": "^15.0.0",
+    "@angular-devkit/build-angular": "^15.0.0",
     "typescript": "^4.9.5"
   }
 }

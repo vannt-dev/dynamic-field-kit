@@ -9,8 +9,8 @@ import { MultiFieldInput } from '@dynamic-field-kit/angular/src/components/Multi
 import { TextFieldComponent } from '@dynamic-field-kit/angular/src/examples/text-field.component';
 
 @NgModule({
-  declarations: [AppComponent, DynamicInput, FieldInput, MultiFieldInput, TextFieldComponent],
-  imports: [BrowserModule],
+  declarations: [AppComponent, TextFieldComponent],
+  imports: [BrowserModule, DynamicInput, FieldInput, MultiFieldInput],
   bootstrap: [AppComponent]
 })
 export class AppModule {}

@@ -11,7 +11,7 @@
         "dist"
     ],
     "dependencies": {
-        "@dynamic-field-kit/core": "^1.0.3"
+        "@dynamic-field-kit/core": "^1.0.7"
     },
     "exports": {
         ".": {

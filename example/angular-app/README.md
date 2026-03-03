@@ -4,14 +4,20 @@ This folder is a minimal Angular app scaffold to help you wire the `@dynamic-fie
 
 Quick start
 
-1. From the repository root, install dependencies for the example app (this will also install the local package references):
+1. From the repository root, build the monorepo packages:
+
+```bash
+npm run build
+```
+
+2. Install dependencies for the example app (this will also install the local package references):
 
 ```bash
 cd example/angular-app
 npm install
 ```
 
-2. Run the app (Angular CLI will serve it):
+3. Run the app (Angular CLI will serve it):
 
 ```bash
 npm start

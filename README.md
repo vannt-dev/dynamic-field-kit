@@ -25,6 +25,7 @@ A lightweight, extensible **dynamic form engine** for React and Angular, built f
 | `@dynamic-field-kit/core` | Core types and shared field registry |
 | `@dynamic-field-kit/react` | React components (FieldInput, MultiFieldInput, DynamicInput) |
 | `@dynamic-field-kit/angular` | Angular components and module (standalone + NgModule) |
+| `@dynamic-field-kit/vue` | Vue 3 components and module |
 
 ---
 
@@ -38,6 +39,11 @@ npm install @dynamic-field-kit/core @dynamic-field-kit/react
 **For Angular:**
 ```bash
 npm install @dynamic-field-kit/core @dynamic-field-kit/angular
+```
+
+**For Vue:**
+```bash
+npm install @dynamic-field-kit/core @dynamic-field-kit/vue
 ```
 
 ---
@@ -144,6 +150,7 @@ For detailed setup and component API:
 
 - **React**: See [`packages/react/README.md`](packages/react/README.md)
 - **Angular**: See [`packages/angular/README.md`](packages/angular/README.md)
+- **Vue**: See [`packages/vue/README.md`](packages/vue/README.md)
 - **Core concepts**: See [`packages/core/README.md`](packages/core/README.md)
 
 ---
@@ -164,6 +171,7 @@ declare module "@dynamic-field-kit/core" {
 Then register renderers using the framework-specific adapter:
 - React: `import { fieldRegistry } from "@dynamic-field-kit/react"`
 - Angular: `import { fieldRegistry } from "@dynamic-field-kit/angular"`
+- Vue: `import { fieldRegistry } from "@dynamic-field-kit/vue"`
 
 Now your custom types are fully type-safe throughout the codebase.
 
@@ -200,7 +208,8 @@ dynamic-field-kit (monorepo)
 ├─ packages/
 │  ├─ core        # Framework-agnostic types and registry
 │  ├─ react       # React components & DynamicInput
-│  └─ angular     # Angular components & DynamicFieldKitModule
+│  ├─ angular     # Angular components & DynamicFieldKitModule
+│  └─ vue         # Vue 3 components
 ├─ example/       # Demo apps and integration guides
 └─ .github/       # Copilot AI agent instructions
 ```
