@@ -1,3 +1,3 @@
-export async function registerDefaults() {
-    await import("./layout/defaultLayouts")
-}
+import "./layout/defaultLayouts";
+
+export async function registerDefaults() {}

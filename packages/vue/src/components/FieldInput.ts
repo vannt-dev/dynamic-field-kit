@@ -1,35 +1,36 @@
-import { defineComponent, h } from 'vue'
-import { FieldDescription, Properties } from '@dynamic-field-kit/core'
-import DynamicInput from './DynamicInput'
+import { FieldDescription, Properties } from "@dynamic-field-kit/core";
+import { defineComponent, h } from "vue";
+import DynamicInput from "./DynamicInput";
 
 interface Props {
-  fieldDescription: FieldDescription
-  renderInfos: Properties
-  onValueChangeField: (value: any, key: string) => void
+  fieldDescription: FieldDescription;
+  renderInfos: Properties;
+  onValueChangeField: (value: any, key: string) => void;
 }
 
 const FieldInput = defineComponent({
-  name: 'FieldInput',
+  name: "FieldInput",
   props: {
     fieldDescription: { type: Object, required: true },
     renderInfos: { type: Object, required: true },
-    onValueChangeField: { type: Function, required: true }
+    onValueChangeField: { type: Function, required: true },
   },
   setup(props: Props) {
     return () => {
-      const { name, type, label, options, className, description } = props.fieldDescription
+      const { name, type, label, options, className, description } =
+        props.fieldDescription;
 
       return h(DynamicInput, {
         type,
         label,
         value: props.renderInfos[name],
         options,
-        class: className,
+        className,
         description,
-        onChange: (v: any) => props.onValueChangeField(v, name)
-      })
-    }
-  }
-})
+        onChange: (v: any) => props.onValueChangeField(v, name),
+      } as any);
+    };
+  },
+});
 
-export default FieldInput
+export default FieldInput;

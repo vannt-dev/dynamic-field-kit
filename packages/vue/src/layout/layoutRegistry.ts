@@ -1,4 +1,5 @@
-import type { VNode, PropType } from 'vue'
+import type { VNode } from 'vue'
+import { reactive } from 'vue'
 
 export type LayoutRenderer<C = any> = (props: {
     children: VNode[]
@@ -6,7 +7,7 @@ export type LayoutRenderer<C = any> = (props: {
 }) => VNode
 
 export class LayoutRegistry {
-    private layouts = new Map<string, LayoutRenderer>()
+    private layouts = reactive(new Map<string, LayoutRenderer>())
 
     register(type: string, renderer: LayoutRenderer) {
         if (this.layouts.has(type)) {
