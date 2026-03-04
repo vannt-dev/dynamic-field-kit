@@ -14,7 +14,8 @@ export default function Page() {
   const [data, setData] = useState({})
 
   return (
-    <main style={{ padding: 24 }}>
+    <main style={{ padding: "24px", maxWidth: "600px", margin: "0 auto", fontFamily: "sans-serif" }}>
+      <h1 style={{ marginBottom: "24px" }}>Dynamic Field Kit React Demo</h1>
       <MultiFieldInput
         fieldDescriptions={fields}
         properties={data}
