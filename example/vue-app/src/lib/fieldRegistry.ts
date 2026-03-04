@@ -1,13 +1,6 @@
 import { fieldRegistry as registry } from "@dynamic-field-kit/vue"
 import { defineComponent, h } from "vue"
 
-declare module "@dynamic-field-kit/core" {
-    interface FieldTypeMap {
-        text: any;
-        number: any;
-    }
-}
-
 const TextRenderer = defineComponent({
     props: ["value"],
     emits: ["update:value"],
@@ -35,7 +28,7 @@ const NumberRenderer = defineComponent({
     },
 })
 
-registry.register("text", TextRenderer as any)
-registry.register("number", NumberRenderer as any)
+registry.register("text", TextRenderer)
+registry.register("number", NumberRenderer)
 
 export { }

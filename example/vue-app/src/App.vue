@@ -1,7 +1,6 @@
 <script setup lang="ts">
+import { type FieldDescription, MultiFieldInput } from "@dynamic-field-kit/vue"
 import { ref } from "vue"
-import { MultiFieldInput } from "@dynamic-field-kit/vue"
-import type { FieldDescription } from "@dynamic-field-kit/core"
 import "./lib/fieldRegistry"
 
 const fields: FieldDescription[] = [
