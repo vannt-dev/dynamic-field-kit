@@ -11,7 +11,12 @@ import { FieldDescription, Properties } from "@dynamic-field-kit/core"
     <dfk-dynamic-input
       [type]="fieldDescription.type"
       [value]="renderInfos[fieldDescription.name]"
-      [ngClass]="fieldDescription.className"
+      [label]="fieldDescription.label"
+      [placeholder]="fieldDescription.placeholder"
+      [required]="fieldDescription.required"
+      [description]="fieldDescription.description"
+      [options]="fieldDescription.options"
+      [className]="fieldDescription.className"
       (onChange)="onValueChangeField.emit({ value: $event, key: fieldDescription.name })"
     ></dfk-dynamic-input>
   `,

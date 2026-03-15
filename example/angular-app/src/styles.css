@@ -80,3 +80,22 @@ button:hover {
 button:active {
   background-color: #1a3a5c;
 }
+
+/* Layout Classes */
+.dfk-column-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dfk-row-layout {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+}
+
+.dfk-grid-layout {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}

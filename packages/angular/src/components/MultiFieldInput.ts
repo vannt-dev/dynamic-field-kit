@@ -1,54 +1,73 @@
-import { Component, Input, Output, EventEmitter, OnInit, ViewContainerRef, ViewChild } from "@angular/core"
+import { Component, Input, Output, EventEmitter, OnChanges, OnInit, SimpleChanges } from "@angular/core"
 import { CommonModule } from '@angular/common'
 
 import { FieldDescription, Properties } from "@dynamic-field-kit/core"
-import { layoutRegistry } from "../layout"
-import { LayoutConfig } from "../types/layout"
 import { FieldInput } from "./FieldInput"
-
-function resolveLayout(layout?: LayoutConfig) {
-  if (!layout) return { type: "column", config: {} }
-  if (typeof layout === "string") return { type: layout, config: {} }
-  return { type: layout.type, config: layout }
-}
+import { LayoutConfig } from "../types/layout"
 
 @Component({
   selector: "dfk-multi-field-input",
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FieldInput],
   template: `
-    <ng-container #host></ng-container>
+    <div [style]="containerStyle">
+      <dfk-field-input
+        *ngFor="let field of visibleFields"
+        [fieldDescription]="field"
+        [renderInfos]="data"
+        (onValueChangeField)="onFieldChange($event)"
+      ></dfk-field-input>
+    </div>
   `,
 })
-export class MultiFieldInput implements OnInit {
+export class MultiFieldInput implements OnInit, OnChanges {
   @Input() fieldDescriptions: FieldDescription[] = []
   @Input() properties?: Properties
   @Output() onChange = new EventEmitter<Properties>()
   @Input() layout?: LayoutConfig
 
-  @ViewChild("host", { read: ViewContainerRef, static: true }) host!: ViewContainerRef
+  data: Properties = {}
+  visibleFields: FieldDescription[] = []
 
-  private data: Properties = {}
+  get containerStyle(): string {
+    if (!this.layout || this.layout === "column") {
+      return "display:flex;flex-direction:column;gap:12px"
+    }
+    if (this.layout === "row") {
+      return "display:flex;flex-direction:row;gap:12px"
+    }
+    if (this.layout === "grid") {
+      return "display:grid;grid-template-columns:repeat(2,1fr);gap:12px"
+    }
+    if (typeof this.layout === "object" && this.layout.type === "grid") {
+      const cols = (this.layout as any).columns ?? 2
+      return `display:grid;grid-template-columns:repeat(${cols},1fr);gap:12px`
+    }
+    return "display:flex;flex-direction:column;gap:12px"
+  }
 
   ngOnInit() {
+    this.init()
+  }
+
+  ngOnChanges(_changes: SimpleChanges) {
+    this.init()
+  }
+
+  private init() {
     if (this.properties) this.data = { ...this.properties }
-    const visibleFields = this.fieldDescriptions.filter((f) => !f.appearCondition || f.appearCondition(this.data))
+    this.updateVisibleFields()
+  }
 
-    const { type, config } = resolveLayout(this.layout)
-    const LayoutComp = layoutRegistry.get(type)
-    if (!LayoutComp) throw new Error(`Unknown layout: ${type}`)
+  private updateVisibleFields() {
+    this.visibleFields = this.fieldDescriptions.filter(
+      (f) => !f.appearCondition || f.appearCondition(this.data)
+    )
+  }
 
-    const layoutRef = this.host.createComponent(LayoutComp as any)
-    // project children manually: create FieldInput components into the layout's ViewContainerRef if exposed.
-    // For now, we append simple FieldInput components as children of layout element.
-    const el = document.createElement("div")
-    visibleFields.forEach((f) => {
-      const wrapper = document.createElement("div")
-      wrapper.textContent = f.label || f.name
-      el.appendChild(wrapper)
-    })
-    try {
-      layoutRef.location.nativeElement.appendChild(el)
-    } catch {}
+  onFieldChange(event: { value: any; key: string }) {
+    this.data = { ...this.data, [event.key]: event.value }
+    this.updateVisibleFields()
+    this.onChange.emit(this.data)
   }
 }

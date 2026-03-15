@@ -6,9 +6,15 @@ import { fieldRegistry, FieldRendererProps, FieldTypeKey } from "@dynamic-field-
   standalone: true,
   template: `<ng-template #host></ng-template>`,
 })
-export class DynamicInput<T extends FieldTypeKey = FieldTypeKey> implements OnChanges {
-  @Input() type!: T
+export class DynamicInput implements OnChanges {
+  @Input() type!: FieldTypeKey
   @Input() value?: any
+  @Input() label?: string
+  @Input() placeholder?: string
+  @Input() required?: boolean
+  @Input() options?: any[]
+  @Input() className?: string
+  @Input() description?: any
   @Output() onChange = new EventEmitter<any>()
 
   @ViewChild("host", { read: ViewContainerRef, static: true }) host!: ViewContainerRef
@@ -19,6 +25,8 @@ export class DynamicInput<T extends FieldTypeKey = FieldTypeKey> implements OnCh
 
   private render() {
     const Renderer = (fieldRegistry as any).get(this.type)
+    console.log(fieldRegistry);
+    
     this.host.clear()
     if (!Renderer) {
       // render a simple text node when missing
@@ -37,11 +45,26 @@ export class DynamicInput<T extends FieldTypeKey = FieldTypeKey> implements OnCh
       if (compRef.instance) {
         if ("value" in compRef.instance) compRef.instance.value = this.value
         if ("onValueChange" in compRef.instance) compRef.instance.onValueChange = (v: any) => this.onChange.emit(v)
+        if ("label" in compRef.instance) compRef.instance.label = this.label
+        if ("placeholder" in compRef.instance) compRef.instance.placeholder = this.placeholder
+        if ("required" in compRef.instance) compRef.instance.required = this.required
+        if ("options" in compRef.instance) compRef.instance.options = this.options
+        if ("className" in compRef.instance) compRef.instance.className = this.className
+        if ("description" in compRef.instance) compRef.instance.description = this.description
       }
     } catch (err) {
       // fallback: attempt to call renderer as function
       try {
-        const out = Renderer({ value: this.value, onValueChange: (v: any) => this.onChange.emit(v) } as FieldRendererProps)
+        const out = Renderer({ 
+          value: this.value, 
+          onValueChange: (v: any) => this.onChange.emit(v),
+          label: this.label,
+          placeholder: this.placeholder,
+          required: this.required,
+          options: this.options,
+          className: this.className,
+          description: this.description
+        } as FieldRendererProps)
         // If renderer returned a string/html, append
         if (typeof out === "string") {
           const el = document.createElement("div")

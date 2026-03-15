@@ -13,7 +13,7 @@
     "@angular/platform-browser-dynamic": "^15.0.0",
     "zone.js": "^0.12.0",
     "@dynamic-field-kit/core": "file:../../packages/core",
-    "@dynamic-field-kit/angular": "file:../../packages/angular"
+    "@dynamic-field-kit/angular": "file:../../packages/angular/dist"
   },
   "devDependencies": {
     "@angular/cli": "^15.0.0",

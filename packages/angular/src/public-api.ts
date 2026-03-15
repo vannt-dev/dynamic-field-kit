@@ -1,10 +1,26 @@
-// Public API surface for the Angular package (used by ng-packagr)
-export * from './components/DynamicInput'
-export * from './components/FieldInput'
-export * from './components/MultiFieldInput'
-export * from './layout'
-export * from './types/layout'
-export * from './lib/dynamic-field-kit.module'
+// public-api.ts
 
-// Ensure default registrations run when library is imported
-import './registerDefaults'
+// Components
+export * from './components/DynamicInput';
+export * from './components/FieldInput';
+export * from './components/MultiFieldInput';
+
+// Layout
+export * from './layout';
+export * from './types/layout';
+
+// Module
+export * from './lib/dynamic-field-kit.module';
+
+// Re-export types from core (only type, not export * )
+export type {
+  FieldTypeKey,
+  FieldDescription,
+  FieldRendererProps
+} from '@dynamic-field-kit/core';
+
+// Optional: expose registry for advanced use cases, but not required for basic usage
+export { fieldRegistry } from '@dynamic-field-kit/core';
+
+// Side-effect import
+import './registerDefaults';

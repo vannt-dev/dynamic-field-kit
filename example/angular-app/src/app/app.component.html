@@ -1,4 +1,9 @@
 <div style="padding:24px">
-  <span>111111111111</span>
-  <dfk-multi-field-input [fieldDescriptions]="fields" (onChange)="onChange($event)"></dfk-multi-field-input>
+  <h2>Dynamic Field Kit — Angular Demo</h2>
+  <dfk-multi-field-input
+    [fieldDescriptions]="fields"
+    [properties]="data"
+    (onChange)="onChange($event)"
+  ></dfk-multi-field-input>
+  <pre style="margin-top:16px;background:#f5f5f5;padding:12px;border-radius:6px;">{{ data | json }}</pre>
 </div>
