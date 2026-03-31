@@ -1,6 +1,6 @@
 {
     "name": "@dynamic-field-kit/vue",
-    "version": "1.0.2",
+    "version": "1.1.0",
     "description": "Vue 3 renderer for dynamic-field-kit",
     "license": "MIT",
     "main": "./dist/index.js",
