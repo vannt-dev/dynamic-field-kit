@@ -1,69 +1,35 @@
-# Example Angular App
+# Angular App
 
-This folder is a minimal Angular app scaffold for `@dynamic-field-kit/angular`.
+Angular demo app for `@dynamic-field-kit/angular`.
 
-Use one of these two modes depending on what you want to test.
+## What It Does
 
-Mode 1: npm package mode
+- Registers Angular field components in `src/app/fieldRegistry.ts`
+- Renders a dynamic form from `src/app/app.component.ts`
+- Updates and displays the submitted object as field values change
 
-Use this mode when you want to test the same setup that another external Angular project will use.
+Current demo fields:
 
-`example/angular-app/package.json`
+- `name` as `text`
+- `age` as `number`
 
-```json
-{
-  "dependencies": {
-    "@dynamic-field-kit/core": "^1.0.10",
-    "@dynamic-field-kit/angular": "^1.2.1"
-  }
-}
-```
-
-Commands:
+## Run
 
 ```bash
-cd example/angular-app
 npm install
 npm start
 ```
 
-Notes:
-- This mode installs packages from npm.
-- Use this mode to verify the published package works in a normal consumer project.
-- If you just published a new Angular package version, reinstall before testing.
-
-Mode 2: local development mode
-
-Use this mode when you are working inside this monorepo and want the example app to load the local package build.
-
-`example/angular-app/package.json`
-
-```json
-{
-  "dependencies": {
-    "@dynamic-field-kit/core": "file:../../packages/core",
-    "@dynamic-field-kit/angular": "file:../../packages/angular/dist"
-  }
-}
-```
-
-Commands:
+## Build
 
 ```bash
-cd packages/angular
 npm run build
-
-cd ../../example/angular-app
-npm install
-npm start
 ```
 
-Notes:
-- This mode links the example app to the local monorepo packages.
-- `angular.json` sets `preserveSymlinks: true` so linked packages work reliably with Angular CLI.
-- After rebuilding `packages/angular`, restart `npm start` so the dev server reloads the updated package.
+## Main Files
 
-Shared notes
-- `AppModule` imports `DynamicFieldKitModule` from `@dynamic-field-kit/angular`.
-- `src/app/fieldRegistry.ts` registers the local Angular field components into the shared `fieldRegistry`.
-- See `example/angular-app/angular-instructions.md` for a copy-paste integration guide for another Angular app.
+- `src/app/app.component.ts`
+- `src/app/app.component.html`
+- `src/app/fieldRegistry.ts`
+- `src/app/components/text-field.component.ts`
+- `src/app/components/number-field.component.ts`

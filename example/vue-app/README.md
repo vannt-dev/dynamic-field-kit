@@ -1,5 +1,34 @@
-# Vue 3 + TypeScript + Vite
+# Vue App
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+Vue 3 + Vite demo app for `@dynamic-field-kit/vue`.
 
-Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
+## What It Does
+
+- Registers local field renderers in `src/lib/fieldRegistry.ts`
+- Renders a dynamic form in `src/App.vue`
+- Shows live JSON output below the form
+
+Current demo fields:
+
+- `name` as `text`
+- `age` as `number`
+
+## Run
+
+```bash
+npm install
+npm run dev
+```
+
+## Build
+
+```bash
+npm run build
+npm run preview
+```
+
+## Main Files
+
+- `src/App.vue`
+- `src/lib/fieldRegistry.ts`
+- `src/style.css`
