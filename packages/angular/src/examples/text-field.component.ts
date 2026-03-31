@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter } from "@angular/core"
 
 @Component({
   selector: "dfk-text-field",
+  standalone: true,
   template: `
     <input [value]="value ?? ''" (input)="onInput($event)" />
   `,

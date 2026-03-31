@@ -26,7 +26,7 @@ export class MultiFieldInput implements OnInit, OnChanges {
   @Input() fieldDescriptions: FieldDescription[] = []
   @Input() properties?: Properties
   @Output() onChange = new EventEmitter<Properties>()
-  @Input() layout?: LayoutConfig
+  @Input() layout: LayoutConfig = "column"
 
   data: Properties = {}
   visibleFields: FieldDescription[] = []

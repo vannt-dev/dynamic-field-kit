@@ -1,7 +1,1 @@
-export type LayoutConfig =
-  | string
-  | {
-      type: string
-      // free-form config passed to layout component
-      [k: string]: any
-    }
+export type LayoutConfig = "column" | "row" | "grid"

@@ -7,6 +7,7 @@ Summary
 - Import `DynamicFieldKitModule` into your Angular module.
 - Register your Angular field components in the shared `fieldRegistry` before bootstrap.
 - Use `dfk-multi-field-input` in your template.
+- `layout` currently supports `column`, `row`, and `grid`.
 - When linking the package locally with `file:`, set `preserveSymlinks: true` in `angular.json`.
 
 Quick start

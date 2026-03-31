@@ -8,6 +8,7 @@ Quick overview
 - Exports `DynamicInput`, `FieldInput`, `MultiFieldInput`, layout components, and `DynamicFieldKitModule`.
 - Uses the shared `fieldRegistry` from `@dynamic-field-kit/core` to resolve Angular field renderers at runtime.
 - Can be consumed as a packaged library, or linked locally from `packages/angular/dist` during development.
+- `MultiFieldInput` currently supports `column`, `row`, and `grid` layout values.
 
 Usage (consumer Angular app)
 
@@ -115,6 +116,7 @@ Notes & caveats
 - `DynamicFieldKitModule` is the recommended integration path for consumer apps.
 - Standalone exports are still available for advanced composition, but most apps should start with the module.
 - Text fields default to an empty string when no value is present, so empty controls render as blank instead of `undefined`.
+- Supported `layout` values are `column`, `row`, and `grid`.
 
 Examples & docs
 - See `example/angular-instructions.md` for detailed wiring steps.

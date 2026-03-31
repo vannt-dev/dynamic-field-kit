@@ -1,6 +1,4 @@
-
 import { Component } from "@angular/core"
-import { layoutRegistry } from "./layoutRegistry"
 import { CommonModule } from '@angular/common'
 
 @Component({
@@ -26,7 +24,3 @@ export class RowLayout {}
   template: `<div style="display:grid;grid-template-columns:repeat(var(--dfk-columns,2),1fr);gap:var(--dfk-gap,12px)"><ng-content></ng-content></div>`,
 })
 export class GridLayout {}
-
-layoutRegistry.register("column", ColumnLayout)
-layoutRegistry.register("row", RowLayout)
-layoutRegistry.register("grid", GridLayout)
