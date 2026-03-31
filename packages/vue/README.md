@@ -1,30 +1,83 @@
 # @dynamic-field-kit/vue
 
-Vue 3 renderer for dynamic-field-kit
+Vue 3 renderer for `@dynamic-field-kit/core`.
+
+This package provides Vue components that render dynamic fields from `FieldDescription[]` and resolve field renderers through the shared `fieldRegistry`.
 
 ## Installation
 
-```
-bash
-npm install @dynamic-field-kit/vue vue @dynamic-field-kit/core
+```bash
+npm install @dynamic-field-kit/core @dynamic-field-kit/vue vue
 ```
 
-## Usage
+## Exports
 
+- `DynamicInput`
+- `FieldInput`
+- `MultiFieldInput`
+- `layoutRegistry`
+- `fieldRegistry`
+- `FieldDescription`, `FieldTypeKey`, `FieldRendererProps`, `Properties`
+- `LayoutConfig`
+
+Default layouts are registered automatically when you import the package root.
+
+Built-in layout types:
+
+- `column`
+- `row`
+- `grid`
+- `grid-2`
+
+## Register field renderers
+
+Register Vue renderers before rendering your form:
+
+```ts
+import { defineComponent, h } from "vue"
+import { fieldRegistry } from "@dynamic-field-kit/vue"
+
+fieldRegistry.register(
+  "text",
+  defineComponent({
+    name: "TextFieldRenderer",
+    props: {
+      value: { type: String, default: "" },
+      label: { type: String, default: "" },
+    },
+    emits: ["update:value"],
+    setup(props, { emit }) {
+      return () =>
+        h("label", { style: { display: "grid", gap: "4px" } }, [
+          h("span", props.label),
+          h("input", {
+            value: props.value ?? "",
+            onInput: (event: Event) => {
+              emit("update:value", (event.target as HTMLInputElement).value)
+            },
+          }),
+        ])
+    },
+  })
+)
 ```
-vue
+
+## Basic usage
+
+```ts
 <script setup lang="ts">
-import { ref } from 'vue'
-import { MultiFieldInput, fieldRegistry } from '@dynamic-field-kit/vue'
+import { ref } from "vue"
+import { MultiFieldInput } from "@dynamic-field-kit/vue"
+import type { FieldDescription } from "@dynamic-field-kit/core"
 
-const fields = ref([
-  { name: 'username', type: 'text', label: 'Username' },
-  { name: 'email', type: 'email', label: 'Email' }
-])
+const fields: FieldDescription[] = [
+  { name: "username", type: "text", label: "Username" },
+  { name: "email", type: "text", label: "Email" },
+]
 
 const formData = ref({})
 
-function handleChange(data: any) {
+function handleChange(data: Record<string, unknown>) {
   formData.value = data
 }
 </script>
@@ -36,3 +89,57 @@ function handleChange(data: any) {
     :onChange="handleChange"
   />
 </template>
+```
+
+## Layouts
+
+Use a simple layout name:
+
+```vue
+<MultiFieldInput
+  :fieldDescriptions="fields"
+  layout="grid"
+/>
+```
+
+Use a layout config object:
+
+```vue
+<MultiFieldInput
+  :fieldDescriptions="fields"
+  :layout="{ type: 'grid', columns: 3, gap: 12 }"
+/>
+```
+
+You can also register custom layouts:
+
+```ts
+import { h } from "vue"
+import { layoutRegistry } from "@dynamic-field-kit/vue"
+
+layoutRegistry.register("stack-tight", ({ children }) => {
+  return h("div", { style: { display: "grid", gap: "8px" } }, children)
+})
+```
+
+## Type augmentation
+
+Add your app field types through module augmentation:
+
+```ts
+import "@dynamic-field-kit/core"
+
+declare module "@dynamic-field-kit/core" {
+  interface FieldTypeMap {
+    text: string
+    number: number
+  }
+}
+```
+
+## Notes
+
+- The library does not ship built-in field UI. Your app owns renderer registration.
+- `MultiFieldInput` filters fields using `appearCondition`.
+- `DynamicInput` shows `Unknown field type: ...` if a renderer is missing.
+- Built-in grid layouts accept `columns` and `gap` in layout config.

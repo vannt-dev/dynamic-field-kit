@@ -3,10 +3,17 @@
     "version": "1.0.8",
     "description": "React renderer for dynamic-field-kit",
     "license": "MIT",
-    "main": "dist/index.cjs",
-    "module": "dist/index.js",
+    "main": "dist/index.js",
+    "module": "dist/index.mjs",
     "types": "dist/index.d.ts",
-    "sideEffects": false,
+    "sideEffects": [
+        "./src/index.ts",
+        "./src/layout/defaultLayouts.tsx",
+        "./src/layout/responsiveLayout.tsx",
+        "./dist/index.js",
+        "./dist/index.mjs",
+        "./dist/index.d.ts"
+    ],
     "files": [
         "dist"
     ],
@@ -16,8 +23,8 @@
     "exports": {
         ".": {
             "types": "./dist/index.d.ts",
-            "import": "./dist/index.js",
-            "require": "./dist/index.cjs"
+            "import": "./dist/index.mjs",
+            "require": "./dist/index.js"
         }
     },
     "scripts": {

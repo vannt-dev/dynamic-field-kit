@@ -7,8 +7,11 @@
     "module": "./dist/index.mjs",
     "types": "./dist/index.d.ts",
     "sideEffects": [
-        "**/*.ts",
-        "**/*.js"
+        "./src/index.ts",
+        "./src/layout/defaultLayouts.ts",
+        "./dist/index.js",
+        "./dist/index.mjs",
+        "./dist/index.d.ts"
     ],
     "files": [
         "dist"

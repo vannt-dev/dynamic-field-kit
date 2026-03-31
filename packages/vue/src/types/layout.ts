@@ -1,4 +1,6 @@
-export interface LayoutConfig {
-    type: string
-    config?: Record<string, any>
-}
+export type LayoutConfig =
+    | string
+    | {
+        type: string
+        [k: string]: any
+    }

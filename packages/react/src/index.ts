@@ -1,6 +1,5 @@
-import { registerDefaults } from "./registerDefaults"
-
-registerDefaults()
+import "./layout/defaultLayouts"
+import "./layout/responsiveLayout"
 
 
 export { layoutRegistry } from "./layout"
@@ -12,7 +11,7 @@ export { default as MultiFieldInput } from "./components/MultiFieldInput"
 
 
 export type { LayoutConfig } from "./types/layout"
-// 🔁 Re-export từ core (CÙNG INSTANCE ĐÃ BUNDLE)
+// Re-export selected core APIs
 export {
     fieldRegistry,
     type FieldTypeKey,

@@ -1,20 +1,8 @@
-# Dynamic Field Kit
+# @dynamic-field-kit/react
 
-A lightweight, extensible **dynamic form engine** for React, built for scalable applications and design systems.
+React renderer for `@dynamic-field-kit/core`.
 
-`dynamic-field-kit` lets you define forms using **configuration objects** instead of hard-coded UI, and allows applications to **freely extend field types** (`text`, `number`, `checkbox`, `select`, `date`, `custom`, …) without modifying the library.
-
----
-
-## ✨ Features
-
-- Schema-driven dynamic forms
-- Extensible field types (no enums, no hard-coded unions)
-- Pluggable field renderers via registry
-- Runtime conditional fields (`appearCondition`)
-- Clean TypeScript declarations (DTS-safe)
-- Core logic separated from React rendering
-- Ideal for form builders & design systems
+This package provides React components that render dynamic fields from `FieldDescription[]` and resolve field renderers through the shared `fieldRegistry`.
 
 ---
 
@@ -26,43 +14,136 @@ A lightweight, extensible **dynamic form engine** for React, built for scalable 
 | `@dynamic-field-kit/react` | React components (FieldInput, MultiFieldInput, DynamicInput) |
 
 ---
-
-## 📥 Installation
+## Installation
 
 ```bash
-npm install @dynamic-field-kit/core @dynamic-field-kit/react
+npm install @dynamic-field-kit/core @dynamic-field-kit/react react
 ```
 
-**Peer dependency**
+Peer dependency:
 
 ```txt
 react >= 17
 ```
 
----
+## Exports
 
-## 🧱 Core Concepts
+- `DynamicInput`
+- `FieldInput`
+- `MultiFieldInput`
+- `layoutRegistry`
+- `fieldRegistry`
+- `FieldDescription`, `FieldTypeKey`, `FieldRendererProps`
 
-The library **does NOT define field types** like:
-```ts
-"text" | "number"
+Default layouts are registered automatically when you import the package root.
+
+Built-in layout types:
+
+- `column`
+- `row`
+- `grid`
+- `responsive`
+
+## Register field renderers
+
+Register React components or functions in `fieldRegistry` before rendering your form:
+
+```tsx
+import { fieldRegistry } from "@dynamic-field-kit/react"
+
+fieldRegistry.register("text", ({ value, onValueChange, label }) => (
+  <label style={{ display: "grid", gap: 4 }}>
+    <span>{label}</span>
+    <input
+      value={value ?? ""}
+      onChange={(e) => onValueChange?.(e.target.value)}
+    />
+  </label>
+))
+
+fieldRegistry.register("number", ({ value, onValueChange, label }) => (
+  <label style={{ display: "grid", gap: 4 }}>
+    <span>{label}</span>
+    <input
+      type="number"
+      value={value ?? ""}
+      onChange={(e) => onValueChange?.(Number(e.target.value))}
+    />
+  </label>
+))
 ```
 
-Instead, it exposes an **extendable interface** that applications can augment:
-```ts
-export interface FieldTypeMap {}
+## Basic usage
+
+```tsx
+import { useState } from "react"
+import { MultiFieldInput } from "@dynamic-field-kit/react"
+import type { FieldDescription } from "@dynamic-field-kit/core"
+
+const fields: FieldDescription[] = [
+  { name: "name", type: "text", label: "Name" },
+  { name: "age", type: "number", label: "Age" },
+]
+
+export function Example() {
+  const [data, setData] = useState({})
+
+  return (
+    <MultiFieldInput
+      fieldDescriptions={fields}
+      properties={data}
+      onChange={setData}
+    />
+  )
+}
 ```
 
-This allows:
-- Unlimited custom field types
-- Strong typing without locking consumers
-- No need to rebuild the library
+## Layouts
 
-This pattern is used by mature libraries like **MUI, React Hook Form,** and **Redux Toolkit**.
+Use a simple layout name:
 
-## 🧩 Defining Field Types (App Side)
+```tsx
+<MultiFieldInput
+  fieldDescriptions={fields}
+  layout="grid"
+/>
+```
 
-Create a `.d.ts` file in your app (e.g. src/types/dynamic-field.d.ts):
+Use a layout config object:
+
+```tsx
+<MultiFieldInput
+  fieldDescriptions={fields}
+  layout={{ type: "grid", columns: 3, gap: 16 }}
+/>
+```
+
+Use the built-in responsive layout:
+
+```tsx
+<MultiFieldInput
+  fieldDescriptions={fields}
+  layout={{
+    type: "responsive",
+    mobile: "column",
+    desktop: { type: "grid", columns: 2, gap: 12 },
+  }}
+/>
+```
+
+You can also register custom layouts:
+
+```tsx
+import { layoutRegistry } from "@dynamic-field-kit/react"
+
+layoutRegistry.register("stack-tight", ({ children }) => (
+  <div style={{ display: "grid", gap: 8 }}>{children}</div>
+))
+```
+
+## Type augmentation
+
+Add your app field types through module augmentation:
 
 ```ts
 import "@dynamic-field-kit/core"
@@ -71,229 +152,12 @@ declare module "@dynamic-field-kit/core" {
   interface FieldTypeMap {
     text: string
     number: number
-    checkbox: boolean
-    select: string
-  }
-}
-```
-⚠️ Make sure this file is included in tsconfig.json.
-
----
-
-## FieldRendererProps
-
-```ts
-export interface FieldRendererProps<T = any> {
-  value?: T
-  onValueChange?: (value: T) => void
-  label?: string
-}
-```
-👉 A common contract for all field renderers
-
----
-
-### FieldDescription
-
-A `FieldDescription` defines **what a field is**, not **how it looks**.
-
-```ts
-import { FieldDescription } from "@dynamic-field-kit/core"
-
-const fields: FieldDescription[] = [
-  {
-    name: "username",
-    type: "text",
-    label: "Username"
-  },
-  {
-    name: "age",
-    type: "number",
-    label: "Age",
-    appearCondition: (data) => data.username !== ""
-  }
-]
-```
-
-**Common Properties**
-| Property	| Description |
-|------|------------|
-| name	| Field key in form data |
-| type	| Field renderer key |
-| label	| UI label |
-| value	| Default value |
-| appearCondition	| Runtime visibility condition |
-
-**Field Registry (Render Layer)**
-The library does **not** ship UI components.
-
-Instead, applications register their own renderers.
-
-```ts
-import { fieldRegistry } from "@dynamic-field-kit/react"
-
-fieldRegistry.register("text", ({ value, onValueChange, label }) => (
-  <div>
-    <label>{label}</label>
-    <input
-      value={value ?? ""}
-      onChange={(e) => onValueChange?.(e.target.value)}
-    />
-  </div>
-))
-
-fieldRegistry.register("checkbox", ({ value, onValueChange, label }) => (
-  <label>
-    <input
-      type="checkbox"
-      checked={!!value}
-      onChange={(e) => onValueChange?.(e.target.checked)}
-    />
-    {label}
-  </label>
-))
-
-```
-
----
-
-## ⚛️ React Usage
-
-**MultiFieldInput (Main Form Engine)**
-
-```tsx
-import { MultiFieldInput } from "@dynamic-field-kit/react"
-import { FieldDescription } from "@dynamic-field-kit/core"
-
-const fields: FieldDescription[] = [
-  { name: "email", type: "text", label: "Email" },
-  { name: "age", type: "number", label: "Age" }
-]
-
-const Example = () => {
-  return (
-    <MultiFieldInput
-      fieldDescriptions={fields}
-      onChange={(data) => {
-        console.log("Form data:", data)
-      }}
-    />
-  )
-}
-```
-
-**Controlled Form**
-```tsx
-const [formData, setFormData] = useState({})
-
-<MultiFieldInput
-  fieldDescriptions={fields}
-  properties={formData}
-  onChange={setFormData}
-/>
-```
-
----
-
-## ➕ Adding a New Field Type
-
-You **do not** need to modify the library.
-
-Just extend `FieldTypeMap`:
-
-```ts
-declare module "@dynamic-field-kit/core" {
-  interface FieldTypeMap {
-    date: Date
   }
 }
 ```
 
-Then register a renderer:
+## Notes
 
-```ts
-fieldRegistry.register("date", ({ value, onValueChange }) => (
-  <input
-    type="date"
-    value={value ? value.toISOString().slice(0, 10) : ""}
-    onChange={(e) =>
-      onValueChange?.(new Date(e.target.value))
-    }
-  />
-))
-```
-
-Now `"date"` is fully type-safe everywhere.
-
----
-## 🧠 Domain Typing (Optional)
-The library intentionally avoids enforcing domain types.
-If you want strict typing, cast inside your app:
-
-```ts
-interface UserForm {
-  age: number
-}
-
-const fields: FieldDescription[] = [
-  {
-    name: "age",
-    type: "number",
-    appearCondition: (data) =>
-      (data as UserForm).age > 18
-  }
-]
-```
-This keeps the library generic while allowing strict typing in the app.
-
----
-
-## 🧩 Components API
-
-**<DynamicInput />**
-
-Resolves and renders a field based on its type.
-
-```tsx
-<DynamicInput type="text" value="hello" />
-```
----
-
-**<FieldInput />**
-
-Renders a single field with value binding.
-
-```tsx
-<FieldInput
-  fieldDescription={field}
-  renderInfos={formData}
-  onChange={(value, key) => {}}
-/>
-```
-
-## Demo
-- [Examples](https://github.com/vannt-dev/dynamic-field-kit-demo)
-
----
-
-## 🏗 Architecture
-
-```
-dynamic-field-kit
-├─ packages/
-│  ├─ core    # framework-agnostic types
-│  └─ react   # React renderer + registry
-```
-
----
-
-## 🚫 Non-Goals
-This library intentionally does not include:
--Built-in UI components
--Built-in UI components
--Form state management library
-
-It is a **form engine**, not a full form framework.
-
-## 📄 License
-MIT © [vannt-dev](https://github.com/vannt-dev)
+- The library does not ship built-in field UI. Your app owns renderer registration.
+- `MultiFieldInput` filters fields using `appearCondition`.
+- `DynamicInput` shows `Unknown field type: ...` if a renderer is missing.
