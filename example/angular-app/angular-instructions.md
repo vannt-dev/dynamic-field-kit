@@ -1,18 +1,17 @@
-# Wiring the Angular example into a consumer Angular app
+# Wiring `@dynamic-field-kit/angular` into an Angular app
 
-This document shows the minimal steps to integrate the Angular example components in this repo into a real Angular application. It assumes you have `@angular/cli` available and will show copy-paste code you can drop into your app.
+This document shows the current recommended integration for a consumer Angular application.
 
 Summary
-- The repository provides `packages/angular/src/examples/registerExample.ts` which registers an Angular component class (`TextFieldComponent`) into the shared `fieldRegistry`.
-- To wire the example into a running Angular app:
-  1. Create a new Angular app (or use an existing one).
-  2. Install/ensure the monorepo packages are available (workspaces or local file references).
-  3. Import the example registration at app startup so the `fieldRegistry` contains the Angular component class.
-  4. Declare the Angular components from `@dynamic-field-kit/angular` in your `AppModule` declarations so Angular can instantiate them dynamically.
+- Install `@dynamic-field-kit/core` and `@dynamic-field-kit/angular`.
+- Import `DynamicFieldKitModule` into your Angular module.
+- Register your Angular field components in the shared `fieldRegistry` before bootstrap.
+- Use `dfk-multi-field-input` in your template.
+- When linking the package locally with `file:`, set `preserveSymlinks: true` in `angular.json`.
 
-Quick start (recommended)
+Quick start
 
-1) Create an Angular app (if you don't have one):
+1. Create an Angular app if you do not already have one:
 
 ```bash
 npm install -g @angular/cli
@@ -20,57 +19,115 @@ ng new my-dfk-app --defaults --skip-git
 cd my-dfk-app
 ```
 
-2) Make the monorepo packages available to the app. In a dev workflow you can use workspace linking or `npm link`/`file:` references. Example `package.json` entry (from repo root):
+2. Install the library packages.
+
+Published package:
+
+```bash
+npm install @dynamic-field-kit/core @dynamic-field-kit/angular
+```
+
+Local monorepo development:
 
 ```json
-// inside my-dfk-app/package.json (example)
 {
   "dependencies": {
     "@dynamic-field-kit/core": "file:../packages/core",
-    "@dynamic-field-kit/angular": "file:../packages/angular"
+    "@dynamic-field-kit/angular": "file:../packages/angular/dist"
   }
 }
 ```
 
-Run `npm install` after editing `package.json`.
+Then run:
 
-3) Import the example registration at app startup so the `fieldRegistry` is populated:
-
-```ts
-// src/main.ts
-import { platformBrowserDynamic } from '@angular/platform-browser-dynamic'
-import { AppModule } from './app/app.module'
-
-// Import example registrations from the monorepo so they run on startup
-import '@dynamic-field-kit/angular/src/examples'
-
-platformBrowserDynamic().bootstrapModule(AppModule)
-  .catch(err => console.error(err))
+```bash
+npm install
 ```
 
-4) Declare the DynamicInput and example component(s) in your module:
+3. If you are using a local `file:` dependency, enable `preserveSymlinks` in `angular.json`:
+
+```json
+{
+  "projects": {
+    "my-dfk-app": {
+      "architect": {
+        "build": {
+          "options": {
+            "preserveSymlinks": true
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+4. Import the module in your Angular app:
 
 ```ts
 // src/app/app.module.ts
 import { NgModule } from '@angular/core'
 import { BrowserModule } from '@angular/platform-browser'
+import { DynamicFieldKitModule } from '@dynamic-field-kit/angular'
 import { AppComponent } from './app.component'
 
-// Import adapter components from the monorepo (source path during development)
-import { DynamicInput } from '@dynamic-field-kit/angular/src/components/DynamicInput'
-import { FieldInput } from '@dynamic-field-kit/angular/src/components/FieldInput'
-import { MultiFieldInput } from '@dynamic-field-kit/angular/src/components/MultiFieldInput'
-import { TextFieldComponent } from '@dynamic-field-kit/angular/src/examples/text-field.component'
-
 @NgModule({
-  declarations: [AppComponent, DynamicInput, FieldInput, MultiFieldInput, TextFieldComponent],
-  imports: [BrowserModule],
-  bootstrap: [AppComponent]
+  declarations: [AppComponent],
+  imports: [BrowserModule, DynamicFieldKitModule],
+  bootstrap: [AppComponent],
 })
 export class AppModule {}
 ```
 
-5) Use the components in a template. Example `app.component.ts` / `app.component.html`:
+5. Register Angular field renderers before bootstrap:
+
+```ts
+// src/main.ts
+import 'zone.js'
+import { platformBrowserDynamic } from '@angular/platform-browser-dynamic'
+import { fieldRegistry } from '@dynamic-field-kit/angular'
+import { AppModule } from './app/app.module'
+import { TextFieldComponent } from './app/components/text-field.component'
+import { NumberFieldComponent } from './app/components/number-field.component'
+
+fieldRegistry.register('text', TextFieldComponent as any)
+fieldRegistry.register('number', NumberFieldComponent as any)
+
+platformBrowserDynamic()
+  .bootstrapModule(AppModule)
+  .catch((err) => console.error(err))
+```
+
+6. Implement field renderer components:
+
+```ts
+// src/app/components/text-field.component.ts
+import { Component, EventEmitter, Input, Output } from '@angular/core'
+
+@Component({
+  selector: 'app-text-field',
+  standalone: true,
+  template: `
+    <input
+      [value]="value ?? ''"
+      [placeholder]="placeholder || ''"
+      (input)="onInput($event)"
+    />
+  `,
+})
+export class TextFieldComponent {
+  @Input() value?: string
+  @Input() placeholder?: string
+  @Output() valueChange = new EventEmitter<string>()
+
+  onInput(event: Event) {
+    const value = (event.target as HTMLInputElement).value
+    this.valueChange.emit(value)
+  }
+}
+```
+
+7. Use `dfk-multi-field-input` in your app:
 
 ```ts
 // src/app/app.component.ts
@@ -79,24 +136,33 @@ import { FieldDescription } from '@dynamic-field-kit/core'
 
 @Component({
   selector: 'app-root',
-  template: `
-    <dfk-multi-field-input [fieldDescriptions]="fields" (onChange)="onChange($event)"></dfk-multi-field-input>
-  `
+  templateUrl: './app.component.html',
 })
 export class AppComponent {
   fields: FieldDescription[] = [
-    { name: 'name', type: 'text', label: 'Name' }
+    { name: 'name', type: 'text', label: 'Name' },
+    { name: 'age', type: 'number', label: 'Age' },
   ]
 
+  data: any = {}
+
   onChange(data: any) {
-    console.log('data', data)
+    this.data = data
   }
 }
 ```
 
-Notes & caveats
-- The Angular adapter in this repo is a lightweight scaffold designed for local development. When using a production Angular app you should publish the `@dynamic-field-kit/angular` package or import built artifacts from `dist/`.
-- During local dev using `file:` dependencies, imports like `@dynamic-field-kit/angular/src/components/DynamicInput` reference the package source. This is convenient for rapid iteration but may require adjusting `tsconfig` paths or build tooling.
-- Dynamic component creation in `DynamicInput` assumes the registered renderer is an Angular component class. Consumers must register Angular component classes (not React components) for Angular usage.
+```html
+<!-- src/app/app.component.html -->
+<dfk-multi-field-input
+  [fieldDescriptions]="fields"
+  [properties]="data"
+  (onChange)="onChange($event)"
+></dfk-multi-field-input>
+```
 
-If you want, I can scaffold a runnable Angular demo app inside `example/angular-app/` (includes `package.json`, `src/`, and a minimal `ng` setup). This will be larger and require installing Angular CLI dependencies; say "scaffold" if you'd like that now.
+Notes
+- Use `DynamicFieldKitModule` as the default integration path.
+- Do not import package internals from `@dynamic-field-kit/angular/src/...` in a consumer app.
+- Register Angular component classes in `fieldRegistry`; do not register React or Vue components.
+- If you rebuild `packages/angular` in a linked local setup, restart `ng serve` so Angular CLI reloads the updated package.
