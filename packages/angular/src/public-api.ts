@@ -1,9 +1,11 @@
 // public-api.ts
 
 // Components
+export * from './components/BaseInput';
 export * from './components/DynamicInput';
 export * from './components/FieldInput';
 export * from './components/MultiFieldInput';
+export * from './components/imports';
 
 // Layout
 export * from './layout';

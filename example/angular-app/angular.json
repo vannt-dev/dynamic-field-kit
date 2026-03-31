@@ -16,6 +16,10 @@
             "outputPath": "dist/example-angular-app",
             "index": "src/index.html",
             "main": "src/main.ts",
+            "preserveSymlinks": true,
+            "allowedCommonJsDependencies": [
+              "@dynamic-field-kit/core"
+            ],
             "polyfills": [
               "zone.js"
             ],

@@ -14,10 +14,13 @@ import { Component, Input, Output, EventEmitter } from "@angular/core"
 })
 export class NumberFieldComponent {
   @Input() value?: any
+  @Output() valueChange = new EventEmitter<any>()
   @Output() onValueChange = new EventEmitter<any>()
 
   onInput(e: any) {
-    this.onValueChange.emit(Number(e.target.value))
+    const value = e.target.value === "" ? undefined : Number(e.target.value)
+    this.valueChange.emit(value)
+    this.onValueChange.emit(value)
   }
 }
 

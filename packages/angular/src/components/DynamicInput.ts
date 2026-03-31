@@ -1,12 +1,15 @@
-import { Component, Input, Output, EventEmitter, ViewChild, ViewContainerRef, OnChanges, SimpleChanges, Type } from "@angular/core"
-import { fieldRegistry, FieldRendererProps, FieldTypeKey } from "@dynamic-field-kit/core"
+import { CommonModule } from "@angular/common"
+import { Component, Input, Output, EventEmitter, ViewChild, ViewContainerRef, OnChanges, AfterViewInit, SimpleChanges, Type, SimpleChange } from "@angular/core"
+import { fieldRegistry, FieldTypeKey } from "@dynamic-field-kit/core"
+import { BaseInputComponent } from "./BaseInput"
 
 @Component({
   selector: "dfk-dynamic-input",
   standalone: true,
-  template: `<ng-template #host></ng-template>`,
+  imports: [CommonModule],
+  template: `<div #host style="display: contents;"></div>`,
 })
-export class DynamicInput implements OnChanges {
+export class DynamicInput extends BaseInputComponent implements OnChanges, AfterViewInit {
   @Input() type!: FieldTypeKey
   @Input() value?: any
   @Input() label?: string
@@ -15,67 +18,94 @@ export class DynamicInput implements OnChanges {
   @Input() options?: any[]
   @Input() className?: string
   @Input() description?: any
-  @Output() onChange = new EventEmitter<any>()
+  @Output() override valueChange = new EventEmitter<any>()
+  @Output() onChange = new EventEmitter<any>() // backward compat
 
-  @ViewChild("host", { read: ViewContainerRef, static: true }) host!: ViewContainerRef
+  @ViewChild("host", { read: ViewContainerRef, static: false }) host!: ViewContainerRef
+  private inputInstance?: any
 
-  ngOnChanges(_changes: SimpleChanges) {
-    this.render()
+  ngOnChanges(changes: SimpleChanges) {
+    if (this.inputInstance) {
+      const childChanges: SimpleChanges = {};
+      for (const prop in changes) {
+        childChanges[prop] = new SimpleChange((this.inputInstance as any)[prop], changes[prop].currentValue, false);
+      }
+      this.inputInstance.ngOnChanges?.(childChanges);
+    } else if (this.host) {
+      this.render();
+    }
+  }
+
+  ngAfterViewInit() {
+    this.render();
   }
 
   private render() {
-    const Renderer = (fieldRegistry as any).get(this.type)
-    console.log(fieldRegistry);
-    
-    this.host.clear()
+    const Renderer = fieldRegistry.get(this.type as FieldTypeKey);
+    this.host.clear();
     if (!Renderer) {
-      // render a simple text node when missing
-      const el = document.createElement("div")
-      el.textContent = `Unknown field type: ${this.type}`
-      this.host.element.nativeElement.appendChild(el)
-      return
+      const el = document.createElement("div");
+      el.textContent = `Unknown field type: ${this.type}`;
+      this.host.element.nativeElement.appendChild(el);
+      return;
     }
 
-    // If a registered renderer is an Angular Component class, create it.
-    // Consumers integrating Angular should register Angular component classes into the shared registry.
     try {
-      const compType = Renderer as Type<any>
-      const compRef = this.host.createComponent(compType)
-      // pass common props if inputs exist
-      if (compRef.instance) {
-        if ("value" in compRef.instance) compRef.instance.value = this.value
-        if ("onValueChange" in compRef.instance) compRef.instance.onValueChange = (v: any) => this.onChange.emit(v)
-        if ("label" in compRef.instance) compRef.instance.label = this.label
-        if ("placeholder" in compRef.instance) compRef.instance.placeholder = this.placeholder
-        if ("required" in compRef.instance) compRef.instance.required = this.required
-        if ("options" in compRef.instance) compRef.instance.options = this.options
-        if ("className" in compRef.instance) compRef.instance.className = this.className
-        if ("description" in compRef.instance) compRef.instance.description = this.description
+      const compType = Renderer as unknown as Type<any>;
+      const compRef = this.host.createComponent(compType);
+      const instance = compRef.instance;
+      if (!instance) throw new Error(`Failed to create instance for ${this.type}`);
+
+      // Map known props from base
+      const knownProps = ['value', 'label', 'placeholder', 'required', 'disabled', 'options', 'className', 'description', 'errorMessage'];
+      for (const prop of knownProps) {
+        if (prop in this && prop in instance) {
+          (instance as any)[prop] = (this as any)[prop];
+        }
       }
+
+      this.bindOutput(instance, "valueChange");
+      this.bindOutput(instance, "onValueChange");
+
+      instance.changeDetectorRef?.detectChanges();
+      this.inputInstance = instance;
+      compRef.changeDetectorRef.detectChanges();
     } catch (err) {
-      // fallback: attempt to call renderer as function
+      // Fallback to function renderer
       try {
-        const out = Renderer({ 
-          value: this.value, 
-          onValueChange: (v: any) => this.onChange.emit(v),
+        const props: any = {
+          value: this.value,
+          onValueChange: (v: any) => this.valueChange.emit(v),
           label: this.label,
           placeholder: this.placeholder,
           required: this.required,
           options: this.options,
           className: this.className,
-          description: this.description
-        } as FieldRendererProps)
-        // If renderer returned a string/html, append
-        if (typeof out === "string") {
-          const el = document.createElement("div")
-          el.innerHTML = out
-          this.host.element.nativeElement.appendChild(el)
+          description: this.description,
+          disabled: this.disabled,
+          errorMessage: this.errorMessage,
+        };
+        const out = (Renderer as Function)(props);
+        if (typeof out === 'string') {
+          const el = document.createElement('div');
+          el.innerHTML = out;
+          this.host.element.nativeElement.appendChild(el);
         }
       } catch (e) {
-        const el = document.createElement("div")
-        el.textContent = `Failed to render field: ${this.type}`
-        this.host.element.nativeElement.appendChild(el)
+        const el = document.createElement('div');
+        el.textContent = `Failed to render field: ${this.type}`;
+        this.host.element.nativeElement.appendChild(el);
       }
     }
+  }
+
+  private bindOutput(instance: any, outputName: "valueChange" | "onValueChange") {
+    const output = instance?.[outputName];
+    if (!output || typeof output.subscribe !== "function") return;
+
+    (output as EventEmitter<any>).subscribe((value) => {
+      this.valueChange.emit(value);
+      this.onChange.emit(value);
+    });
   }
 }

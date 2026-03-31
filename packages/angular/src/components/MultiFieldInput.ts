@@ -1,6 +1,5 @@
+import { NgClass, NgFor } from "@angular/common"
 import { Component, Input, Output, EventEmitter, OnChanges, OnInit, SimpleChanges } from "@angular/core"
-import { CommonModule } from '@angular/common'
-
 import { FieldDescription, Properties } from "@dynamic-field-kit/core"
 import { FieldInput } from "./FieldInput"
 import { LayoutConfig } from "../types/layout"
@@ -8,11 +7,14 @@ import { LayoutConfig } from "../types/layout"
 @Component({
   selector: "dfk-multi-field-input",
   standalone: true,
-  imports: [CommonModule, FieldInput],
+  imports: [NgClass, NgFor, FieldInput],
   template: `
-    <div [style]="containerStyle">
+    <div class="flex flex-col gap-3 p-4 border rounded-lg bg-gray-50" [ngClass]="{
+      'flex-row gap-3': layout === 'row',
+      'grid grid-cols-2 gap-3': layout === 'grid'
+    }">
       <dfk-field-input
-        *ngFor="let field of visibleFields"
+        *ngFor="let field of visibleFields; trackBy: trackByFn"
         [fieldDescription]="field"
         [renderInfos]="data"
         (onValueChangeField)="onFieldChange($event)"
@@ -29,21 +31,8 @@ export class MultiFieldInput implements OnInit, OnChanges {
   data: Properties = {}
   visibleFields: FieldDescription[] = []
 
-  get containerStyle(): string {
-    if (!this.layout || this.layout === "column") {
-      return "display:flex;flex-direction:column;gap:12px"
-    }
-    if (this.layout === "row") {
-      return "display:flex;flex-direction:row;gap:12px"
-    }
-    if (this.layout === "grid") {
-      return "display:grid;grid-template-columns:repeat(2,1fr);gap:12px"
-    }
-    if (typeof this.layout === "object" && this.layout.type === "grid") {
-      const cols = (this.layout as any).columns ?? 2
-      return `display:grid;grid-template-columns:repeat(${cols},1fr);gap:12px`
-    }
-    return "display:flex;flex-direction:column;gap:12px"
+  trackByFn(index: number, field: FieldDescription): string | number {
+    return field.name || index;
   }
 
   ngOnInit() {

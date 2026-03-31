@@ -11,7 +11,7 @@ import { CommonModule } from "@angular/common"
         {{ label }}<span *ngIf="required" style="color: red;"> *</span>
       </label>
       <input
-        [value]="value"
+        [value]="value ?? ''"
         [placeholder]="placeholder || ''"
         (input)="onInput($event)"
         [required]="required"
@@ -30,10 +30,13 @@ export class TextFieldComponent {
   @Input() label?: string
   @Input() description?: string
   @Input() className?: string
+  @Output() valueChange = new EventEmitter<any>()
   @Output() onValueChange = new EventEmitter<any>()
 
   onInput(e: any) {
-    this.onValueChange.emit(e.target.value)
+    const value = e.target.value
+    this.valueChange.emit(value)
+    this.onValueChange.emit(value)
   }
 }
 
