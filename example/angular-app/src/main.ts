@@ -1,8 +1,5 @@
 import 'zone.js';
 
-// Ensure example registrations run on startup
-import '@dynamic-field-kit/angular';
-
 // Register custom field types (text, number) with the shared fieldRegistry
 import './app/fieldRegistry';
 

@@ -1,72 +1,49 @@
 # @dynamic-field-kit/core
 
-**Core types and field registry for dynamic-field-kit** (v1.0.7)
+Core types and shared registries for `dynamic-field-kit`.
 
-A lightweight, extensible **dynamic form engine** framework-agnostic. Define forms using **configuration objects** instead of hard-coded UI, and allow applications to **freely extend field types** without modifying the library.
+`@dynamic-field-kit/core` is intentionally framework-agnostic. It does not import React, Vue, or Angular types in its public API. Applications define field schemas in `core`, then register framework-specific renderers through an adapter package such as `@dynamic-field-kit/react`, `@dynamic-field-kit/vue`, or `@dynamic-field-kit/angular`.
 
-`dynamic-field-kit` provides:
-- A shared `fieldRegistry` singleton that stores renderer implementations across frameworks.
-- Exchange types (`FieldDescription`, `FieldRendererProps`) that let you register renderers in any UI framework (React, Angular, Vue, etc.).
-- An extensible `FieldTypeMap` interface so consumers add custom field types with full TypeScript support.
+Demo app: https://github.com/vannt-dev/dynamic-field-kit-demo
 
----
+## What this package provides
 
-## ✨ Features
+- `FieldDescription` for schema-driven field definitions
+- `FieldRendererProps` as the shared renderer contract
+- `FieldTypeMap` for module augmentation and custom field typing
+- `fieldRegistry` as the shared runtime registry instance
 
-- Schema-driven dynamic forms
-- Extensible field types (no enums, no hard-coded unions)
-- Pluggable field renderers via registry
-- Runtime conditional fields (`appearCondition`)
-- Clean TypeScript declarations (DTS-safe)
-- Framework-agnostic (works with React, Angular, Vue, or vanilla JS)
-- Ideal for form builders & design systems
+## Install
 
----
+```bash
+npm install @dynamic-field-kit/core
+```
 
-## 📦 Packages in the Monorepo
-
-| Package | Description |
-|------|------------|
-| `@dynamic-field-kit/core` | Core types and field registry (you are here) |
-| `@dynamic-field-kit/react` | React components (FieldInput, MultiFieldInput, DynamicInput) |
-| `@dynamic-field-kit/angular` | Angular components and module (standalone + NgModule exports) |
-
----
-
-## 📥 Installation
-
-The core package is a peer dependency for UI framework adapters. Install together:
+Install a UI adapter alongside it when rendering forms:
 
 ```bash
 npm install @dynamic-field-kit/core @dynamic-field-kit/react
-# or for Angular
+# or
+npm install @dynamic-field-kit/core @dynamic-field-kit/vue
+# or
 npm install @dynamic-field-kit/core @dynamic-field-kit/angular
 ```
 
----
+## Core idea
 
-## 🧱 Core Concepts
+The library does not hard-code field types like `"text" | "number"`.
 
-The library **does NOT define field types** like:
-```ts
-"text" | "number"
-```
+Instead, apps extend `FieldTypeMap`:
 
-Instead, it exposes an **extendable interface** that applications can augment:
 ```ts
 export interface FieldTypeMap {}
 ```
 
-This allows:
-- Unlimited custom field types
-- Strong typing without locking consumers
-- No need to rebuild the library
+That keeps the package open for custom field types without modifying the library.
 
-This pattern is used by mature libraries like **MUI, React Hook Form,** and **Redux Toolkit**.
+## Define field types in your app
 
-## 🧩 Defining Field Types (App Side)
-
-Create a `.d.ts` file in your app (e.g. src/types/dynamic-field.d.ts):
+Create a declaration file such as `src/types/dynamic-field-kit.d.ts`:
 
 ```ts
 import "@dynamic-field-kit/core"
@@ -80,140 +57,121 @@ declare module "@dynamic-field-kit/core" {
   }
 }
 ```
-⚠️ Make sure this file is included in tsconfig.json.
 
----
+Make sure that file is included by your app's `tsconfig.json`.
 
-## FieldRendererProps
+## Shared types
 
 ```ts
 export interface FieldRendererProps<T = any> {
   value?: T
   onValueChange?: (value: T) => void
   label?: string
+  placeholder?: string
+  required?: boolean
+  options?: Record<string, any>[]
+  className?: string
+  description?: any
 }
 ```
-👉 A common contract for all field renderers
-
----
-
-### FieldDescription
-
-A `FieldDescription` defines **what a field is**, not **how it looks**.
 
 ```ts
-import { FieldDescription } from "@dynamic-field-kit/core"
+export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {
+  name: string
+  type: T
+  label?: string
+  placeholder?: string
+  required?: boolean
+  appearCondition?: (data: Record<string, any>) => boolean
+  options?: Record<string, any>[]
+  className?: string
+  description?: any
+}
+```
+
+## Register renderers through an adapter
+
+`core` owns the shared registry instance, but renderer registration should happen through the framework adapter so the adapter can expose the correct renderer type for that framework.
+
+Typical adapter imports:
+
+```ts
+import { fieldRegistry as reactRegistry } from "@dynamic-field-kit/react"
+import { fieldRegistry as vueRegistry } from "@dynamic-field-kit/vue"
+import { fieldRegistry as angularRegistry } from "@dynamic-field-kit/angular"
+```
+
+Then register a renderer using the adapter that matches your UI framework.
+
+React:
+
+```tsx
+import { fieldRegistry } from "@dynamic-field-kit/react"
+
+fieldRegistry.register("text", ({ value, onValueChange, label }) => (
+  <label>
+    <span>{label}</span>
+    <input
+      value={value ?? ""}
+      onChange={(e) => onValueChange?.(e.target.value)}
+    />
+  </label>
+))
+```
+
+Vue:
+
+```ts
+import { defineComponent, h } from "vue"
+import { fieldRegistry } from "@dynamic-field-kit/vue"
+
+fieldRegistry.register(
+  "text",
+  defineComponent({
+    setup() {
+      return () => h("input")
+    },
+  })
+)
+```
+
+Angular:
+
+```ts
+import { fieldRegistry } from "@dynamic-field-kit/angular"
+import { TextFieldComponent } from "./text-field.component"
+
+fieldRegistry.register("text", TextFieldComponent as any)
+```
+
+## Example schema
+
+```ts
+import type { FieldDescription } from "@dynamic-field-kit/core"
 
 const fields: FieldDescription[] = [
-  {
-    name: "username",
-    type: "text",
-    label: "Username"
-  },
+  { name: "username", type: "text", label: "Username" },
   {
     name: "age",
     type: "number",
     label: "Age",
-    appearCondition: (data) => data.username !== ""
-  }
+    appearCondition: (data) => Boolean(data.username),
+  },
 ]
 ```
 
-**Common Properties**
-| Property	| Description |
-|------|------------|
-| name	| Field key in form data |
-| type	| Field renderer key |
-| label	| UI label |
-| value	| Default value |
-| appearCondition	| Runtime visibility condition |
+## Notes
 
-**Field Registry (Render Layer)**
+- `core` is runtime-shared across adapters.
+- `core` does not ship UI components.
+- The registry stores framework-specific renderers, but the framework-specific typing belongs in each adapter package.
 
-The library does **not** ship UI components. Instead, applications register their own renderers using the `fieldRegistry` from the framework adapter (`@dynamic-field-kit/react`, `@dynamic-field-kit/angular`, etc.).
+## Related packages
 
-Example (framework adapter determines how to invoke the renderer):
-```ts
-import { fieldRegistry } from "@dynamic-field-kit/react" // or /angular
+- `@dynamic-field-kit/react`
+- `@dynamic-field-kit/vue`
+- `@dynamic-field-kit/angular`
 
-fieldRegistry.register("text", myTextRenderer)
-fieldRegistry.register("checkbox", myCheckboxRenderer)
-```
+## License
 
-
-
-## ➕ Adding a New Field Type
-
-You **do not** need to modify the library. Just extend `FieldTypeMap` in your application:
-
-```ts
-declare module "@dynamic-field-kit/core" {
-  interface FieldTypeMap {
-    date: Date
-    myCustom: any
-  }
-}
-```
-
-Then register renderers using the framework-specific adapter:
-
-- React: `import { fieldRegistry } from "@dynamic-field-kit/react"`
-- Angular: `import { fieldRegistry } from "@dynamic-field-kit/angular"`
-
-Now your custom types are fully type-safe throughout the codebase.
-
----
-## 🧠 Domain Typing (Optional)
-The library intentionally avoids enforcing domain types.
-If you want strict typing, cast inside your app:
-
-```ts
-interface UserForm {
-  age: number
-}
-
-const fields: FieldDescription[] = [
-  {
-    name: "age",
-    type: "number",
-    appearCondition: (data) =>
-      (data as UserForm).age > 18
-  }
-]
-```
-This keeps the library generic while allowing strict typing in the app.
-
-## 📚 Next Steps
-
-- **React integration**: See `@dynamic-field-kit/react` for component usage and examples.
-- **Angular integration**: See `@dynamic-field-kit/angular` for component usage and examples.
-- **Framework-agnostic**: Use `fieldRegistry` from any adapter to register custom renderers.
-
----
-
-## 🏗 Architecture
-
-The monorepo contains framework-agnostic core and framework-specific adapters:
-
-```
-dynamic-field-kit (monorepo)
-├─ packages/
-│  ├─ core        # Framework-agnostic types and registry
-│  ├─ react       # React renderer & DynamicInput component
-│  └─ angular     # Angular components & DynamicFieldKitModule
-```
-
-All packages share the same `fieldRegistry` instance so registrations are visible across frameworks (in the same process).
-
----
-
-## 🚫 Non-Goals
-This library intentionally does not include:
--Built-in UI components
--Built-in UI components
--Form state management library
-
-It is a **form engine**, not a full form framework.
-
-## 📄 License
-MIT © [vannt-dev](https://github.com/vannt-dev)
+MIT

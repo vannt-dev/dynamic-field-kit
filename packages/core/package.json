@@ -1,6 +1,6 @@
 {
     "name": "@dynamic-field-kit/core",
-    "version": "1.0.10",
+    "version": "1.0.13",
     "description": "Core types and field registry for dynamic-field-kit",
     "license": "MIT",
     "main": "dist/index.cjs",

@@ -1,29 +1,15 @@
 # @dynamic-field-kit/react
 
-React renderer for `@dynamic-field-kit/core`.
+React adapter for `@dynamic-field-kit/core`.
 
-This package provides React components that render dynamic fields from `FieldDescription[]` and resolve field renderers through the shared `fieldRegistry`.
+This package provides React components for rendering `FieldDescription[]` and exports a React-typed `fieldRegistry`, so registered renderers can be used directly as JSX components.
 
----
+Demo app: https://github.com/vannt-dev/dynamic-field-kit-demo
 
-## 📦 Packages
-
-| Package | Description |
-|------|------------|
-| `@dynamic-field-kit/core` | Core types and field registry |
-| `@dynamic-field-kit/react` | React components (FieldInput, MultiFieldInput, DynamicInput) |
-
----
-## Installation
+## Install
 
 ```bash
 npm install @dynamic-field-kit/core @dynamic-field-kit/react react
-```
-
-Peer dependency:
-
-```txt
-react >= 17
 ```
 
 ## Exports
@@ -33,11 +19,15 @@ react >= 17
 - `MultiFieldInput`
 - `layoutRegistry`
 - `fieldRegistry`
-- `FieldDescription`, `FieldTypeKey`, `FieldRendererProps`
+- `ReactFieldRenderer`
+- `ReactFieldRegistry`
+- `FieldDescription`
+- `FieldTypeKey`
+- `FieldRendererProps`
 
 Default layouts are registered automatically when you import the package root.
 
-Built-in layout types:
+Built-in layouts:
 
 - `column`
 - `row`
@@ -46,7 +36,7 @@ Built-in layout types:
 
 ## Register field renderers
 
-Register React components or functions in `fieldRegistry` before rendering your form:
+Register React components or function components through the React adapter:
 
 ```tsx
 import { fieldRegistry } from "@dynamic-field-kit/react"
@@ -100,13 +90,10 @@ export function Example() {
 
 ## Layouts
 
-Use a simple layout name:
+Use a layout name:
 
 ```tsx
-<MultiFieldInput
-  fieldDescriptions={fields}
-  layout="grid"
-/>
+<MultiFieldInput fieldDescriptions={fields} layout="grid" />
 ```
 
 Use a layout config object:
@@ -131,7 +118,7 @@ Use the built-in responsive layout:
 />
 ```
 
-You can also register custom layouts:
+Register a custom layout:
 
 ```tsx
 import { layoutRegistry } from "@dynamic-field-kit/react"
@@ -143,7 +130,7 @@ layoutRegistry.register("stack-tight", ({ children }) => (
 
 ## Type augmentation
 
-Add your app field types through module augmentation:
+Add your app's field types through module augmentation:
 
 ```ts
 import "@dynamic-field-kit/core"
@@ -158,6 +145,11 @@ declare module "@dynamic-field-kit/core" {
 
 ## Notes
 
-- The library does not ship built-in field UI. Your app owns renderer registration.
+- `@dynamic-field-kit/core` stays framework-agnostic and does not export React-specific JSX types.
+- `@dynamic-field-kit/react` narrows the shared registry to React component types so `fieldRegistry.get(type)` can be rendered safely in TSX.
 - `MultiFieldInput` filters fields using `appearCondition`.
-- `DynamicInput` shows `Unknown field type: ...` if a renderer is missing.
+- `DynamicInput` renders `Unknown field type: ...` when a renderer is missing.
+
+## License
+
+MIT

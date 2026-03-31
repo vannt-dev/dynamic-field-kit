@@ -1,5 +1,6 @@
-import { fieldRegistry, FieldTypeKey, Properties } from "@dynamic-field-kit/core"
+import { FieldTypeKey, Properties } from "@dynamic-field-kit/core"
 import { ReactNode } from "react"
+import { fieldRegistry } from "../fieldRegistry"
 
 interface Props<T extends FieldTypeKey> {
     type: T

@@ -1,17 +1,16 @@
 {
   "name": "@dynamic-field-kit/angular",
-  "version": "1.2.0",
+  "version": "1.2.4",
   "description": "Angular renderer for dynamic-field-kit",
   "license": "MIT",
   "private": false,
   "sideEffects": false,
-  "files": [
-    "dist"
-  ],
+  "main": "fesm2015/dynamic-field-kit-angular.mjs",
+  "types": "index.d.ts",
   "peerDependencies": {
     "@angular/common": ">=13 <22",
     "@angular/core": ">=13 <22",
-    "@dynamic-field-kit/core": "^1.0.7"
+    "@dynamic-field-kit/core": "^1.0.13"
   },
   "publishConfig": {
     "access": "public"
@@ -20,9 +19,10 @@
     "build": "ng-packagr -p ng-package.json",
     "clean": "rimraf dist",
     "prepublishOnly": "npm run clean && npm run build",
-    "release:patch": "npm version patch && npm publish",
-    "release:minor": "npm version minor && npm publish",
-    "release:major": "npm version major && npm publish"
+    "publish:dist": "npm publish ./dist --access public",
+    "release:patch": "npm version patch && npm run build && npm run publish:dist",
+    "release:minor": "npm version minor && npm run build && npm run publish:dist",
+    "release:major": "npm version major && npm run build && npm run publish:dist"
   },
   "devDependencies": {
     "@angular/common": "^15.2.10",

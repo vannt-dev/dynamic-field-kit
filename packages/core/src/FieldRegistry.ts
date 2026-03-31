@@ -1,7 +1,8 @@
-import { JSX } from "react"
 import type { FieldRendererProps, FieldTypeMap } from "./types"
 
-export type FieldRenderer<T = any> = (props: FieldRendererProps<T>) => JSX.Element
+export type FieldRenderer<T = any, TResult = unknown> = (
+    props: FieldRendererProps<T>
+) => TResult
 
 export class FieldRegistry {
     // ❗ INTERNAL = string, not constrain
