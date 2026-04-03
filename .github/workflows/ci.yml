@@ -23,7 +23,10 @@ jobs:
         run: npm run lint && npm run format-check
 
       - name: Build packages
-        run: npm run build
+        run: |
+          npm run build --workspace=@dynamic-field-kit/core
+          npm run build --workspace=@dynamic-field-kit/react
+          npm run build --workspace=@dynamic-field-kit/vue
 
       - name: Show bundle sizes
         run: node scripts/show-sizes.js
