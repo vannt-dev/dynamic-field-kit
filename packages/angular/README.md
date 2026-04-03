@@ -12,6 +12,10 @@ Demo app: https://github.com/vannt-dev/dynamic-field-kit-demo
 npm install @dynamic-field-kit/core @dynamic-field-kit/angular
 ```
 
+Note: Core is shared runtime. Install core separately and ensure a single version is used across adapters to avoid duplicate registries.
+
+- Install with core: `npm install @dynamic-field-kit/core @dynamic-field-kit/angular`
+
 If you need to pin versions explicitly:
 
 ```bash
@@ -26,37 +30,52 @@ npm install @dynamic-field-kit/core@^1.0.12 @dynamic-field-kit/angular@^1.2.3
 - `DynamicFieldKitModule`
 - `fieldRegistry`
 
-## Basic setup
+## Basic setup (Angular 19+)
 
-1. Import `DynamicFieldKitModule` in your Angular module.
+1. Import the component and register fields before bootstrap.
 
 ```ts
-import { BrowserModule } from "@angular/platform-browser"
-import { NgModule } from "@angular/core"
-import { DynamicFieldKitModule } from "@dynamic-field-kit/angular"
+import 'zone.js';
+import { bootstrapApplication } from '@angular/platform-browser';
+import { fieldRegistry } from '@dynamic-field-kit/angular';
+import { AppComponent } from './app/app.component';
+import { TextFieldComponent } from './app/components/text-field.component';
+import { NumberFieldComponent } from './app/components/number-field.component';
 
-@NgModule({
-  imports: [BrowserModule, DynamicFieldKitModule],
-})
-export class AppModule {}
+fieldRegistry.register('text', TextFieldComponent as any);
+fieldRegistry.register('number', NumberFieldComponent as any);
+
+bootstrapApplication(AppComponent, {
+  providers: [],
+}).catch((err) => console.error(err));
 ```
 
-2. Register Angular field components before bootstrap.
+2. Use the component in a standalone component.
 
 ```ts
-import "zone.js"
-import { platformBrowserDynamic } from "@angular/platform-browser-dynamic"
-import { fieldRegistry } from "@dynamic-field-kit/angular"
-import { AppModule } from "./app/app.module"
-import { TextFieldComponent } from "./app/components/text-field.component"
-import { NumberFieldComponent } from "./app/components/number-field.component"
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FieldDescription } from '@dynamic-field-kit/core';
+import { MultiFieldInput } from '@dynamic-field-kit/angular';
 
-fieldRegistry.register("text", TextFieldComponent as any)
-fieldRegistry.register("number", NumberFieldComponent as any)
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [CommonModule, MultiFieldInput],
+  templateUrl: './app.component.html',
+})
+export class AppComponent {
+  fields: FieldDescription[] = [
+    { name: 'name', type: 'text', label: 'Name' },
+    { name: 'age', type: 'number', label: 'Age' },
+  ];
 
-platformBrowserDynamic()
-  .bootstrapModule(AppModule)
-  .catch((err) => console.error(err))
+  data: any = {};
+
+  onChange(data: any) {
+    this.data = data;
+  }
+}
 ```
 
 3. Render your schema in a template.
@@ -69,39 +88,28 @@ platformBrowserDynamic()
 ></dfk-multi-field-input>
 ```
 
-4. Define your field schema in the component.
+## Legacy setup (Angular 14 and earlier with NgModule)
 
 ```ts
-import { Component } from "@angular/core"
-import { FieldDescription } from "@dynamic-field-kit/core"
+import { BrowserModule } from '@angular/platform-browser';
+import { NgModule } from '@angular/core';
+import { DynamicFieldKitModule } from '@dynamic-field-kit/angular';
 
-@Component({
-  selector: "app-root",
-  templateUrl: "./app.component.html",
+@NgModule({
+  imports: [BrowserModule, DynamicFieldKitModule],
 })
-export class AppComponent {
-  fields: FieldDescription[] = [
-    { name: "name", type: "text", label: "Name" },
-    { name: "age", type: "number", label: "Age" },
-  ]
-
-  data: any = {}
-
-  onChange(data: any) {
-    this.data = data
-  }
-}
+export class AppModule {}
 ```
 
 ## Type augmentation
 
 ```ts
-import "@dynamic-field-kit/core"
+import '@dynamic-field-kit/core';
 
-declare module "@dynamic-field-kit/core" {
+declare module '@dynamic-field-kit/core' {
   interface FieldTypeMap {
-    text: string
-    number: number
+    text: string;
+    number: number;
   }
 }
 ```

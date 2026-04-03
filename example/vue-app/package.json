@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@dynamic-field-kit/core": "*",
+    "@dynamic-field-kit/core": "file:../../packages/core",
     "@dynamic-field-kit/vue": "file:../../packages/vue",
     "vue": "^3.5.25"
   },

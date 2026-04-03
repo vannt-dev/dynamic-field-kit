@@ -1,1 +1,1 @@
-export type LayoutConfig = "column" | "row" | "grid"
+export type LayoutConfig = 'column' | 'row' | 'grid';

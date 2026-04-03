@@ -1,1 +1,1 @@
-export * from "./defaultLayouts"
+export * from './defaultLayouts';

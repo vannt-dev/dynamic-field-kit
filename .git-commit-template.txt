@@ -1,0 +1,11 @@
+Subject (type): Short description
+
+- Type: feat | fix | docs | style | refactor | perf | test | chore
+- Scope: (optional) package or module
+- Description: concise description in imperative mood
+
+Body:
+- Why: explain the reason for the change
+- What: outline what was changed
+- How to test: quick steps to verify
+- Breaking changes: if any

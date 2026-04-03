@@ -12,6 +12,10 @@ Demo app: https://github.com/vannt-dev/dynamic-field-kit-demo
 npm install @dynamic-field-kit/core @dynamic-field-kit/vue vue
 ```
 
+Note: @dynamic-field-kit/core is a shared runtime and should be installed in your app separately. The Vue adapter declares core as a peer dependency to avoid bundling core multiple times across adapters.
+
+- Install with core: `npm install @dynamic-field-kit/core @dynamic-field-kit/vue vue`
+
 ## Exports
 
 - `DynamicInput`
@@ -39,51 +43,51 @@ Built-in layouts:
 Register Vue renderers before rendering your form:
 
 ```ts
-import { defineComponent, h } from "vue"
-import { fieldRegistry } from "@dynamic-field-kit/vue"
+import { defineComponent, h } from 'vue';
+import { fieldRegistry } from '@dynamic-field-kit/vue';
 
 fieldRegistry.register(
-  "text",
+  'text',
   defineComponent({
-    name: "TextFieldRenderer",
+    name: 'TextFieldRenderer',
     props: {
-      value: { type: String, default: "" },
-      label: { type: String, default: "" },
+      value: { type: String, default: '' },
+      label: { type: String, default: '' },
     },
-    emits: ["update:value"],
+    emits: ['update:value'],
     setup(props, { emit }) {
       return () =>
-        h("label", { style: { display: "grid", gap: "4px" } }, [
-          h("span", props.label),
-          h("input", {
-            value: props.value ?? "",
+        h('label', { style: { display: 'grid', gap: '4px' } }, [
+          h('span', props.label),
+          h('input', {
+            value: props.value ?? '',
             onInput: (event: Event) => {
-              emit("update:value", (event.target as HTMLInputElement).value)
+              emit('update:value', (event.target as HTMLInputElement).value);
             },
           }),
-        ])
+        ]);
     },
   })
-)
+);
 ```
 
 ## Basic usage
 
 ```vue
 <script setup lang="ts">
-import { ref } from "vue"
-import { MultiFieldInput } from "@dynamic-field-kit/vue"
-import type { FieldDescription } from "@dynamic-field-kit/core"
+import { ref } from 'vue';
+import { MultiFieldInput } from '@dynamic-field-kit/vue';
+import type { FieldDescription } from '@dynamic-field-kit/core';
 
 const fields: FieldDescription[] = [
-  { name: "username", type: "text", label: "Username" },
-  { name: "email", type: "text", label: "Email" },
-]
+  { name: 'username', type: 'text', label: 'Username' },
+  { name: 'email', type: 'text', label: 'Email' },
+];
 
-const formData = ref({})
+const formData = ref({});
 
 function handleChange(data: Record<string, unknown>) {
-  formData.value = data
+  formData.value = data;
 }
 </script>
 
@@ -116,23 +120,23 @@ Use a layout config object:
 Register a custom layout:
 
 ```ts
-import { h } from "vue"
-import { layoutRegistry } from "@dynamic-field-kit/vue"
+import { h } from 'vue';
+import { layoutRegistry } from '@dynamic-field-kit/vue';
 
-layoutRegistry.register("stack-tight", ({ children }) => {
-  return h("div", { style: { display: "grid", gap: "8px" } }, children)
-})
+layoutRegistry.register('stack-tight', ({ children }) => {
+  return h('div', { style: { display: 'grid', gap: '8px' } }, children);
+});
 ```
 
 ## Type augmentation
 
 ```ts
-import "@dynamic-field-kit/core"
+import '@dynamic-field-kit/core';
 
-declare module "@dynamic-field-kit/core" {
+declare module '@dynamic-field-kit/core' {
   interface FieldTypeMap {
-    text: string
-    number: number
+    text: string;
+    number: number;
   }
 }
 ```

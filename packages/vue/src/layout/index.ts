@@ -1,1 +1,1 @@
-export { layoutRegistry } from "./layoutRegistry"
+export { layoutRegistry } from './layoutRegistry';

@@ -3,6 +3,7 @@
 This document shows the current recommended integration for a consumer Angular application.
 
 Summary
+
 - Install `@dynamic-field-kit/core` and `@dynamic-field-kit/angular`.
 - Import `DynamicFieldKitModule` into your Angular module.
 - Register your Angular field components in the shared `fieldRegistry` before bootstrap.
@@ -67,10 +68,10 @@ npm install
 
 ```ts
 // src/app/app.module.ts
-import { NgModule } from '@angular/core'
-import { BrowserModule } from '@angular/platform-browser'
-import { DynamicFieldKitModule } from '@dynamic-field-kit/angular'
-import { AppComponent } from './app.component'
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import { DynamicFieldKitModule } from '@dynamic-field-kit/angular';
+import { AppComponent } from './app.component';
 
 @NgModule({
   declarations: [AppComponent],
@@ -84,26 +85,26 @@ export class AppModule {}
 
 ```ts
 // src/main.ts
-import 'zone.js'
-import { platformBrowserDynamic } from '@angular/platform-browser-dynamic'
-import { fieldRegistry } from '@dynamic-field-kit/angular'
-import { AppModule } from './app/app.module'
-import { TextFieldComponent } from './app/components/text-field.component'
-import { NumberFieldComponent } from './app/components/number-field.component'
+import 'zone.js';
+import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
+import { fieldRegistry } from '@dynamic-field-kit/angular';
+import { AppModule } from './app/app.module';
+import { TextFieldComponent } from './app/components/text-field.component';
+import { NumberFieldComponent } from './app/components/number-field.component';
 
-fieldRegistry.register('text', TextFieldComponent as any)
-fieldRegistry.register('number', NumberFieldComponent as any)
+fieldRegistry.register('text', TextFieldComponent as any);
+fieldRegistry.register('number', NumberFieldComponent as any);
 
 platformBrowserDynamic()
   .bootstrapModule(AppModule)
-  .catch((err) => console.error(err))
+  .catch((err) => console.error(err));
 ```
 
 6. Implement field renderer components:
 
 ```ts
 // src/app/components/text-field.component.ts
-import { Component, EventEmitter, Input, Output } from '@angular/core'
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 
 @Component({
   selector: 'app-text-field',
@@ -117,13 +118,13 @@ import { Component, EventEmitter, Input, Output } from '@angular/core'
   `,
 })
 export class TextFieldComponent {
-  @Input() value?: string
-  @Input() placeholder?: string
-  @Output() valueChange = new EventEmitter<string>()
+  @Input() value?: string;
+  @Input() placeholder?: string;
+  @Output() valueChange = new EventEmitter<string>();
 
   onInput(event: Event) {
-    const value = (event.target as HTMLInputElement).value
-    this.valueChange.emit(value)
+    const value = (event.target as HTMLInputElement).value;
+    this.valueChange.emit(value);
   }
 }
 ```
@@ -132,8 +133,8 @@ export class TextFieldComponent {
 
 ```ts
 // src/app/app.component.ts
-import { Component } from '@angular/core'
-import { FieldDescription } from '@dynamic-field-kit/core'
+import { Component } from '@angular/core';
+import { FieldDescription } from '@dynamic-field-kit/core';
 
 @Component({
   selector: 'app-root',
@@ -143,12 +144,12 @@ export class AppComponent {
   fields: FieldDescription[] = [
     { name: 'name', type: 'text', label: 'Name' },
     { name: 'age', type: 'number', label: 'Age' },
-  ]
+  ];
 
-  data: any = {}
+  data: any = {};
 
   onChange(data: any) {
-    this.data = data
+    this.data = data;
   }
 }
 ```
@@ -163,6 +164,7 @@ export class AppComponent {
 ```
 
 Notes
+
 - Use `DynamicFieldKitModule` as the default integration path.
 - Do not import package internals from `@dynamic-field-kit/angular/src/...` in a consumer app.
 - Register Angular component classes in `fieldRegistry`; do not register React or Vue components.

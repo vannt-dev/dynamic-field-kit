@@ -1,10 +1,10 @@
-import { NgIf } from "@angular/common"
-import { Component, Input, Output, EventEmitter } from "@angular/core"
-import { DynamicInput } from './DynamicInput'
-import { FieldDescription, Properties } from "@dynamic-field-kit/core"
+import { NgIf } from '@angular/common';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { FieldDescription, Properties } from '@dynamic-field-kit/core';
+import { DynamicInput } from './DynamicInput';
 
 @Component({
-  selector: "dfk-field-input",
+  selector: 'dfk-field-input',
   standalone: true,
   imports: [NgIf, DynamicInput],
   template: `
@@ -18,25 +18,32 @@ import { FieldDescription, Properties } from "@dynamic-field-kit/core"
       [description]="fieldDescription!.description"
       [options]="fieldDescription!.options"
       [className]="fieldDescription!.className"
-      (valueChange)="onValueChangeField.emit({ value: $event, key: fieldDescription!.name })"
+      (valueChange)="
+        onValueChangeField.emit({ value: $event, key: fieldDescription!.name })
+      "
       [disabled]="false"
       [errorMessage]="''"
     ></dfk-dynamic-input>
   `,
 })
 export class FieldInput {
-  @Input() fieldDescription?: FieldDescription
-  @Input() renderInfos?: Properties
-  @Output() onValueChangeField = new EventEmitter<{value: any, key: string}>()
+  @Input() fieldDescription?: FieldDescription;
+  @Input() renderInfos?: Properties;
+  @Output() onValueChangeField = new EventEmitter<{
+    value: any;
+    key: string;
+  }>();
 
   getFieldValue() {
-    if (!this.fieldDescription || !this.renderInfos) return undefined
-
-    const value = this.renderInfos[this.fieldDescription.name]
-    if (value === undefined && this.fieldDescription.type === "text") {
-      return ""
+    if (!this.fieldDescription || !this.renderInfos) {
+      return undefined;
     }
 
-    return value
+    const value = this.renderInfos[this.fieldDescription.name];
+    if (value === undefined && this.fieldDescription.type === 'text') {
+      return '';
+    }
+
+    return value;
   }
 }
