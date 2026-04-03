@@ -1,16 +1,19 @@
-import { FieldDescription, Properties } from "@dynamic-field-kit/core"
-import DynamicInput from "./DynamicInput"
+import { FieldDescription, Properties } from '@dynamic-field-kit/core';
+import DynamicInput from './DynamicInput';
 
 interface Props {
-  fieldDescription: FieldDescription
-  renderInfos: Properties
-  onValueChangeField: (value: any, key: string) => void
+  fieldDescription: FieldDescription;
+  renderInfos: Properties;
+  onValueChangeField: (value: any, key: string) => void;
 }
 
-
-const FieldInput = ({ fieldDescription, renderInfos, onValueChangeField }: Props) => {
-  const { name, type, label, options, className, description } = fieldDescription
-
+const FieldInput = ({
+  fieldDescription,
+  renderInfos,
+  onValueChangeField,
+}: Props) => {
+  const { name, type, label, options, className, description } =
+    fieldDescription;
 
   return (
     <DynamicInput
@@ -22,8 +25,7 @@ const FieldInput = ({ fieldDescription, renderInfos, onValueChangeField }: Props
       description={description}
       onChange={(v) => onValueChangeField(v, name)}
     />
-  )
-}
+  );
+};
 
-
-export default FieldInput
+export default FieldInput;

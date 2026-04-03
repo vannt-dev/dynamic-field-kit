@@ -1,6 +1,6 @@
 export type LayoutConfig =
-    | string
-    | {
-        type: string
-        [k: string]: any
-    }
+  | string
+  | {
+      type: string;
+      [k: string]: any;
+    };

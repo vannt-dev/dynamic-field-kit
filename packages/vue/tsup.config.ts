@@ -1,27 +1,10 @@
-import { defineConfig } from "tsup"
-import { VueLoaderPlugin } from "vue-loader"
+import { defineConfig } from 'tsup';
 
 export default defineConfig({
-    entry: ["src/index.ts"],
-    format: ["esm", "cjs"],
-    dts: true,
-    clean: true,
-    sourcemap: true,
-    // Vue is external
-    external: [
-        'vue',
-        '@vue/runtime-core'
-    ],
-    // BẮT BUỘC
-    noExternal: [
-        '@dynamic-field-kit/core'
-    ],
-    // Add loader for .vue files
-    loader: {
-        '.vue': 'ts'
-    },
-    // Add VueLoaderPlugin
-    plugins: [
-        new VueLoaderPlugin()
-    ]
-})
+  entry: ['src/index.ts'],
+  format: ['esm', 'cjs'],
+  dts: true,
+  clean: true,
+  sourcemap: true,
+  external: ['vue', '@vue/runtime-core', '@dynamic-field-kit/core'],
+});

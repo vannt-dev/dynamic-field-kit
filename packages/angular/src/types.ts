@@ -1,1 +1,1 @@
-export * from "@dynamic-field-kit/core"
+export * from '@dynamic-field-kit/core';
