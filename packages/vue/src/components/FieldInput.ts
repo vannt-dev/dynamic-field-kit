@@ -1,9 +1,9 @@
-import { FieldDescription, Properties } from "@dynamic-field-kit/core";
-import { defineComponent, h, PropType } from "vue";
-import DynamicInput from "./DynamicInput";
+import { FieldDescription, Properties } from '@dynamic-field-kit/core';
+import { defineComponent, h, PropType } from 'vue';
+import DynamicInput from './DynamicInput';
 
 const FieldInput = defineComponent({
-  name: "FieldInput",
+  name: 'FieldInput',
   props: {
     fieldDescription: {
       type: Object as PropType<FieldDescription>,

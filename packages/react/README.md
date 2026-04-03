@@ -12,6 +12,10 @@ Demo app: https://github.com/vannt-dev/dynamic-field-kit-demo
 npm install @dynamic-field-kit/core @dynamic-field-kit/react react
 ```
 
+Note: Core is shared runtime. Install core separately and ensure a single version is used across adapters to avoid duplicate registries.
+
+- Install with core: `npm install @dynamic-field-kit/core @dynamic-field-kit/react`
+
 ## Exports
 
 - `DynamicInput`
@@ -39,44 +43,44 @@ Built-in layouts:
 Register React components or function components through the React adapter:
 
 ```tsx
-import { fieldRegistry } from "@dynamic-field-kit/react"
+import { fieldRegistry } from '@dynamic-field-kit/react';
 
-fieldRegistry.register("text", ({ value, onValueChange, label }) => (
-  <label style={{ display: "grid", gap: 4 }}>
+fieldRegistry.register('text', ({ value, onValueChange, label }) => (
+  <label style={{ display: 'grid', gap: 4 }}>
     <span>{label}</span>
     <input
-      value={value ?? ""}
+      value={value ?? ''}
       onChange={(e) => onValueChange?.(e.target.value)}
     />
   </label>
-))
+));
 
-fieldRegistry.register("number", ({ value, onValueChange, label }) => (
-  <label style={{ display: "grid", gap: 4 }}>
+fieldRegistry.register('number', ({ value, onValueChange, label }) => (
+  <label style={{ display: 'grid', gap: 4 }}>
     <span>{label}</span>
     <input
       type="number"
-      value={value ?? ""}
+      value={value ?? ''}
       onChange={(e) => onValueChange?.(Number(e.target.value))}
     />
   </label>
-))
+));
 ```
 
 ## Basic usage
 
 ```tsx
-import { useState } from "react"
-import { MultiFieldInput } from "@dynamic-field-kit/react"
-import type { FieldDescription } from "@dynamic-field-kit/core"
+import { useState } from 'react';
+import { MultiFieldInput } from '@dynamic-field-kit/react';
+import type { FieldDescription } from '@dynamic-field-kit/core';
 
 const fields: FieldDescription[] = [
-  { name: "name", type: "text", label: "Name" },
-  { name: "age", type: "number", label: "Age" },
-]
+  { name: 'name', type: 'text', label: 'Name' },
+  { name: 'age', type: 'number', label: 'Age' },
+];
 
 export function Example() {
-  const [data, setData] = useState({})
+  const [data, setData] = useState({});
 
   return (
     <MultiFieldInput
@@ -84,7 +88,7 @@ export function Example() {
       properties={data}
       onChange={setData}
     />
-  )
+  );
 }
 ```
 
@@ -101,7 +105,7 @@ Use a layout config object:
 ```tsx
 <MultiFieldInput
   fieldDescriptions={fields}
-  layout={{ type: "grid", columns: 3, gap: 16 }}
+  layout={{ type: 'grid', columns: 3, gap: 16 }}
 />
 ```
 
@@ -111,9 +115,9 @@ Use the built-in responsive layout:
 <MultiFieldInput
   fieldDescriptions={fields}
   layout={{
-    type: "responsive",
-    mobile: "column",
-    desktop: { type: "grid", columns: 2, gap: 12 },
+    type: 'responsive',
+    mobile: 'column',
+    desktop: { type: 'grid', columns: 2, gap: 12 },
   }}
 />
 ```
@@ -121,11 +125,11 @@ Use the built-in responsive layout:
 Register a custom layout:
 
 ```tsx
-import { layoutRegistry } from "@dynamic-field-kit/react"
+import { layoutRegistry } from '@dynamic-field-kit/react';
 
-layoutRegistry.register("stack-tight", ({ children }) => (
-  <div style={{ display: "grid", gap: 8 }}>{children}</div>
-))
+layoutRegistry.register('stack-tight', ({ children }) => (
+  <div style={{ display: 'grid', gap: 8 }}>{children}</div>
+));
 ```
 
 ## Type augmentation
@@ -133,12 +137,12 @@ layoutRegistry.register("stack-tight", ({ children }) => (
 Add your app's field types through module augmentation:
 
 ```ts
-import "@dynamic-field-kit/core"
+import '@dynamic-field-kit/core';
 
-declare module "@dynamic-field-kit/core" {
+declare module '@dynamic-field-kit/core' {
   interface FieldTypeMap {
-    text: string
-    number: number
+    text: string;
+    number: number;
   }
 }
 ```

@@ -1,8 +1,13 @@
-import { Component, Input, Output, EventEmitter, ChangeDetectorRef } from '@angular/core';
-import { FieldRendererProps } from '@dynamic-field-kit/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  EventEmitter,
+  Input,
+  Output,
+} from '@angular/core';
 
 @Component({
-  template: ''
+  template: '',
 })
 export abstract class BaseInputComponent {
   @Input() value?: any;
@@ -24,4 +29,3 @@ export abstract class BaseInputComponent {
 
   constructor(protected cdr: ChangeDetectorRef) {}
 }
-

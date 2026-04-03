@@ -2,5 +2,6 @@
   "dest": "dist",
   "lib": {
     "entryFile": "src/public-api.ts"
-  }
+  },
+  "allowedNonPeerDependencies": ["@dynamic-field-kit/core"]
 }

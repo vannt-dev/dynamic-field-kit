@@ -1,20 +1,18 @@
-import { Component, Input, Output, EventEmitter } from "@angular/core"
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 
 @Component({
-  selector: "dfk-text-field",
+  selector: 'dfk-text-field',
   standalone: true,
-  template: `
-    <input [value]="value ?? ''" (input)="onInput($event)" />
-  `,
+  template: ` <input [value]="value ?? ''" (input)="onInput($event)" /> `,
 })
 export class TextFieldComponent {
-  @Input() value?: any
-  @Output() valueChange = new EventEmitter<any>()
-  @Output() onValueChange = new EventEmitter<any>()
+  @Input() value?: any;
+  @Output() valueChange = new EventEmitter<any>();
+  @Output() onValueChange = new EventEmitter<any>();
 
   onInput(e: any) {
-    const value = e.target.value
-    this.valueChange.emit(value)
-    this.onValueChange.emit(value)
+    const value = e.target.value;
+    this.valueChange.emit(value);
+    this.onValueChange.emit(value);
   }
 }

@@ -1,24 +1,24 @@
-import type { VNode } from 'vue'
-import { reactive } from 'vue'
+import type { VNode } from 'vue';
+import { reactive } from 'vue';
 
 export type LayoutRenderer<C = any> = (props: {
-    children: VNode[]
-    config?: C
-}) => VNode
+  children: VNode[];
+  config?: C;
+}) => VNode;
 
 export class LayoutRegistry {
-    private layouts = reactive(new Map<string, LayoutRenderer>())
+  private layouts = reactive(new Map<string, LayoutRenderer>());
 
-    register(type: string, renderer: LayoutRenderer) {
-        if (this.layouts.has(type)) {
-            console.warn(`[dynamic-field-kit] Layout "${type}" already exists`)
-        }
-        this.layouts.set(type, renderer)
+  register(type: string, renderer: LayoutRenderer) {
+    if (this.layouts.has(type)) {
+      console.warn(`[dynamic-field-kit] Layout "${type}" already exists`);
     }
+    this.layouts.set(type, renderer);
+  }
 
-    get(type: string): LayoutRenderer | undefined {
-        return this.layouts.get(type)
-    }
+  get(type: string): LayoutRenderer | undefined {
+    return this.layouts.get(type);
+  }
 }
 
-export const layoutRegistry = new LayoutRegistry()
+export const layoutRegistry = new LayoutRegistry();

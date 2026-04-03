@@ -1,17 +1,21 @@
-import { FieldDescription, Properties } from "@dynamic-field-kit/core";
-import { computed, defineComponent, h, PropType, ref, watch } from "vue";
-import { layoutRegistry } from "../layout";
-import { LayoutConfig } from "../types/layout";
-import FieldInput from "./FieldInput";
+import { FieldDescription, Properties } from '@dynamic-field-kit/core';
+import { computed, defineComponent, h, PropType, ref, watch } from 'vue';
+import { layoutRegistry } from '../layout';
+import { LayoutConfig } from '../types/layout';
+import FieldInput from './FieldInput';
 
 function resolveLayout(layout?: LayoutConfig) {
-  if (!layout) return { type: "column", config: {} };
-  if (typeof layout === "string") return { type: layout, config: {} };
+  if (!layout) {
+    return { type: 'column', config: {} };
+  }
+  if (typeof layout === 'string') {
+    return { type: layout, config: {} };
+  }
   return { type: layout.type, config: layout };
 }
 
 const MultiFieldInput = defineComponent({
-  name: "MultiFieldInput",
+  name: 'MultiFieldInput',
 
   props: {
     fieldDescriptions: {
@@ -42,13 +46,13 @@ const MultiFieldInput = defineComponent({
           data.value = { ...newProps };
         }
       },
-      { immediate: true, deep: true },
+      { immediate: true, deep: true }
     );
 
     const visibleFields = computed(() =>
       props.fieldDescriptions.filter(
-        (f) => !f.appearCondition || f.appearCondition(data.value),
-      ),
+        (f) => !f.appearCondition || f.appearCondition(data.value)
+      )
     );
 
     const layoutInfo = computed(() => resolveLayout(props.layout));
@@ -63,7 +67,7 @@ const MultiFieldInput = defineComponent({
 
     return () => {
       if (!Layout.value) {
-        return h("div", `Unknown layout: ${layoutInfo.value.type}`);
+        return h('div', `Unknown layout: ${layoutInfo.value.type}`);
       }
 
       const children = visibleFields.value.map((f) =>
@@ -72,7 +76,7 @@ const MultiFieldInput = defineComponent({
           fieldDescription: f,
           renderInfos: data.value,
           onValueChangeField: handleValueChange,
-        }),
+        })
       );
 
       return Layout.value({

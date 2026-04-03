@@ -6,12 +6,14 @@
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   height: 100%;
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
   background-color: #fafafa;
   color: #333;
   line-height: 1.5;
@@ -39,9 +41,9 @@ label {
   color: #333;
 }
 
-input[type="text"],
-input[type="email"],
-input[type="password"],
+input[type='text'],
+input[type='email'],
+input[type='password'],
 textarea,
 select {
   width: 100%;
@@ -52,9 +54,9 @@ select {
   font-family: inherit;
 }
 
-input[type="text"]:focus,
-input[type="email"]:focus,
-input[type="password"]:focus,
+input[type='text']:focus,
+input[type='email']:focus,
+input[type='password']:focus,
 textarea:focus,
 select:focus {
   outline: none;

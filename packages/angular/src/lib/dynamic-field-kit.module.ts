@@ -1,14 +1,29 @@
-import { NgModule } from '@angular/core'
-import { CommonModule } from '@angular/common'
+import { CommonModule } from '@angular/common';
+import { NgModule } from '@angular/core';
 
-import { DynamicInput } from '../components/DynamicInput'
-import { FieldInput } from '../components/FieldInput'
-import { MultiFieldInput } from '../components/MultiFieldInput'
+import { DynamicInput } from '../components/DynamicInput';
+import { FieldInput } from '../components/FieldInput';
+import { MultiFieldInput } from '../components/MultiFieldInput';
 
-import { ColumnLayout, RowLayout, GridLayout } from '../layout/defaultLayouts'
+import { ColumnLayout, RowLayout, GridLayout } from '../layout/defaultLayouts';
 
 @NgModule({
-  imports: [CommonModule, DynamicInput, FieldInput, MultiFieldInput, ColumnLayout, RowLayout, GridLayout],
-  exports: [DynamicInput, FieldInput, MultiFieldInput, ColumnLayout, RowLayout, GridLayout],
+  imports: [
+    CommonModule,
+    DynamicInput,
+    FieldInput,
+    MultiFieldInput,
+    ColumnLayout,
+    RowLayout,
+    GridLayout,
+  ],
+  exports: [
+    DynamicInput,
+    FieldInput,
+    MultiFieldInput,
+    ColumnLayout,
+    RowLayout,
+    GridLayout,
+  ],
 })
 export class DynamicFieldKitModule {}

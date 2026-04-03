@@ -1,47 +1,53 @@
 {
-    "name": "@dynamic-field-kit/react",
-    "version": "1.1.1",
-    "description": "React renderer for dynamic-field-kit",
-    "license": "MIT",
-    "main": "dist/index.js",
-    "module": "dist/index.mjs",
-    "types": "dist/index.d.ts",
-    "sideEffects": [
-        "./src/index.ts",
-        "./src/layout/defaultLayouts.tsx",
-        "./src/layout/responsiveLayout.tsx",
-        "./dist/index.js",
-        "./dist/index.mjs",
-        "./dist/index.d.ts"
-    ],
-    "files": [
-        "dist"
-    ],
-    "dependencies": {
-        "@dynamic-field-kit/core": "^1.0.13"
-    },
-    "exports": {
-        ".": {
-            "types": "./dist/index.d.ts",
-            "import": "./dist/index.mjs",
-            "require": "./dist/index.js"
-        }
-    },
-    "scripts": {
-        "build": "tsup",
-        "clean": "rimraf dist",
-        "prepublishOnly": "npm run clean && npm run build",
-        "release:patch": "npm version patch && npm publish",
-        "release:minor": "npm version minor && npm publish",
-        "release:major": "npm version major && npm publish"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/vannt-dev/dynamic-field-kit.git"
-    },
-    "keywords": [
-        "dynamic-field",
-        "dynamic-field-kit",
-        "dynamic-field-kit/react"
-    ]
+  "name": "@dynamic-field-kit/react",
+  "version": "1.2.0",
+  "description": "React renderer for dynamic-field-kit",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "sideEffects": [
+    "./dist/index.js",
+    "./dist/index.mjs",
+    "./dist/index.d.ts",
+    "./src/layout/defaultLayouts.tsx",
+    "./src/layout/responsiveLayout.tsx"
+  ],
+  "files": [
+    "dist"
+  ],
+  "peerDependencies": {
+    "@dynamic-field-kit/core": "^1.1.0"
+  },
+  "dependencies": {
+    "@dynamic-field-kit/core": "^1.1.0",
+    "react": "^18.2.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.1"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "npx tsup",
+    "clean": "rimraf dist",
+    "prepublishOnly": "npm run clean && npm run build",
+    "release:patch": "npm version patch && npm publish",
+    "release:minor": "npm version minor && npm publish",
+    "release:major": "npm version major && npm publish"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vannt-dev/dynamic-field-kit.git"
+  },
+  "keywords": [
+    "dynamic-field",
+    "dynamic-field-kit",
+    "dynamic-field-kit/react"
+  ]
 }

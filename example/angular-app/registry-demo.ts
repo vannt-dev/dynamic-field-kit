@@ -9,12 +9,12 @@
 // This demo is intentionally minimal: it demonstrates registration and retrieval
 // from the shared `fieldRegistry` at runtime. It does not execute framework renderers.
 
-import "../packages/react/src/examples/registerExample"
-import "../packages/angular/src/examples/registerExample"
+import '../packages/react/src/examples/registerExample';
+import '../packages/angular/src/examples/registerExample';
 
-import { fieldRegistry } from "@dynamic-field-kit/core"
+import { fieldRegistry } from '@dynamic-field-kit/core';
 
-const renderer = (fieldRegistry as any).get("text")
-console.log("Registered renderer for 'text':", renderer)
+const renderer = (fieldRegistry as any).get('text');
+console.log("Registered renderer for 'text':", renderer);
 
-if (!renderer) process.exitCode = 2
+if (!renderer) process.exitCode = 2;

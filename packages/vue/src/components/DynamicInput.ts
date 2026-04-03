@@ -1,12 +1,13 @@
-import { defineComponent, computed, h, PropType } from "vue";
+/* eslint-disable import/order, import/no-unresolved, @typescript-eslint/no-explicit-any */
+import { defineComponent, computed, h, PropType } from 'vue';
 import {
   fieldRegistry,
   FieldTypeKey,
   Properties,
-} from "@dynamic-field-kit/core";
+} from '@dynamic-field-kit/core';
 
 const DynamicInput = defineComponent({
-  name: "DynamicInput",
+  name: 'DynamicInput',
 
   props: {
     type: {
@@ -44,12 +45,12 @@ const DynamicInput = defineComponent({
 
     return () => {
       if (!Renderer.value) {
-        return h("div", `Unknown field type: ${props.type}`);
+        return h('div', `Unknown field type: ${props.type}`);
       }
 
       return h(Renderer.value, {
         value: props.value,
-        "onUpdate:value": props.onChange,
+        'onUpdate:value': props.onChange,
         label: props.label,
         options: props.options,
         class: props.className,

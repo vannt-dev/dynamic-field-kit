@@ -1,20 +1,43 @@
 {
-    "name": "dynamic-field-kit",
-    "private": true,
-    "workspaces": [
-        "packages/*"
-    ],
-    "scripts": {
-        "build": "npm run build --workspaces",
-        "dev": "npm run dev --workspaces"
-    },
-    "devDependencies": {
-        "@types/react": "^19.2.8",
-        "tsup": "^8.0.1",
-        "typescript": "^5.3.3"
-    },
-    "dependencies": {
-        "@dynamic-field-kit/angular": "^1.0.2",
-        "@dynamic-field-kit/vue": "^1.0.0"
-    }
+  "name": "dynamic-field-kit",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "build:changed": "node scripts/build-changed.js",
+    "dev": "npm run dev --workspaces",
+    "test": "npm run test --workspaces",
+    "lint": "eslint packages/core/src packages/react/src packages/vue/src packages/angular/src --ext .ts,.tsx,.js --ignore-path .eslintignore",
+    "lint:cross-framework": "node scripts/check-cross-framework-imports.js",
+    "verify-framework-deps": "node scripts/verify-framework-deps.js",
+    "lint:fix": "eslint . --ext .ts,.tsx,.js --fix",
+    "format-check": "prettier --check .",
+    "typecheck": "node scripts/typecheck-all.js",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.8",
+    "@typescript-eslint/eslint-plugin": "^5.60.0",
+    "@typescript-eslint/parser": "^5.60.0",
+    "eslint": "^8.44.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-prettier": "^8.7.0",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "prettier": "^2.8.8",
+    "tsup": "^8.0.1",
+    "typescript": "~5.5.0",
+    "vitest": "^0.34.0"
+  },
+  "dependencies": {
+    "@dynamic-field-kit/core": "workspace:*",
+    "@dynamic-field-kit/react": "workspace:*",
+    "@dynamic-field-kit/vue": "workspace:*",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "vue": "^3.5.32"
+  }
 }

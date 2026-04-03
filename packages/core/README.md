@@ -19,6 +19,14 @@ Demo app: https://github.com/vannt-dev/dynamic-field-kit-demo
 npm install @dynamic-field-kit/core
 ```
 
+Note: This package is framework-agnostic. To render forms in an application, install a framework adapter as well (for example, @dynamic-field-kit/react, @dynamic-field-kit/vue, or @dynamic-field-kit/angular).
+
+- Example: npm install @dynamic-field-kit/core @dynamic-field-kit/react
+- Or: npm install @dynamic-field-kit/core @dynamic-field-kit/vue
+- Or: npm install @dynamic-field-kit/core @dynamic-field-kit/angular
+
+- Core is intended to be a single source of truth for registry and types. Ensure your app uses a single version of @dynamic-field-kit/core to avoid multiple registry instances.
+
 Install a UI adapter alongside it when rendering forms:
 
 ```bash
@@ -46,14 +54,14 @@ That keeps the package open for custom field types without modifying the library
 Create a declaration file such as `src/types/dynamic-field-kit.d.ts`:
 
 ```ts
-import "@dynamic-field-kit/core"
+import '@dynamic-field-kit/core';
 
-declare module "@dynamic-field-kit/core" {
+declare module '@dynamic-field-kit/core' {
   interface FieldTypeMap {
-    text: string
-    number: number
-    checkbox: boolean
-    select: string
+    text: string;
+    number: number;
+    checkbox: boolean;
+    select: string;
   }
 }
 ```
@@ -64,28 +72,28 @@ Make sure that file is included by your app's `tsconfig.json`.
 
 ```ts
 export interface FieldRendererProps<T = any> {
-  value?: T
-  onValueChange?: (value: T) => void
-  label?: string
-  placeholder?: string
-  required?: boolean
-  options?: Record<string, any>[]
-  className?: string
-  description?: any
+  value?: T;
+  onValueChange?: (value: T) => void;
+  label?: string;
+  placeholder?: string;
+  required?: boolean;
+  options?: Record<string, any>[];
+  className?: string;
+  description?: any;
 }
 ```
 
 ```ts
 export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {
-  name: string
-  type: T
-  label?: string
-  placeholder?: string
-  required?: boolean
-  appearCondition?: (data: Record<string, any>) => boolean
-  options?: Record<string, any>[]
-  className?: string
-  description?: any
+  name: string;
+  type: T;
+  label?: string;
+  placeholder?: string;
+  required?: boolean;
+  appearCondition?: (data: Record<string, any>) => boolean;
+  options?: Record<string, any>[];
+  className?: string;
+  description?: any;
 }
 ```
 
@@ -96,9 +104,9 @@ export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {
 Typical adapter imports:
 
 ```ts
-import { fieldRegistry as reactRegistry } from "@dynamic-field-kit/react"
-import { fieldRegistry as vueRegistry } from "@dynamic-field-kit/vue"
-import { fieldRegistry as angularRegistry } from "@dynamic-field-kit/angular"
+import { fieldRegistry as reactRegistry } from '@dynamic-field-kit/react';
+import { fieldRegistry as vueRegistry } from '@dynamic-field-kit/vue';
+import { fieldRegistry as angularRegistry } from '@dynamic-field-kit/angular';
 ```
 
 Then register a renderer using the adapter that matches your UI framework.
@@ -106,58 +114,58 @@ Then register a renderer using the adapter that matches your UI framework.
 React:
 
 ```tsx
-import { fieldRegistry } from "@dynamic-field-kit/react"
+import { fieldRegistry } from '@dynamic-field-kit/react';
 
-fieldRegistry.register("text", ({ value, onValueChange, label }) => (
+fieldRegistry.register('text', ({ value, onValueChange, label }) => (
   <label>
     <span>{label}</span>
     <input
-      value={value ?? ""}
+      value={value ?? ''}
       onChange={(e) => onValueChange?.(e.target.value)}
     />
   </label>
-))
+));
 ```
 
 Vue:
 
 ```ts
-import { defineComponent, h } from "vue"
-import { fieldRegistry } from "@dynamic-field-kit/vue"
+import { defineComponent, h } from 'vue';
+import { fieldRegistry } from '@dynamic-field-kit/vue';
 
 fieldRegistry.register(
-  "text",
+  'text',
   defineComponent({
     setup() {
-      return () => h("input")
+      return () => h('input');
     },
   })
-)
+);
 ```
 
 Angular:
 
 ```ts
-import { fieldRegistry } from "@dynamic-field-kit/angular"
-import { TextFieldComponent } from "./text-field.component"
+import { fieldRegistry } from '@dynamic-field-kit/angular';
+import { TextFieldComponent } from './text-field.component';
 
-fieldRegistry.register("text", TextFieldComponent as any)
+fieldRegistry.register('text', TextFieldComponent as any);
 ```
 
 ## Example schema
 
 ```ts
-import type { FieldDescription } from "@dynamic-field-kit/core"
+import type { FieldDescription } from '@dynamic-field-kit/core';
 
 const fields: FieldDescription[] = [
-  { name: "username", type: "text", label: "Username" },
+  { name: 'username', type: 'text', label: 'Username' },
   {
-    name: "age",
-    type: "number",
-    label: "Age",
+    name: 'age',
+    type: 'number',
+    label: 'Age',
     appearCondition: (data) => Boolean(data.username),
   },
-]
+];
 ```
 
 ## Notes
