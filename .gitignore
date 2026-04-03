@@ -2,7 +2,6 @@
 
 # dependencies
 node_modules/
-package-lock.json
 packages/core/dist
 packages/react/dist
 packages/angular/dist
