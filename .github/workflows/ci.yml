@@ -9,26 +9,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '24'
+          cache: 'npm'
+
       - name: Install dependencies
-        run: npm install --legacy-peer-deps
-      - name: Lint
-        run: npm run lint
-      - name: Build core, react, vue
-        run: |
-          npm run build --workspace=@dynamic-field-kit/core
-          npm run build --workspace=@dynamic-field-kit/react
-          npm run build --workspace=@dynamic-field-kit/vue
+        run: npm ci
+
+      - name: Lint & Format
+        run: npm run lint && npm run format-check
+
+      - name: Build packages
+        run: npm run build
+
       - name: Show bundle sizes
         run: node scripts/show-sizes.js
-      - name: Run tests
-        run: npm run test --workspace=@dynamic-field-kit/core
-      - name: Verify framework deps (core + adapters)
-        run: node scripts/verify-framework-deps.js
-      - name: Cross-framework import lint
-        run: npm run lint:cross-framework
-      - name: Integration cross-registry test
-        run: node scripts/integration-cross-registry.js
+
+      - name: Test & Verify
+        run: |
+          npm run test --workspace=@dynamic-field-kit/core
+          node scripts/verify-framework-deps.js
+          node scripts/check-cross-framework-imports.js
+          node scripts/integration-cross-registry.js
