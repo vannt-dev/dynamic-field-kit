@@ -13,5 +13,7 @@
   },
   "[vue]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
-  }
+  },
+  "http.browserPreview.openInBrowser": "chrome",
+  "http.enablePreview": true
 }
