@@ -69,6 +69,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Build core package
+        run: npm run build --workspace=@dynamic-field-kit/core
+
       - name: Run React tests with coverage
         run: npm run test --workspace=@dynamic-field-kit/react -- --coverage
         working-directory: packages/react
