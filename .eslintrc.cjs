@@ -31,9 +31,10 @@ module.exports = {
     curly: 'error',
     eqeqeq: 'error',
     semi: ['error', 'always'],
-    'no-console': 'warn',
+    'no-console': 'off',
     '@typescript-eslint/no-use-before-define': ['error'],
     '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    '@typescript-eslint/no-explicit-any': 'off',
     'max-len': ['error', { code: 120 }],
     'prefer-const': 'error',
     'import/order': [

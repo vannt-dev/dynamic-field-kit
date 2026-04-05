@@ -1,4 +1,4 @@
-/* eslint-disable import/order, import/no-unresolved, @typescript-eslint/no-explicit-any */
+/* eslint-disable import/order, import/no-unresolved */
 import { defineComponent, computed, h, PropType } from 'vue';
 import {
   fieldRegistry,

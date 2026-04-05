@@ -1,6 +1,9 @@
 import React from 'react';
-import { LayoutConfig } from '../types/layout';
-import { layoutRegistry } from './layoutRegistry';
+import {
+  LayoutConfig,
+  ResponsiveLayout,
+  layoutRegistry,
+} from './layoutRegistry';
 
 function resolve(layout: LayoutConfig) {
   if (typeof layout === 'string') {
@@ -12,7 +15,8 @@ function resolve(layout: LayoutConfig) {
 layoutRegistry.register('responsive', ({ children, config }) => {
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
-  const current = isMobile ? config.mobile : config.desktop;
+  const responsiveConfig = config as ResponsiveLayout;
+  const current = isMobile ? responsiveConfig.mobile : responsiveConfig.desktop;
   if (!current) {
     return <>{children} </>;
   }

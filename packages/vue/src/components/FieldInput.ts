@@ -30,8 +30,8 @@ const FieldInput = defineComponent({
         options,
         className,
         description,
-        onChange: (v: any) => props.onValueChangeField(v, name),
-      } as any);
+        onChange: (v: unknown) => props.onValueChangeField(v, name),
+      });
     };
   },
 });

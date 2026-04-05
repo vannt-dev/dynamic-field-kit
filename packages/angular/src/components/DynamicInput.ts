@@ -30,7 +30,7 @@ export class DynamicInput
 {
   @Input() type!: FieldTypeKey;
   @Output() override valueChange = new EventEmitter<any>();
-  @Output() onChange = new EventEmitter<any>(); // backward compat
+  @Output() onChange = new EventEmitter<any>();
 
   @ViewChild('host', { read: ViewContainerRef, static: false })
   host!: ViewContainerRef;
@@ -113,7 +113,6 @@ export class DynamicInput
       this.inputInstance = instance;
       compRef.changeDetectorRef.detectChanges();
     } catch (err) {
-      // Fallback to function renderer
       try {
         const props: any = {
           value: this.value,

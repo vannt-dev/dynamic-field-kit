@@ -23,7 +23,6 @@ export abstract class BaseInputComponent {
   @Input() maxLength?: number;
   @Input() minNumber?: number;
   @Input() maxNumber?: number;
-  // Add more from mplis as needed
 
   @Output() valueChange = new EventEmitter<any>();
 

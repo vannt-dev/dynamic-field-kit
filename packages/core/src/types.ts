@@ -26,5 +26,5 @@ export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {
   appearCondition?: (data: Properties) => boolean;
   options?: Properties[];
   className?: string;
-  description?: any;
+  description?: unknown;
 }

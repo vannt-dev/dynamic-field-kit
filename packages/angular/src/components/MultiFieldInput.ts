@@ -67,7 +67,7 @@ export class MultiFieldInput implements OnInit, OnChanges {
     );
   }
 
-  onFieldChange(event: { value: any; key: string }) {
+  onFieldChange(event: { value: unknown; key: string }) {
     this.data = { ...this.data, [event.key]: event.value };
     this.updateVisibleFields();
     this.onChange.emit(this.data);
