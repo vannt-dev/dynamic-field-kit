@@ -8,7 +8,7 @@
     "build": "npm run build --workspaces",
     "build:changed": "node scripts/build-changed.js",
     "dev": "npm run dev --workspaces",
-    "test": "npm run test --workspaces",
+    "test": "npm run test --workspaces --if-present",
     "lint": "eslint packages/core/src packages/react/src packages/vue/src packages/angular/src --ext .ts,.tsx,.js --ignore-path .eslintignore",
     "lint:cross-framework": "node scripts/check-cross-framework-imports.js",
     "verify-framework-deps": "node scripts/verify-framework-deps.js",
