@@ -5,7 +5,9 @@ import {
 } from '@dynamic-field-kit/core';
 import type { ComponentType } from 'react';
 
-export type ReactFieldRenderer<T = any> = ComponentType<FieldRendererProps<T>>;
+export type ReactFieldRenderer<T = unknown> = ComponentType<
+  FieldRendererProps<T>
+>;
 
 export interface ReactFieldRegistry {
   register<K extends keyof FieldTypeMap>(
