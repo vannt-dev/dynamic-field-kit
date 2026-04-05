@@ -1,0 +1,27 @@
+{
+  "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+  "version": 1,
+  "newProjectRoot": "projects",
+  "projects": {
+    "dynamic-field-kit-angular": {
+      "projectType": "library",
+      "root": "",
+      "sourceRoot": "src",
+      "prefix": "dfk",
+      "architect": {
+        "test": {
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": {
+            "main": "test.ts",
+            "polyfills": ["zone.js"],
+            "tsConfig": "tsconfig.spec.json",
+            "karmaConfig": "karma.conf.js",
+            "assets": [],
+            "styles": [],
+            "scripts": []
+          }
+        }
+      }
+    }
+  }
+}
