@@ -40,6 +40,7 @@ jobs:
         run: node scripts/show-sizes.js
 
   test:
+    name: Test ${{ matrix.package }}
     runs-on: ubuntu-latest
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
