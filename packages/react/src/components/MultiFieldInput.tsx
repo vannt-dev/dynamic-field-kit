@@ -1,8 +1,7 @@
 import { FieldDescription, Properties } from '@dynamic-field-kit/core';
 import React, { useEffect, useMemo, useState } from 'react';
 
-import { layoutRegistry } from '../layout';
-import { LayoutConfig } from '../types/layout';
+import { layoutRegistry, LayoutConfig } from '../layout';
 import FieldInput from './FieldInput';
 
 interface Props {

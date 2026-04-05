@@ -33,8 +33,8 @@ const renderGrid = ({
   children,
   config,
 }: {
-  children: any[];
-  config?: Record<string, any>;
+  children: unknown[];
+  config?: Record<string, unknown>;
 }) =>
   h(
     'div',
@@ -45,7 +45,7 @@ const renderGrid = ({
         gap: `${config?.gap ?? 16}px`,
       },
     },
-    children
+    children as never[]
   );
 
 layoutRegistry.register('grid', renderGrid);

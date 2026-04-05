@@ -1,10 +1,11 @@
 import { FieldDescription, Properties } from '@dynamic-field-kit/core';
+import React from 'react';
 import DynamicInput from './DynamicInput';
 
 interface Props {
   fieldDescription: FieldDescription;
   renderInfos: Properties;
-  onValueChangeField: (value: any, key: string) => void;
+  onValueChangeField: (value: unknown, key: string) => void;
 }
 
 const FieldInput = ({
@@ -22,7 +23,7 @@ const FieldInput = ({
       value={renderInfos[name]}
       options={options}
       className={className}
-      description={description}
+      description={description as React.ReactNode}
       onChange={(v) => onValueChangeField(v, name)}
     />
   );

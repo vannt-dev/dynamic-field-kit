@@ -1,6 +1,23 @@
 import React from 'react';
 
-export type LayoutRenderer<C = any> = (props: {
+export type BaseLayout =
+  | 'column'
+  | 'row'
+  | {
+      type: 'grid';
+      columns?: number;
+      gap?: number;
+    };
+
+export type ResponsiveLayout = {
+  type: 'responsive';
+  mobile: BaseLayout;
+  desktop: BaseLayout;
+};
+
+export type LayoutConfig = BaseLayout | ResponsiveLayout;
+
+export type LayoutRenderer<C = unknown> = (props: {
   children: React.ReactNode;
   config?: C;
 }) => React.ReactElement;

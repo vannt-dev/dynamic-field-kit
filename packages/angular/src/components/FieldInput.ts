@@ -15,7 +15,7 @@ import { DynamicInput } from './DynamicInput';
       [label]="fieldDescription!.label"
       [placeholder]="fieldDescription!.placeholder"
       [required]="fieldDescription!.required"
-      [description]="fieldDescription!.description"
+      [description]="$any(fieldDescription!.description)"
       [options]="fieldDescription!.options"
       [className]="fieldDescription!.className"
       (valueChange)="

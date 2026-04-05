@@ -1,11 +1,16 @@
 import { layoutRegistry } from './layoutRegistry';
 
+interface GridConfig {
+  gap?: number;
+  columns?: number;
+}
+
 layoutRegistry.register('column', ({ children, config }) => (
   <div
     style={{
       display: 'flex',
       flexDirection: 'column',
-      gap: config?.gap ?? 12,
+      gap: (config as { gap?: number })?.gap ?? 12,
     }}
   >
     {children}
@@ -17,7 +22,7 @@ layoutRegistry.register('row', ({ children, config }) => (
     style={{
       display: 'flex',
       flexDirection: 'row',
-      gap: config?.gap ?? 12,
+      gap: (config as { gap?: number })?.gap ?? 12,
     }}
   >
     {children}
@@ -28,8 +33,10 @@ layoutRegistry.register('grid', ({ children, config }) => (
   <div
     style={{
       display: 'grid',
-      gridTemplateColumns: `repeat(${config?.columns ?? 2}, 1fr)`,
-      gap: config?.gap ?? 12,
+      gridTemplateColumns: `repeat(${
+        (config as GridConfig)?.columns ?? 2
+      }, 1fr)`,
+      gap: (config as GridConfig)?.gap ?? 12,
     }}
   >
     {children}
