@@ -18,7 +18,7 @@ module.exports = function (config) {
     karmaTypescriptConfig: {
       tsconfig: './tsconfig.spec.json',
     },
-    reporters: ['progress', 'coverage-istanbul'],
+    reporters: ['progress', 'coverage'],
     browsers: ['ChromeHeadless'],
     customLaunchers: {
       ChromeHeadlessCI: {
@@ -27,10 +27,11 @@ module.exports = function (config) {
       },
     },
     singleRun: true,
-    coverageIstanbulReporter: {
-      reports: ['lcov', 'text-summary'],
-      dir: 'coverage',
-      fixWebpackSourcePaths: true,
+    coverageReporter: {
+      reporters: [
+        { type: 'lcov', dir: 'coverage', subdir: '.' },
+        { type: 'text-summary' },
+      ],
     },
   });
 };
