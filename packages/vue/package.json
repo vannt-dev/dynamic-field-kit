@@ -3,6 +3,7 @@
   "version": "1.2.0",
   "description": "Vue 3 renderer for dynamic-field-kit",
   "license": "MIT",
+  "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -23,7 +24,11 @@
     "@dynamic-field-kit/core": "^1.1.0"
   },
   "devDependencies": {
-    "tsup": "^8.0.1"
+    "@vitest/coverage-v8": "^1.6.0",
+    "@vue/test-utils": "^2.4.6",
+    "jsdom": "^24.0.0",
+    "tsup": "^8.0.1",
+    "vitest": "^1.6.0"
   },
   "exports": {
     ".": {
@@ -36,6 +41,9 @@
     "build": "npx tsup",
     "clean": "rimraf dist",
     "prepublishOnly": "npm run clean && npm run build",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "release:patch": "npm version patch && npm publish",
     "release:minor": "npm version minor && npm publish",
     "release:major": "npm version major && npm publish",

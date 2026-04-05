@@ -5,6 +5,10 @@ on:
     branches: [main, develop]
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint-and-build:
     runs-on: ubuntu-latest
@@ -30,14 +34,38 @@ jobs:
           npm run build --workspace=@dynamic-field-kit/core
           npm run build --workspace=@dynamic-field-kit/react
           npm run build --workspace=@dynamic-field-kit/vue
+          npm run build --workspace=@dynamic-field-kit/angular
 
       - name: Show bundle sizes
         run: node scripts/show-sizes.js
 
-  test-core:
+  test:
+    name: Test ${{ matrix.package }}
     runs-on: ubuntu-latest
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - package: core
+            test-cmd: npm run test --workspace=@dynamic-field-kit/core
+          - package: react
+            build-cmd: npm run build --workspace=@dynamic-field-kit/core
+            test-cmd: npm run test --workspace=@dynamic-field-kit/react -- --coverage
+            coverage-file: packages/react/coverage/lcov.info
+            coverage-name: react
+          - package: vue
+            build-cmd: npm run build --workspace=@dynamic-field-kit/core
+            test-cmd: npm run test --workspace=@dynamic-field-kit/vue -- --coverage
+            coverage-file: packages/vue/coverage/lcov.info
+            coverage-name: vue
+          - package: angular
+            build-cmd: npm run build --workspace=@dynamic-field-kit/core
+            test-cmd: npm run test:coverage --workspace=@dynamic-field-kit/angular
+            coverage-file: packages/angular/coverage/lcov.info
+            coverage-name: angular
+            needs-chrome: true
     steps:
       - uses: actions/checkout@v4
 
@@ -47,47 +75,34 @@ jobs:
           node-version: '24'
           cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run core tests
-        run: npm run test --workspace=@dynamic-field-kit/core
-
-  test-react:
-    runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Install Chrome
+        if: matrix.needs-chrome == true
+        uses: browser-actions/setup-chrome@latest
         with:
-          node-version: '24'
-          cache: 'npm'
+          chrome-version: stable
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Build core package
-        run: npm run build --workspace=@dynamic-field-kit/core
+      - name: Build core
+        if: matrix.build-cmd != ''
+        run: ${{ matrix.build-cmd }}
 
-      - name: Run React tests with coverage
-        run: npm run test --workspace=@dynamic-field-kit/react -- --coverage
-        working-directory: packages/react
+      - name: Run tests
+        run: ${{ matrix.test-cmd }}
 
-      - name: Upload coverage to Codecov
+      - name: Upload coverage
+        if: matrix.coverage-file != '' && success()
         uses: codecov/codecov-action@v4
-        if: success()
         with:
-          files: packages/react/coverage/lcov.info
+          files: ${{ matrix.coverage-file }}
           flags: unittests
-          name: react
+          name: ${{ matrix.coverage-name }}
           fail_ci_if_error: false
 
   verify:
     runs-on: ubuntu-latest
-    needs: [lint-and-build, test-core, test-react]
+    needs: [lint-and-build, test]
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
