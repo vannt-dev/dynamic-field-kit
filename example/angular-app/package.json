@@ -7,18 +7,21 @@
     "build": "ng build"
   },
   "dependencies": {
-    "@angular/core": "^19.0.0",
     "@angular/common": "^19.0.0",
+    "@angular/core": "^19.0.0",
     "@angular/platform-browser": "^19.0.0",
     "@angular/platform-browser-dynamic": "^19.0.0",
-    "zone.js": "^0.15.0",
+    "@dynamic-field-kit/angular": "file:../../packages/angular/dist",
     "@dynamic-field-kit/core": "file:../../packages/core",
-    "@dynamic-field-kit/angular": "file:../../packages/angular/dist"
+    "zone.js": "^0.15.0"
   },
   "devDependencies": {
+    "@angular-devkit/build-angular": "^19.0.0",
     "@angular/cli": "^19.0.0",
     "@angular/compiler-cli": "^19.0.0",
-    "@angular-devkit/build-angular": "^19.0.0",
+    "autoprefixer": "^10.4.27",
+    "postcss": "^8.5.8",
+    "tailwindcss": "^3.4.19",
     "typescript": "~5.5.0"
   }
 }

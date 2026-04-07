@@ -1,38 +1,70 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, Input, TemplateRef } from '@angular/core';
+import { layoutRegistry } from './layoutRegistry';
 
 @Component({
   selector: 'dfk-column-layout',
   standalone: true,
   imports: [CommonModule],
   template: `<div
-    style="display:flex;flex-direction:column;gap:var(--dfk-gap,12px)"
+    [style.display]="'flex'"
+    [style.flexDirection]="'column'"
+    [style.gap]="gap + 'px'"
   >
-    <ng-content></ng-content>
+    <ng-container *ngTemplateOutlet="template"></ng-container>
   </div>`,
 })
-export class ColumnLayout {}
+export class ColumnLayout {
+  @Input() config?: { gap?: number };
+  @Input() template!: TemplateRef<any>;
+  get gap() {
+    return this.config?.gap ?? 12;
+  }
+}
 
 @Component({
   selector: 'dfk-row-layout',
   standalone: true,
   imports: [CommonModule],
   template: `<div
-    style="display:flex;flex-direction:row;gap:var(--dfk-gap,12px)"
+    [style.display]="'flex'"
+    [style.flexDirection]="'row'"
+    [style.gap]="gap + 'px'"
   >
-    <ng-content></ng-content>
+    <ng-container *ngTemplateOutlet="template"></ng-container>
   </div>`,
 })
-export class RowLayout {}
+export class RowLayout {
+  @Input() config?: { gap?: number };
+  @Input() template!: TemplateRef<any>;
+  get gap() {
+    return this.config?.gap ?? 12;
+  }
+}
 
 @Component({
   selector: 'dfk-grid-layout',
   standalone: true,
   imports: [CommonModule],
   template: `<div
-    style="display:grid;grid-template-columns:repeat(var(--dfk-columns,2),1fr);gap:var(--dfk-gap,12px)"
+    [style.display]="'grid'"
+    [style.gridTemplateColumns]="'repeat(' + columns + ', 1fr)'"
+    [style.gap]="gap + 'px'"
   >
-    <ng-content></ng-content>
+    <ng-container *ngTemplateOutlet="template"></ng-container>
   </div>`,
 })
-export class GridLayout {}
+export class GridLayout {
+  @Input() config?: { columns?: number; gap?: number };
+  @Input() template!: TemplateRef<any>;
+  get columns() {
+    return this.config?.columns ?? 2;
+  }
+  get gap() {
+    return this.config?.gap ?? 12;
+  }
+}
+
+layoutRegistry.register('column', ColumnLayout as any);
+layoutRegistry.register('row', RowLayout as any);
+layoutRegistry.register('grid', GridLayout as any);
