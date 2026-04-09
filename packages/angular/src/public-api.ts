@@ -15,9 +15,9 @@ export * from './lib/dynamic-field-kit.module';
 
 // Re-export types from core (only type, not export * )
 export type {
-  FieldTypeKey,
   FieldDescription,
   FieldRendererProps,
+  FieldTypeKey,
 } from '@dynamic-field-kit/core';
 
 // Optional: expose registry for advanced use cases, but not required for basic usage

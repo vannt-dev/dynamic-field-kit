@@ -1,11 +1,12 @@
 import { NgClass, NgFor } from '@angular/common';
 import {
+  ChangeDetectorRef,
   Component,
-  Input,
-  Output,
   EventEmitter,
+  Input,
   OnChanges,
   OnInit,
+  Output,
   SimpleChanges,
 } from '@angular/core';
 import { FieldDescription, Properties } from '@dynamic-field-kit/core';
@@ -42,6 +43,8 @@ export class MultiFieldInput implements OnInit, OnChanges {
   data: Properties = {};
   visibleFields: FieldDescription[] = [];
 
+  constructor(private cdr: ChangeDetectorRef) {}
+
   trackByFn(index: number, field: FieldDescription): string | number {
     return field.name || index;
   }
@@ -67,9 +70,10 @@ export class MultiFieldInput implements OnInit, OnChanges {
     );
   }
 
-  onFieldChange(event: { value: unknown; key: string }) {
+  onFieldChange(event: { value: unknown; key: string }): void {
     this.data = { ...this.data, [event.key]: event.value };
     this.updateVisibleFields();
     this.onChange.emit(this.data);
+    this.cdr.markForCheck();
   }
 }

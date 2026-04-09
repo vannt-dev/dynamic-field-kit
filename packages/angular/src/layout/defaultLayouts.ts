@@ -16,7 +16,7 @@ import { layoutRegistry } from './layoutRegistry';
 })
 export class ColumnLayout {
   @Input() config?: { gap?: number };
-  @Input() template!: TemplateRef<any>;
+  @Input() template!: TemplateRef<unknown>;
   get gap() {
     return this.config?.gap ?? 12;
   }
@@ -36,7 +36,7 @@ export class ColumnLayout {
 })
 export class RowLayout {
   @Input() config?: { gap?: number };
-  @Input() template!: TemplateRef<any>;
+  @Input() template!: TemplateRef<unknown>;
   get gap() {
     return this.config?.gap ?? 12;
   }
@@ -56,7 +56,7 @@ export class RowLayout {
 })
 export class GridLayout {
   @Input() config?: { columns?: number; gap?: number };
-  @Input() template!: TemplateRef<any>;
+  @Input() template!: TemplateRef<unknown>;
   get columns() {
     return this.config?.columns ?? 2;
   }
@@ -65,6 +65,6 @@ export class GridLayout {
   }
 }
 
-layoutRegistry.register('column', ColumnLayout as any);
-layoutRegistry.register('row', RowLayout as any);
-layoutRegistry.register('grid', GridLayout as any);
+layoutRegistry.register('column', ColumnLayout);
+layoutRegistry.register('row', RowLayout);
+layoutRegistry.register('grid', GridLayout);
