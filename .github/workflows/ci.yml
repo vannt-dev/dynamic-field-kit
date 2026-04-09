@@ -89,7 +89,7 @@ jobs:
 
       - name: Upload coverage
         if: matrix.coverage-file != '' && success()
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v6
         with:
           files: ${{ matrix.coverage-file }}
           flags: unittests

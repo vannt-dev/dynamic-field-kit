@@ -1,22 +1,37 @@
 import { CommonModule } from '@angular/common';
 import {
+  AfterViewInit,
   Component,
   ComponentRef,
-  Input,
-  Output,
   EventEmitter,
-  ViewChild,
-  ViewContainerRef,
+  Input,
   OnChanges,
-  AfterViewInit,
   OnDestroy,
+  Output,
   SimpleChanges,
   Type,
-  SimpleChange,
+  ViewChild,
+  ViewContainerRef,
 } from '@angular/core';
 import { fieldRegistry, FieldTypeKey } from '@dynamic-field-kit/core';
 import { Subscription } from 'rxjs';
 import { BaseInputComponent } from './BaseInput';
+
+const KNOWN_PROPS = [
+  'value',
+  'label',
+  'placeholder',
+  'required',
+  'disabled',
+  'options',
+  'className',
+  'description',
+  'errorMessage',
+  'acceptFile',
+  'maxLength',
+  'minNumber',
+  'maxNumber',
+] as const;
 
 @Component({
   selector: 'dfk-dynamic-input',
@@ -29,159 +44,179 @@ export class DynamicInput
   implements OnChanges, AfterViewInit, OnDestroy
 {
   @Input() type!: FieldTypeKey;
-  @Output() override valueChange = new EventEmitter<any>();
-  @Output() onChange = new EventEmitter<any>();
+  @Output() override valueChange = new EventEmitter<unknown>();
+  @Output() onChange = new EventEmitter<unknown>();
 
   @ViewChild('host', { read: ViewContainerRef, static: false })
   host!: ViewContainerRef;
-  private compRef?: ComponentRef<any>;
-  private inputInstance?: any;
+  private compRef?: ComponentRef<unknown>;
+  private inputInstance?: unknown;
   private subscriptions: Subscription[] = [];
 
-  ngOnChanges(changes: SimpleChanges) {
-    if (changes['type'] && !changes['type'].firstChange && this.host) {
-      this.render();
-      return;
-    }
+  ngOnChanges(changes: SimpleChanges): void {
+    super.ngOnChanges(changes);
 
     if (this.inputInstance) {
-      this.applyKnownProps(this.inputInstance);
+      this.syncPropsToInstance(changes);
+    }
 
-      const childChanges: SimpleChanges = {};
-      for (const prop in changes) {
-        childChanges[prop] = new SimpleChange(
-          changes[prop].previousValue,
-          changes[prop].currentValue,
-          changes[prop].firstChange
-        );
-      }
-
-      this.inputInstance.ngOnChanges?.(childChanges);
-      this.compRef?.changeDetectorRef.detectChanges();
-    } else if (this.host) {
+    if (changes['type'] && !changes['type'].firstChange && this.host) {
+      this.render();
+    } else if (!this.inputInstance && this.host) {
       this.render();
     }
   }
 
-  ngAfterViewInit() {
+  ngAfterViewInit(): void {
     this.render();
   }
 
-  ngOnDestroy() {
+  ngOnDestroy(): void {
+    this.cleanup();
+  }
+
+  private syncPropsToInstance(changes: SimpleChanges): void {
+    if (!this.inputInstance) {
+      return;
+    }
+
+    for (const prop of KNOWN_PROPS) {
+      if (changes[prop] && this.inputInstance) {
+        (this.inputInstance as Record<string, unknown>)[prop] = (
+          this as Record<string, unknown>
+        )[prop];
+      }
+    }
+    this.compRef?.changeDetectorRef?.detectChanges();
+  }
+
+  private cleanup(): void {
     this.cleanupSubscriptions();
     this.cleanupRenderedComponent();
   }
 
-  private cleanupSubscriptions() {
+  private cleanupSubscriptions(): void {
     this.subscriptions.forEach((s) => s.unsubscribe());
     this.subscriptions = [];
   }
 
-  private render() {
-    const Renderer = fieldRegistry.get(this.type as FieldTypeKey);
-    this.cleanupRenderedComponent();
-    this.cleanupSubscriptions();
+  private cleanupRenderedComponent(): void {
+    this.compRef?.destroy();
+    this.compRef = undefined;
+    this.inputInstance = undefined;
+  }
+
+  private render(): void {
+    const Renderer = fieldRegistry.get(this.type);
+    this.cleanup();
     this.host.clear();
+
     if (!Renderer) {
-      const el = document.createElement('div');
-      el.textContent = `Unknown field type: ${this.type}`;
-      this.host.element.nativeElement.appendChild(el);
+      this.renderError(`Unknown field type: ${this.type}`);
       return;
     }
 
+    if (this.isComponentType(Renderer)) {
+      this.renderComponent(Renderer as unknown as Type<unknown>);
+    } else if (typeof Renderer === 'function') {
+      this.renderFallback(Renderer);
+    } else {
+      this.renderError(`Invalid renderer for type: ${this.type}`);
+    }
+  }
+
+  private isComponentType(renderer: unknown): boolean {
+    return (
+      typeof renderer === 'object' && renderer !== null && 'cmp' in renderer
+    );
+  }
+
+  private renderComponent(compType: Type<unknown>): void {
     try {
-      const compType = Renderer as unknown as Type<any>;
       const compRef = this.host.createComponent(compType);
       const instance = compRef.instance;
+
       if (!instance) {
-        throw new Error(`Failed to create instance for ${this.type}`);
+        this.renderError(`Failed to create instance for ${this.type}`);
+        return;
       }
 
-      this.applyKnownProps(instance);
+      this.applyProps(instance);
+      this.bindOutputs(instance);
 
-      const subA = this.bindOutput(instance, 'valueChange');
-      if (subA) {
-        this.subscriptions.push(subA);
-      }
-      const subB = this.bindOutput(instance, 'onValueChange');
-      if (subB) {
-        this.subscriptions.push(subB);
-      }
-
-      instance.changeDetectorRef?.detectChanges();
       this.compRef = compRef;
       this.inputInstance = instance;
       compRef.changeDetectorRef.detectChanges();
-    } catch (err) {
-      try {
-        const props: any = {
-          value: this.value,
-          onValueChange: (v: any) => this.emitValue(v),
-          label: this.label,
-          placeholder: this.placeholder,
-          required: this.required,
-          options: this.options,
-          className: this.className,
-          description: this.description,
-          disabled: this.disabled,
-          errorMessage: this.errorMessage,
-        };
-        const out = (Renderer as (props: unknown) => unknown)(props);
-        if (typeof out === 'string') {
-          const el = document.createElement('div');
-          el.innerHTML = out;
-          this.host.element.nativeElement.appendChild(el);
-        }
-      } catch (e) {
+    } catch {
+      this.renderError(`Failed to render field: ${this.type}`);
+    }
+  }
+
+  private renderFallback(renderer: unknown): void {
+    try {
+      const props = this.getFallbackProps();
+      const result = (renderer as (props: unknown) => string)(props);
+
+      if (typeof result === 'string') {
         const el = document.createElement('div');
-        el.textContent = `Failed to render field: ${this.type}`;
+        el.innerHTML = result;
         this.host.element.nativeElement.appendChild(el);
       }
+    } catch {
+      this.renderError(`Failed to render field: ${this.type}`);
     }
   }
 
-  private applyKnownProps(instance: any) {
-    const knownProps = [
-      'value',
-      'label',
-      'placeholder',
-      'required',
-      'disabled',
-      'options',
-      'className',
-      'description',
-      'errorMessage',
-    ];
-    for (const prop of knownProps) {
-      if (prop in this && prop in instance) {
-        instance[prop] = (this as any)[prop];
+  private getFallbackProps(): Record<string, unknown> {
+    return {
+      value: this.value,
+      onValueChange: (v: unknown) => this.emitValue(v),
+      label: this.label ?? '',
+      placeholder: this.placeholder ?? '',
+      required: this.required ?? false,
+      options: this.options ?? [],
+      className: this.className ?? '',
+      description: this.description ?? '',
+      disabled: this.disabled ?? false,
+      errorMessage: this.errorMessage ?? '',
+    };
+  }
+
+  private applyProps(instance: unknown): void {
+    const instanceObj = instance as Record<string, unknown>;
+    for (const prop of KNOWN_PROPS) {
+      if (prop in this && prop in instanceObj) {
+        instanceObj[prop] = (this as Record<string, unknown>)[prop];
       }
     }
   }
 
-  private bindOutput(
-    instance: any,
-    outputName: 'valueChange' | 'onValueChange'
-  ): Subscription | undefined {
-    const output = instance?.[outputName];
-    if (!output || typeof output.subscribe !== 'function') {
-      return;
-    }
+  private bindOutputs(instance: unknown): void {
+    const outputNames: Array<'valueChange' | 'onValueChange'> = [
+      'valueChange',
+      'onValueChange',
+    ];
 
-    const sub = (output as EventEmitter<any>).subscribe((value) => {
-      this.emitValue(value);
-    });
-    return sub;
+    for (const outputName of outputNames) {
+      const output = (instance as Record<string, unknown>)[outputName];
+      if (output && typeof output === 'object' && 'subscribe' in output) {
+        const sub = (
+          output as { subscribe: (cb: (v: unknown) => void) => Subscription }
+        ).subscribe((value: unknown) => this.emitValue(value));
+        this.subscriptions.push(sub);
+      }
+    }
   }
 
-  private emitValue(value: any) {
+  private emitValue(value: unknown): void {
     this.valueChange.emit(value);
     this.onChange.emit(value);
   }
 
-  private cleanupRenderedComponent() {
-    this.compRef?.destroy();
-    this.compRef = undefined;
-    this.inputInstance = undefined;
+  private renderError(message: string): void {
+    const el = document.createElement('div');
+    el.textContent = message;
+    el.style.color = 'red';
+    this.host.element.nativeElement.appendChild(el);
   }
 }

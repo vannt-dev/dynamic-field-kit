@@ -1,5 +1,13 @@
 import { NgIf } from '@angular/common';
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  EventEmitter,
+  Input,
+  OnChanges,
+  Output,
+  SimpleChanges,
+} from '@angular/core';
 import { FieldDescription, Properties } from '@dynamic-field-kit/core';
 import { DynamicInput } from './DynamicInput';
 
@@ -9,7 +17,7 @@ import { DynamicInput } from './DynamicInput';
   imports: [NgIf, DynamicInput],
   template: `
     <dfk-dynamic-input
-      *ngIf="fieldDescription && renderInfos"
+      *ngIf="shouldRender"
       [type]="fieldDescription!.type"
       [value]="getFieldValue()"
       [label]="fieldDescription!.label"
@@ -26,15 +34,24 @@ import { DynamicInput } from './DynamicInput';
     ></dfk-dynamic-input>
   `,
 })
-export class FieldInput {
+export class FieldInput implements OnChanges {
   @Input() fieldDescription?: FieldDescription;
   @Input() renderInfos?: Properties;
   @Output() onValueChangeField = new EventEmitter<{
-    value: any;
+    value: unknown;
     key: string;
   }>();
 
-  getFieldValue() {
+  shouldRender = false;
+
+  constructor(private cdr: ChangeDetectorRef) {}
+
+  ngOnChanges(_changes: SimpleChanges): void {
+    this.shouldRender = !!(this.fieldDescription && this.renderInfos);
+    this.cdr.markForCheck();
+  }
+
+  getFieldValue(): unknown {
     if (!this.fieldDescription || !this.renderInfos) {
       return undefined;
     }
