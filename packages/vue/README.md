@@ -35,8 +35,8 @@ Built-in layouts:
 
 - `column`
 - `row`
-- `grid`
-- `grid-2`
+- `grid` (alias: `grid-2`)
+- `responsive`
 
 ## Register field renderers
 
@@ -117,6 +117,19 @@ Use a layout config object:
 />
 ```
 
+Use the built-in responsive layout:
+
+```vue
+<MultiFieldInput
+  :fieldDescriptions="fields"
+  :layout="{
+    type: 'responsive',
+    mobile: 'column',
+    desktop: { type: 'grid', columns: 2, gap: 12 },
+  }"
+/>
+```
+
 Register a custom layout:
 
 ```ts
@@ -126,6 +139,47 @@ import { layoutRegistry } from '@dynamic-field-kit/vue';
 layoutRegistry.register('stack-tight', ({ children }) => {
   return h('div', { style: { display: 'grid', gap: '8px' } }, children);
 });
+```
+
+## Derived fields with `computeValue`
+
+Give a field a `computeValue` to derive its value from the rest of the form data whenever any field changes:
+
+```ts
+const fields: FieldDescription[] = [
+  { name: 'firstName', type: 'text' },
+  { name: 'lastName', type: 'text' },
+  {
+    name: 'fullName',
+    type: 'text',
+    computeValue: (data) => `${data.firstName ?? ''} ${data.lastName ?? ''}`.trim(),
+  },
+];
+```
+
+## Repeatable field groups
+
+A field with `fields` renders as a repeatable group: `data[name]` becomes an array of items, each shaped by the nested `fields`, with "Add"/"Remove" controls rendered automatically.
+
+```ts
+const fields: FieldDescription[] = [
+  {
+    name: 'contacts',
+    type: 'group',
+    label: 'Contacts',
+    fields: [
+      { name: 'email', type: 'text', label: 'Email' },
+      { name: 'phone', type: 'text', label: 'Phone' },
+    ],
+    defaultItem: { email: '', phone: '' },
+    minItems: 1,
+    maxItems: 5,
+  },
+];
+```
+
+```vue
+<MultiFieldInput :fieldDescriptions="fields" />
 ```
 
 ## Type augmentation
@@ -145,8 +199,9 @@ declare module '@dynamic-field-kit/core' {
 
 - `@dynamic-field-kit/core` owns the schema types and shared runtime registry.
 - `@dynamic-field-kit/vue` is the package you should import when registering Vue renderers.
-- `MultiFieldInput` filters fields using `appearCondition`.
+- `MultiFieldInput` filters fields using `appearCondition` and derives fields using `computeValue`.
 - `DynamicInput` renders `Unknown field type: ...` when a renderer is missing.
+- Fields with `fields` render as repeatable groups instead of going through `fieldRegistry`.
 
 ## License
 

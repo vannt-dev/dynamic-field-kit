@@ -1,5 +1,6 @@
 export { layoutRegistry } from './layout';
 import './layout/defaultLayouts';
+import './layout/responsiveLayout';
 
 export { default as DynamicInput } from './components/DynamicInput';
 export { default as FieldInput } from './components/FieldInput';

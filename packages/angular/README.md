@@ -88,6 +88,67 @@ export class AppComponent {
 ></dfk-multi-field-input>
 ```
 
+## Layouts
+
+`MultiFieldInput` supports `column`, `row`, `grid`, and `responsive` (mobile/desktop with a custom breakpoint), matching the React and Vue adapters:
+
+```html
+<dfk-multi-field-input
+  [fieldDescriptions]="fields"
+  [layout]="{ type: 'grid', columns: 3, gap: 16 }"
+></dfk-multi-field-input>
+
+<dfk-multi-field-input
+  [fieldDescriptions]="fields"
+  [layout]="{
+    type: 'responsive',
+    mobile: 'column',
+    desktop: { type: 'grid', columns: 2, gap: 12 }
+  }"
+></dfk-multi-field-input>
+```
+
+## Derived fields with `computeValue`
+
+Give a field a `computeValue` to derive its value from the rest of the form data whenever any field changes:
+
+```ts
+fields: FieldDescription[] = [
+  { name: 'firstName', type: 'text' },
+  { name: 'lastName', type: 'text' },
+  {
+    name: 'fullName',
+    type: 'text',
+    computeValue: (data) => `${data.firstName ?? ''} ${data.lastName ?? ''}`.trim(),
+  },
+];
+```
+
+## Repeatable field groups
+
+A field with `fields` renders as a repeatable group: `data[name]` becomes an array of items, each shaped by the nested `fields`, with "Add"/"Remove" controls rendered automatically.
+
+```ts
+fields: FieldDescription[] = [
+  {
+    name: 'contacts',
+    type: 'group',
+    label: 'Contacts',
+    fields: [
+      { name: 'email', type: 'text', label: 'Email' },
+      { name: 'phone', type: 'text', label: 'Phone' },
+    ],
+    defaultItem: { email: '', phone: '' },
+    minItems: 1,
+    maxItems: 5,
+  },
+];
+```
+
+```html
+<dfk-multi-field-input [fieldDescriptions]="fields"></dfk-multi-field-input>
+```
+
 ## Legacy setup (Angular 14 and earlier with NgModule)
 
 ```ts
@@ -118,7 +179,8 @@ declare module '@dynamic-field-kit/core' {
 
 - Register Angular component classes in `fieldRegistry`.
 - Do not register React or Vue renderers in the Angular adapter.
-- `MultiFieldInput` supports `column`, `row`, and `grid` layouts.
+- `MultiFieldInput` supports `column`, `row`, `grid`, and `responsive` layouts, and derives fields using `computeValue`.
+- Fields with `fields` render as repeatable groups instead of going through `fieldRegistry`.
 - The shared schema and field types still come from `@dynamic-field-kit/core`.
 
 ## License

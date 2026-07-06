@@ -29,6 +29,8 @@ Note: Core is shared runtime. Install core separately and ensure a single versio
 - `FieldTypeKey`
 - `FieldRendererProps`
 
+`FieldGroupInput` (repeatable field groups) is used internally by `FieldInput` and doesn't need to be imported directly - see "Repeatable field groups" below.
+
 Default layouts are registered automatically when you import the package root.
 
 Built-in layouts:
@@ -132,6 +134,45 @@ layoutRegistry.register('stack-tight', ({ children }) => (
 ));
 ```
 
+## Derived fields with `computeValue`
+
+Give a field a `computeValue` to derive its value from the rest of the form data whenever any field changes:
+
+```tsx
+const fields: FieldDescription[] = [
+  { name: 'firstName', type: 'text' },
+  { name: 'lastName', type: 'text' },
+  {
+    name: 'fullName',
+    type: 'text',
+    computeValue: (data) => `${data.firstName ?? ''} ${data.lastName ?? ''}`.trim(),
+  },
+];
+```
+
+## Repeatable field groups
+
+A field with `fields` renders as a repeatable group: `data[name]` becomes an array of items, each shaped by the nested `fields`, with "Add"/"Remove" controls rendered automatically.
+
+```tsx
+const fields: FieldDescription[] = [
+  {
+    name: 'contacts',
+    type: 'group',
+    label: 'Contacts',
+    fields: [
+      { name: 'email', type: 'text', label: 'Email' },
+      { name: 'phone', type: 'text', label: 'Phone' },
+    ],
+    defaultItem: { email: '', phone: '' },
+    minItems: 1,
+    maxItems: 5,
+  },
+];
+
+<MultiFieldInput fieldDescriptions={fields} />;
+```
+
 ## Type augmentation
 
 Add your app's field types through module augmentation:
@@ -151,8 +192,9 @@ declare module '@dynamic-field-kit/core' {
 
 - `@dynamic-field-kit/core` stays framework-agnostic and does not export React-specific JSX types.
 - `@dynamic-field-kit/react` narrows the shared registry to React component types so `fieldRegistry.get(type)` can be rendered safely in TSX.
-- `MultiFieldInput` filters fields using `appearCondition`.
+- `MultiFieldInput` filters fields using `appearCondition` and derives fields using `computeValue`.
 - `DynamicInput` renders `Unknown field type: ...` when a renderer is missing.
+- Fields with `fields` render as repeatable groups instead of going through `fieldRegistry`.
 
 ## License
 

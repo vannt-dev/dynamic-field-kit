@@ -4,6 +4,7 @@ import { mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import MultiFieldInput from '../src/components/MultiFieldInput';
 import '../src/layout/defaultLayouts';
+import '../src/layout/responsiveLayout';
 
 declare module '@dynamic-field-kit/core' {
   interface FieldTypeMap {
@@ -188,5 +189,105 @@ describe('Layout: Column', () => {
     const style = container.attributes('style');
     expect(style).toContain('flex-direction: column');
     expect(style).toContain('16px');
+  });
+});
+
+describe('Layout: Responsive', () => {
+  const originalWidth = window.innerWidth;
+
+  function setWidth(width: number) {
+    Object.defineProperty(window, 'innerWidth', {
+      writable: true,
+      configurable: true,
+      value: width,
+    });
+    window.dispatchEvent(new Event('resize'));
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (fieldRegistry as any).registry['text'] = {
+      props: ['value'],
+      template: '<input :value="value" />',
+    };
+  });
+
+  afterEach(() => {
+    (fieldRegistry as any).registry = {};
+    setWidth(originalWidth);
+  });
+
+  it('should use desktop layout above the breakpoint', () => {
+    setWidth(1024);
+    const fields: FieldDescription[] = [{ name: 'field1', type: 'text' }];
+
+    const wrapper = mount(MultiFieldInput, {
+      props: {
+        fieldDescriptions: fields,
+        layout: { type: 'responsive', mobile: 'column', desktop: 'row' },
+      },
+    });
+
+    const style = wrapper.find('div').attributes('style');
+    expect(style).toContain('flex-direction: row');
+  });
+
+  it('should use mobile layout below the breakpoint', () => {
+    setWidth(375);
+    const fields: FieldDescription[] = [{ name: 'field1', type: 'text' }];
+
+    const wrapper = mount(MultiFieldInput, {
+      props: {
+        fieldDescriptions: fields,
+        layout: { type: 'responsive', mobile: 'column', desktop: 'row' },
+      },
+    });
+
+    const style = wrapper.find('div').attributes('style');
+    expect(style).toContain('flex-direction: column');
+  });
+
+  it('should react to window resize', async () => {
+    setWidth(1024);
+    const fields: FieldDescription[] = [{ name: 'field1', type: 'text' }];
+
+    const wrapper = mount(MultiFieldInput, {
+      props: {
+        fieldDescriptions: fields,
+        layout: { type: 'responsive', mobile: 'column', desktop: 'row' },
+      },
+    });
+
+    expect(wrapper.find('div').attributes('style')).toContain(
+      'flex-direction: row'
+    );
+
+    setWidth(375);
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.find('div').attributes('style')).toContain(
+      'flex-direction: column'
+    );
+  });
+
+  it('should respect a custom breakpoint', () => {
+    setWidth(900);
+    const fields: FieldDescription[] = [{ name: 'field1', type: 'text' }];
+
+    const wrapper = mount(MultiFieldInput, {
+      props: {
+        fieldDescriptions: fields,
+        layout: {
+          type: 'responsive',
+          mobile: 'column',
+          desktop: 'row',
+          breakpoint: 1200,
+        },
+      },
+    });
+
+    expect(wrapper.find('div').attributes('style')).toContain(
+      'flex-direction: column'
+    );
   });
 });

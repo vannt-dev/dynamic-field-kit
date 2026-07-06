@@ -1,5 +1,9 @@
-import { FieldDescription, Properties } from '@dynamic-field-kit/core';
-import React, { useEffect, useMemo, useState } from 'react';
+import {
+  applyComputedValues,
+  FieldDescription,
+  Properties,
+} from '@dynamic-field-kit/core';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { layoutRegistry, LayoutConfig } from '../layout';
 import FieldInput from './FieldInput';
@@ -31,8 +35,11 @@ const MultiFieldInput = ({
 
   useEffect(() => {
     if (properties) {
-      setData(properties);
+      setData(applyComputedValues(fieldDescriptions, properties));
     }
+    // Only re-run when `properties` itself changes; recomputing on every
+    // fieldDescriptions identity change would fight user edits mid-session.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [properties]);
 
   const visibleFields = useMemo(
@@ -42,6 +49,26 @@ const MultiFieldInput = ({
       ),
     [fieldDescriptions, data]
   );
+
+  // Keep the latest data/onChange in refs so handleValueChangeField can stay
+  // referentially stable (empty deps) without defeating FieldInput's memoization,
+  // and without calling onChange from inside a setState updater (must stay pure).
+  const dataRef = useRef(data);
+  dataRef.current = data;
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+  const fieldDescriptionsRef = useRef(fieldDescriptions);
+  fieldDescriptionsRef.current = fieldDescriptions;
+
+  const handleValueChangeField = useCallback((value: unknown, key: string) => {
+    const next = applyComputedValues(fieldDescriptionsRef.current, {
+      ...dataRef.current,
+      [key]: value,
+    });
+    dataRef.current = next;
+    setData(next);
+    onChangeRef.current?.(next);
+  }, []);
 
   const { type, config } = resolveLayout(layout);
 
@@ -58,11 +85,7 @@ const MultiFieldInput = ({
           key={f.name}
           fieldDescription={f}
           renderInfos={data}
-          onValueChangeField={(value, key) => {
-            const next = { ...data, [key]: value };
-            setData(next);
-            onChange?.(next);
-          }}
+          onValueChangeField={handleValueChangeField}
         />
       ))}
     </Layout>

@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { act, render, screen } from '@testing-library/react';
 import React from 'react';
 import { MultiFieldInput, layoutRegistry } from '../src';
 import { fieldRegistry } from '../src/fieldRegistry';
@@ -192,6 +192,127 @@ describe('Layout: Column', () => {
       flexDirection: 'column',
       gap: '16px',
     });
+  });
+});
+
+describe('Layout: Responsive', () => {
+  const originalWidth = window.innerWidth;
+
+  function setWidth(width: number) {
+    Object.defineProperty(window, 'innerWidth', {
+      writable: true,
+      configurable: true,
+      value: width,
+    });
+    act(() => {
+      window.dispatchEvent(new Event('resize'));
+    });
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    fieldRegistry.register(
+      'text',
+      vi.fn(({ value, onValueChange }: any) => (
+        <div data-testid="field">
+          <input
+            data-testid="input"
+            value={value || ''}
+            onChange={(e: any) => onValueChange?.(e.target.value)}
+          />
+        </div>
+      )) as any
+    );
+  });
+
+  afterEach(() => {
+    setWidth(originalWidth);
+  });
+
+  it('should use desktop layout above the breakpoint', () => {
+    setWidth(1024);
+    const fields: FieldDescription[] = [
+      { name: 'field1', type: 'text' },
+      { name: 'field2', type: 'text' },
+    ];
+
+    render(
+      <MultiFieldInput
+        fieldDescriptions={fields}
+        layout={
+          { type: 'responsive', mobile: 'column', desktop: 'row' } as any
+        }
+      />
+    );
+
+    const fieldsElements = screen.getAllByTestId('field');
+    const layoutContainer = fieldsElements[0].parentElement;
+    expect(layoutContainer).toHaveStyle({ flexDirection: 'row' });
+  });
+
+  it('should use mobile layout below the breakpoint', () => {
+    setWidth(375);
+    const fields: FieldDescription[] = [
+      { name: 'field1', type: 'text' },
+      { name: 'field2', type: 'text' },
+    ];
+
+    render(
+      <MultiFieldInput
+        fieldDescriptions={fields}
+        layout={
+          { type: 'responsive', mobile: 'column', desktop: 'row' } as any
+        }
+      />
+    );
+
+    const fieldsElements = screen.getAllByTestId('field');
+    const layoutContainer = fieldsElements[0].parentElement;
+    expect(layoutContainer).toHaveStyle({ flexDirection: 'column' });
+  });
+
+  it('should react to window resize', () => {
+    setWidth(1024);
+    const fields: FieldDescription[] = [{ name: 'field1', type: 'text' }];
+
+    render(
+      <MultiFieldInput
+        fieldDescriptions={fields}
+        layout={
+          { type: 'responsive', mobile: 'column', desktop: 'row' } as any
+        }
+      />
+    );
+
+    let layoutContainer = screen.getAllByTestId('field')[0].parentElement;
+    expect(layoutContainer).toHaveStyle({ flexDirection: 'row' });
+
+    setWidth(375);
+
+    layoutContainer = screen.getAllByTestId('field')[0].parentElement;
+    expect(layoutContainer).toHaveStyle({ flexDirection: 'column' });
+  });
+
+  it('should respect a custom breakpoint', () => {
+    setWidth(900);
+    const fields: FieldDescription[] = [{ name: 'field1', type: 'text' }];
+
+    render(
+      <MultiFieldInput
+        fieldDescriptions={fields}
+        layout={
+          {
+            type: 'responsive',
+            mobile: 'column',
+            desktop: 'row',
+            breakpoint: 1200,
+          } as any
+        }
+      />
+    );
+
+    const layoutContainer = screen.getAllByTestId('field')[0].parentElement;
+    expect(layoutContainer).toHaveStyle({ flexDirection: 'column' });
   });
 });
 
