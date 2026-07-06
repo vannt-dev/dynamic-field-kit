@@ -27,6 +27,9 @@ function resolveLayout(layout?: LayoutConfig) {
 // from within its own initializer (which fails to build: "implicitly has
 // type 'any' because it does not have a type annotation and is referenced
 // ... in its own initializer"). Assigned once MultiFieldInput exists below.
+// Must be declared before, and assigned after, MultiFieldInput is defined,
+// so it can't be a `const` despite only ever being assigned once.
+// eslint-disable-next-line prefer-const
 let multiFieldInputSelfRef: Component;
 
 // Repeatable field groups render a nested MultiFieldInput per item, so this

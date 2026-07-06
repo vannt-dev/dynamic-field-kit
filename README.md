@@ -172,12 +172,12 @@ const fields: FieldDescription[] = [
 ];
 ```
 
-| Property | Description |
-|------|------------|
-| fields | Sub-fields rendered per item. Presence of `fields` is what marks this as a group. |
-| defaultItem | Values a newly-added item starts with. Defaults to `{}`. |
-| minItems / maxItems | Bounds enforced on the "Remove" / "Add" controls. Unbounded when omitted. |
-| addLabel / removeLabel | Custom button text (defaults to "Add" / "Remove"). |
+| Property               | Description                                                                       |
+| ---------------------- | --------------------------------------------------------------------------------- |
+| fields                 | Sub-fields rendered per item. Presence of `fields` is what marks this as a group. |
+| defaultItem            | Values a newly-added item starts with. Defaults to `{}`.                          |
+| minItems / maxItems    | Bounds enforced on the "Remove" / "Add" controls. Unbounded when omitted.         |
+| addLabel / removeLabel | Custom button text (defaults to "Add" / "Remove").                                |
 
 **Field Registry (Render Layer)**
 

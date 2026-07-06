@@ -152,7 +152,8 @@ const fields: FieldDescription[] = [
   {
     name: 'fullName',
     type: 'text',
-    computeValue: (data) => `${data.firstName ?? ''} ${data.lastName ?? ''}`.trim(),
+    computeValue: (data) =>
+      `${data.firstName ?? ''} ${data.lastName ?? ''}`.trim(),
   },
 ];
 ```

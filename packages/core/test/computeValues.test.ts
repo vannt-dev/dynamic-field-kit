@@ -10,7 +10,8 @@ describe('applyComputedValues', () => {
       {
         name: 'fullName',
         type: 'text',
-        computeValue: (data) => `${data.firstName ?? ''} ${data.lastName ?? ''}`.trim(),
+        computeValue: (data) =>
+          `${data.firstName ?? ''} ${data.lastName ?? ''}`.trim(),
       },
     ];
 
@@ -43,8 +44,16 @@ describe('applyComputedValues', () => {
   test('applies multiple computed fields in declaration order', () => {
     const fields: FieldDescription[] = [
       { name: 'a', type: 'number' },
-      { name: 'b', type: 'number', computeValue: (data) => (data.a as number) + 1 },
-      { name: 'c', type: 'number', computeValue: (data) => (data.b as number) + 1 },
+      {
+        name: 'b',
+        type: 'number',
+        computeValue: (data) => (data.a as number) + 1,
+      },
+      {
+        name: 'c',
+        type: 'number',
+        computeValue: (data) => (data.b as number) + 1,
+      },
     ];
 
     const result = applyComputedValues(fields, { a: 1, b: 0, c: 0 });

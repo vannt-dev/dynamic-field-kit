@@ -239,9 +239,7 @@ describe('Layout: Responsive', () => {
     render(
       <MultiFieldInput
         fieldDescriptions={fields}
-        layout={
-          { type: 'responsive', mobile: 'column', desktop: 'row' } as any
-        }
+        layout={{ type: 'responsive', mobile: 'column', desktop: 'row' } as any}
       />
     );
 
@@ -260,9 +258,7 @@ describe('Layout: Responsive', () => {
     render(
       <MultiFieldInput
         fieldDescriptions={fields}
-        layout={
-          { type: 'responsive', mobile: 'column', desktop: 'row' } as any
-        }
+        layout={{ type: 'responsive', mobile: 'column', desktop: 'row' } as any}
       />
     );
 
@@ -278,9 +274,7 @@ describe('Layout: Responsive', () => {
     render(
       <MultiFieldInput
         fieldDescriptions={fields}
-        layout={
-          { type: 'responsive', mobile: 'column', desktop: 'row' } as any
-        }
+        layout={{ type: 'responsive', mobile: 'column', desktop: 'row' } as any}
       />
     );
 
