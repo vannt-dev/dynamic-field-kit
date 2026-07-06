@@ -13,6 +13,7 @@ export type ResponsiveLayout = {
   type: 'responsive';
   mobile: BaseLayout;
   desktop: BaseLayout;
+  breakpoint?: number;
 };
 
 export type LayoutConfig = BaseLayout | ResponsiveLayout;

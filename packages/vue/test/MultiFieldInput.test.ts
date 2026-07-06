@@ -215,4 +215,58 @@ describe('MultiFieldInput', () => {
     const style = container.attributes('style');
     expect(style).toContain('repeat(3, 1fr)');
   });
+
+  it('should derive a computed field value from other fields on mount', async () => {
+    const fields: FieldDescription[] = [
+      { name: 'firstName', type: 'text' },
+      { name: 'lastName', type: 'text' },
+      {
+        name: 'fullName',
+        type: 'text',
+        computeValue: (data) =>
+          `${data.firstName ?? ''} ${data.lastName ?? ''}`.trim(),
+      },
+    ];
+
+    const wrapper = mount(MultiFieldInput, {
+      props: {
+        fieldDescriptions: fields,
+        properties: { firstName: 'Ada', lastName: 'Lovelace' },
+      },
+    });
+
+    const inputs = wrapper.findAll('input');
+    expect(inputs[2].element.value).toBe('Ada Lovelace');
+  });
+
+  it('should recompute a derived field as its dependencies change', async () => {
+    const onChange = vi.fn();
+    const textRenderer = {
+      props: ['value', 'onUpdate:value'],
+      emits: ['update:value'],
+      template:
+        '<input :value="value" @input="$emit(\'update:value\', $event.target.value)" />',
+    };
+    (fieldRegistry as any).registry['text'] = textRenderer;
+
+    const fields: FieldDescription[] = [
+      { name: 'firstName', type: 'text' },
+      {
+        name: 'greeting',
+        type: 'text',
+        computeValue: (data) => `Hello ${data.firstName ?? ''}`,
+      },
+    ];
+
+    const wrapper = mount(MultiFieldInput, {
+      props: { fieldDescriptions: fields, onChange },
+    });
+
+    await wrapper.findAll('input')[0].setValue('Ada');
+
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ firstName: 'Ada', greeting: 'Hello Ada' })
+    );
+    expect(wrapper.findAll('input')[1].element.value).toBe('Hello Ada');
+  });
 });

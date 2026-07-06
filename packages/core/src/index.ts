@@ -2,3 +2,10 @@
 export * from './types';
 export { FieldRegistry } from './FieldRegistry';
 export { fieldRegistry } from './FieldRegistry';
+export { applyComputedValues } from './computeValues';
+export {
+  isFieldGroup,
+  createGroupItem,
+  canAddGroupItem,
+  canRemoveGroupItem,
+} from './fieldGroup';

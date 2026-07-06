@@ -170,4 +170,50 @@ describe('MultiFieldInput', () => {
 
     expect(screen.getByTestId('input')).toHaveValue('Updated');
   });
+
+  it('should derive a computed field value from other fields on mount', () => {
+    const fields: FieldDescription[] = [
+      { name: 'firstName', type: 'text' },
+      { name: 'lastName', type: 'text' },
+      {
+        name: 'fullName',
+        type: 'text',
+        computeValue: (data) =>
+          `${data.firstName ?? ''} ${data.lastName ?? ''}`.trim(),
+      },
+    ];
+
+    render(
+      <MultiFieldInput
+        fieldDescriptions={fields}
+        properties={{ firstName: 'Ada', lastName: 'Lovelace' }}
+      />
+    );
+
+    const inputs = screen.getAllByTestId('input');
+    expect(inputs[2]).toHaveValue('Ada Lovelace');
+  });
+
+  it('should recompute a derived field as its dependencies change', async () => {
+    const { userEvent } = await import('@testing-library/user-event');
+    const onChange = vi.fn();
+
+    const fields: FieldDescription[] = [
+      { name: 'firstName', type: 'text' },
+      {
+        name: 'greeting',
+        type: 'text',
+        computeValue: (data) => `Hello ${data.firstName ?? ''}`,
+      },
+    ];
+
+    render(<MultiFieldInput fieldDescriptions={fields} onChange={onChange} />);
+
+    await userEvent.type(screen.getAllByTestId('input')[0], 'Ada');
+
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ firstName: 'Ada', greeting: 'Hello Ada' })
+    );
+    expect(screen.getAllByTestId('input')[1]).toHaveValue('Hello Ada');
+  });
 });

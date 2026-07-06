@@ -18,10 +18,19 @@ export interface ColumnLayoutConfig {
   width?: string;
 }
 
-export type LayoutConfig =
+export type BaseLayoutConfig =
   | 'column'
   | 'row'
   | 'grid'
   | GridLayoutConfig
   | RowLayoutConfig
   | ColumnLayoutConfig;
+
+export interface ResponsiveLayoutConfig {
+  type: 'responsive';
+  mobile: BaseLayoutConfig;
+  desktop: BaseLayoutConfig;
+  breakpoint?: number;
+}
+
+export type LayoutConfig = BaseLayoutConfig | ResponsiveLayoutConfig;

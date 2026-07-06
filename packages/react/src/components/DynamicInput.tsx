@@ -16,7 +16,7 @@ interface Props<T extends FieldTypeKey> {
   description?: ReactNode;
 }
 
-const DynamicInput = <T extends FieldTypeKey>({
+const DynamicInputInner = <T extends FieldTypeKey>({
   type,
   value,
   onChange,
@@ -44,5 +44,13 @@ const DynamicInput = <T extends FieldTypeKey>({
     description,
   });
 };
+
+// Skip re-render when none of the rendered props actually changed, so
+// unaffected fields don't re-render every time a sibling field's value changes.
+// React.memo erases the generic signature, so restore it via an `unknown`
+// round-trip (plain `as typeof DynamicInputInner` fails dts generation).
+const DynamicInput = React.memo(
+  DynamicInputInner
+) as unknown as typeof DynamicInputInner;
 
 export default DynamicInput;

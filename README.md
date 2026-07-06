@@ -14,6 +14,9 @@ A lightweight, extensible **dynamic form engine** for React, Angular, and Vue, b
 - Extensible field types (no enums, no hard-coded unions)
 - Pluggable field renderers via shared registry
 - Runtime conditional fields (`appearCondition`)
+- Derived/computed fields (`computeValue`)
+- Repeatable field groups (`fields`) - "add another item" without leaving the schema
+- Responsive layouts (mobile/desktop) with custom breakpoints
 - Clean TypeScript declarations (DTS-safe)
 - Framework-agnostic core (works with React, Angular, Vue, or vanilla JS)
 - Ideal for form builders & design systems
@@ -129,6 +132,12 @@ const fields: FieldDescription[] = [
     label: 'Age',
     appearCondition: (data) => data.username !== '',
   },
+  {
+    name: 'greeting',
+    type: 'text',
+    label: 'Greeting',
+    computeValue: (data) => `Hello ${data.username || ''}`.trim(),
+  },
 ];
 ```
 
@@ -140,6 +149,35 @@ const fields: FieldDescription[] = [
 | label | UI label |
 | value | Default value |
 | appearCondition | Runtime visibility condition |
+| computeValue | Derives this field's value from the rest of the form data (e.g. a total or full name) whenever any field changes. Evaluated once per change, not to a fixed point, so avoid chaining `computeValue` fields into a cycle. |
+
+**Repeatable Field Groups**
+
+A field with `fields` becomes a repeatable group instead of a registry-rendered leaf field: `data[name]` becomes an array of items, each shaped by the nested `fields`. `MultiFieldInput` renders one nested form per item plus "Add"/"Remove" controls - no library-level wiring needed.
+
+```ts
+const fields: FieldDescription[] = [
+  {
+    name: 'contacts',
+    type: 'group', // any type key works; only `fields` matters for grouping
+    label: 'Contacts',
+    fields: [
+      { name: 'email', type: 'text', label: 'Email' },
+      { name: 'phone', type: 'text', label: 'Phone' },
+    ],
+    defaultItem: { email: '', phone: '' }, // seed values for a new item
+    minItems: 1,
+    maxItems: 5,
+  },
+];
+```
+
+| Property | Description |
+|------|------------|
+| fields | Sub-fields rendered per item. Presence of `fields` is what marks this as a group. |
+| defaultItem | Values a newly-added item starts with. Defaults to `{}`. |
+| minItems / maxItems | Bounds enforced on the "Remove" / "Add" controls. Unbounded when omitted. |
+| addLabel / removeLabel | Custom button text (defaults to "Add" / "Remove"). |
 
 **Field Registry (Render Layer)**
 

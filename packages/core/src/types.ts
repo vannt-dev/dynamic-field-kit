@@ -24,7 +24,28 @@ export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {
   placeholder?: string;
   required?: boolean;
   appearCondition?: (data: Properties) => boolean;
+  /**
+   * Derives this field's value from the rest of the form data (e.g. a "full
+   * name" field computed from firstName + lastName). Re-evaluated once,
+   * against the post-change data, whenever any field's value changes - it is
+   * not re-run to a fixed point, so avoid chaining computeValue fields off
+   * one another in a cycle.
+   */
+  computeValue?: (data: Properties) => unknown;
   options?: Properties[];
   className?: string;
   description?: unknown;
+  /**
+   * Declares this field as a repeatable group instead of a registry-rendered
+   * leaf field: `data[name]` becomes an array of items, each shaped by
+   * `fields`. Renders an "add item" / per-item "remove" control instead of
+   * going through fieldRegistry.
+   */
+  fields?: FieldDescription[];
+  /** Values to seed a newly-added item with. Defaults to `{}`. */
+  defaultItem?: Properties;
+  minItems?: number;
+  maxItems?: number;
+  addLabel?: string;
+  removeLabel?: string;
 }

@@ -12,6 +12,8 @@ Demo app: https://github.com/vannt-dev/dynamic-field-kit-demo
 - `FieldRendererProps` as the shared renderer contract
 - `FieldTypeMap` for module augmentation and custom field typing
 - `fieldRegistry` as the shared runtime registry instance
+- `applyComputedValues` to resolve `computeValue` fields against form data
+- `isFieldGroup`, `createGroupItem`, `canAddGroupItem`, `canRemoveGroupItem` to work with repeatable field groups (`FieldDescription.fields`)
 
 ## Install
 
@@ -91,11 +93,65 @@ export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {
   placeholder?: string;
   required?: boolean;
   appearCondition?: (data: Record<string, any>) => boolean;
+  computeValue?: (data: Record<string, any>) => unknown;
   options?: Record<string, any>[];
   className?: string;
   description?: any;
+  // Repeatable field group (see "Repeatable field groups" below)
+  fields?: FieldDescription[];
+  defaultItem?: Record<string, any>;
+  minItems?: number;
+  maxItems?: number;
+  addLabel?: string;
+  removeLabel?: string;
 }
 ```
+
+## Derived fields with `computeValue`
+
+`computeValue` derives a field's value from the rest of the form data (e.g. a `fullName` computed from `firstName` + `lastName`). Every adapter's `MultiFieldInput` re-evaluates it once per change, against the post-change data - it is not re-run to a fixed point, so avoid chaining `computeValue` fields into a cycle.
+
+```ts
+import { applyComputedValues } from '@dynamic-field-kit/core';
+
+const fields: FieldDescription[] = [
+  { name: 'firstName', type: 'text' },
+  { name: 'lastName', type: 'text' },
+  {
+    name: 'fullName',
+    type: 'text',
+    computeValue: (data) => `${data.firstName ?? ''} ${data.lastName ?? ''}`.trim(),
+  },
+];
+
+applyComputedValues(fields, { firstName: 'Ada', lastName: 'Lovelace' });
+// => { firstName: 'Ada', lastName: 'Lovelace', fullName: 'Ada Lovelace' }
+```
+
+Adapters call `applyComputedValues` for you whenever `MultiFieldInput`'s data changes; you normally only need to import it directly when working with form data outside of a component (e.g. on submit).
+
+## Repeatable field groups
+
+A `FieldDescription` with `fields` becomes a repeatable group instead of a registry-rendered leaf field: `data[name]` becomes an array of items, each shaped by the nested `fields`. Every adapter's `MultiFieldInput` renders one nested form per item plus "Add"/"Remove" controls automatically - no adapter-specific wiring required.
+
+```ts
+const fields: FieldDescription[] = [
+  {
+    name: 'contacts',
+    type: 'group', // any type key works; only `fields` matters for grouping
+    label: 'Contacts',
+    fields: [
+      { name: 'email', type: 'text', label: 'Email' },
+      { name: 'phone', type: 'text', label: 'Phone' },
+    ],
+    defaultItem: { email: '', phone: '' }, // seed values for a new item
+    minItems: 1,
+    maxItems: 5,
+  },
+];
+```
+
+The `isFieldGroup`, `createGroupItem`, `canAddGroupItem`, and `canRemoveGroupItem` helpers back this feature and are exported for adapters (or apps) that need to replicate the same add/remove bounds logic outside of `MultiFieldInput`.
 
 ## Register renderers through an adapter
 

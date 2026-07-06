@@ -1,5 +1,6 @@
 import { NgIf } from '@angular/common';
 import {
+  ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
   EventEmitter,
@@ -8,13 +9,14 @@ import {
   Output,
   SimpleChanges,
 } from '@angular/core';
-import { FieldDescription, Properties } from '@dynamic-field-kit/core';
+import { FieldDescription } from '@dynamic-field-kit/core';
 import { DynamicInput } from './DynamicInput';
 
 @Component({
   selector: 'dfk-field-input',
   standalone: true,
   imports: [NgIf, DynamicInput],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <dfk-dynamic-input
       *ngIf="shouldRender"
@@ -36,7 +38,7 @@ import { DynamicInput } from './DynamicInput';
 })
 export class FieldInput implements OnChanges {
   @Input() fieldDescription?: FieldDescription;
-  @Input() renderInfos?: Properties;
+  @Input() value?: unknown;
   @Output() onValueChangeField = new EventEmitter<{
     value: unknown;
     key: string;
@@ -47,20 +49,19 @@ export class FieldInput implements OnChanges {
   constructor(private cdr: ChangeDetectorRef) {}
 
   ngOnChanges(_changes: SimpleChanges): void {
-    this.shouldRender = !!(this.fieldDescription && this.renderInfos);
+    this.shouldRender = !!this.fieldDescription;
     this.cdr.markForCheck();
   }
 
   getFieldValue(): unknown {
-    if (!this.fieldDescription || !this.renderInfos) {
+    if (!this.fieldDescription) {
       return undefined;
     }
 
-    const value = this.renderInfos[this.fieldDescription.name];
-    if (value === undefined && this.fieldDescription.type === 'text') {
+    if (this.value === undefined && this.fieldDescription.type === 'text') {
       return '';
     }
 
-    return value;
+    return this.value;
   }
 }

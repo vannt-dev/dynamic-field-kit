@@ -111,6 +111,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Build packages
+        run: |
+          npm run build --workspace=@dynamic-field-kit/core
+          npm run build --workspace=@dynamic-field-kit/react
+          npm run build --workspace=@dynamic-field-kit/vue
+          npm run build --workspace=@dynamic-field-kit/angular
+
       - name: Run verification scripts
         run: |
           node scripts/verify-framework-deps.js

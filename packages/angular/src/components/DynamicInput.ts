@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import {
   AfterViewInit,
+  ChangeDetectionStrategy,
   Component,
   ComponentRef,
   EventEmitter,
@@ -37,6 +38,7 @@ const KNOWN_PROPS = [
   selector: 'dfk-dynamic-input',
   standalone: true,
   imports: [CommonModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `<div #host style="display: contents;"></div>`,
 })
 export class DynamicInput
