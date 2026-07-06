@@ -48,9 +48,7 @@ const DEFAULT_BREAKPOINT = 768;
         resolvedLayoutType === 'grid' ? 'repeat(' + columns + ', 1fr)' : null
       "
     >
-      <ng-container
-        *ngFor="let field of visibleFields; trackBy: trackByFn"
-      >
+      <ng-container *ngFor="let field of visibleFields; trackBy: trackByFn">
         <dfk-field-input
           *ngIf="!field.fields"
           [fieldDescription]="field"
@@ -61,7 +59,11 @@ const DEFAULT_BREAKPOINT = 768;
         <div *ngIf="field.fields" [class]="field.className">
           <div *ngIf="field.label">{{ field.label }}</div>
           <div
-            *ngFor="let item of getItems(field); let i = index; trackBy: trackByIndex"
+            *ngFor="
+              let item of getItems(field);
+              let i = index;
+              trackBy: trackByIndex
+            "
             style="display: flex; align-items: flex-start; gap: 8px;"
           >
             <div style="flex: 1">

@@ -65,7 +65,10 @@ describe('FieldGroupInput (repeatable field group)', () => {
 
     expect(wrapper.findAll('input')).toHaveLength(0);
 
-    await wrapper.findAll('button').find((b) => b.text() === 'Add')?.trigger('click');
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Add')
+      ?.trigger('click');
 
     expect(wrapper.findAll('input')).toHaveLength(1);
     expect(onChange).toHaveBeenLastCalledWith(

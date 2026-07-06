@@ -3,7 +3,13 @@ import {
   FieldDescription,
   Properties,
 } from '@dynamic-field-kit/core';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import { layoutRegistry, LayoutConfig } from '../layout';
 import FieldInput from './FieldInput';
@@ -39,7 +45,6 @@ const MultiFieldInput = ({
     }
     // Only re-run when `properties` itself changes; recomputing on every
     // fieldDescriptions identity change would fight user edits mid-session.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [properties]);
 
   const visibleFields = useMemo(
