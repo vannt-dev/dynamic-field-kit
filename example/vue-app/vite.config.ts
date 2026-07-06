@@ -13,7 +13,7 @@ export default defineConfig({
       ),
       '@dynamic-field-kit/vue': path.resolve(
         __dirname,
-        '../../packages/vue/dist/index.mjs'
+        '../../packages/vue/dist/index.js'
       ),
     },
   },
