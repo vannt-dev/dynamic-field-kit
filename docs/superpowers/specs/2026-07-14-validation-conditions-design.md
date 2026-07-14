@@ -102,8 +102,11 @@ Behavioral rules:
   falsy value; a single string is wrapped into a one-element array.
 - `validateFields` only descends into a field when `isFieldGroup(field)` is true;
   each group item is validated against the group's nested `fields`, with the same
-  `rootData`. A field hidden by `appearCondition` is **skipped** (not validated),
-  so hidden fields never make a form invalid.
+  `rootData`.
+- A field is **skipped** (not validated, contributes no errors, never makes the
+  form invalid) when it is hidden by `appearCondition` **or** disabled (static
+  `disabled` or `disabledCondition`, i.e. `resolveDisabled` is true). A `readOnly`
+  field is still validated — its value still counts.
 - `rootData` defaults to `data` (top-level call), consistent with
   `applyComputedValues`.
 
@@ -116,8 +119,10 @@ adapter.
 For each **leaf** field it renders, every adapter's `MultiFieldInput`:
 
 1. Computes `error = validateField(field, data[field.name], data, rootData)` and
-   passes it to the renderer via `FieldRendererProps.error`. This is reactive and
-   **always surfaced** — no touched/submit gating in the engine.
+   passes it to the renderer via `FieldRendererProps.error` — but only for fields
+   that are visible and enabled; a disabled field surfaces no error (same skip
+   policy as `validateFields`). This is reactive and **always surfaced** for
+   eligible fields — no touched/submit gating in the engine.
 2. Computes effective `disabled = resolveDisabled(field, data, rootData)` and
    `readOnly = resolveReadOnly(field, data, rootData)` and passes both down.
 3. Emits `onValidityChange?({ valid, errors })` for the fields at its own level
@@ -152,13 +157,14 @@ form.
 ## Testing
 
 - **Core** (`validation.test.ts`): `validateField` (no hook, string, array,
-  falsy); `validateFields` recursion into groups with path keys, `appearCondition`
-  skipping, `rootData` passthrough, `valid` flag; `resolveDisabled` (static flag,
-  condition, both) and `resolveReadOnly`.
+  falsy); `validateFields` recursion into groups with path keys, skipping of
+  `appearCondition`-hidden **and** disabled fields, that `readOnly` fields are
+  still validated, `rootData` passthrough, `valid` flag; `resolveDisabled`
+  (static flag, condition, both) and `resolveReadOnly`.
 - **Each adapter**: `error` reaches the renderer and updates when data changes;
   effective `disabled`/`readOnly` reflect conditions; `onValidityChange` /
-  `validityChange` fires with the expected payload; hidden fields don't produce
-  errors.
+  `validityChange` fires with the expected payload; hidden and disabled fields
+  don't produce errors.
 
 ## Docs
 
