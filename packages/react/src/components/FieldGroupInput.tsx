@@ -11,11 +11,30 @@ import MultiFieldInput from './MultiFieldInput';
 interface Props {
   fieldDescription: FieldDescription;
   items: Properties[];
+  rootData?: Properties;
   onChange: (items: Properties[]) => void;
 }
 
-const FieldGroupInput = ({ fieldDescription, items, onChange }: Props) => {
-  const { fields = [], label, addLabel, removeLabel } = fieldDescription;
+const FieldGroupInput = ({
+  fieldDescription,
+  items,
+  rootData,
+  onChange,
+}: Props) => {
+  const {
+    fields = [],
+    label,
+    addLabel,
+    removeLabel,
+    keyField,
+  } = fieldDescription;
+
+  const itemKey = (item: Properties, index: number): string | number =>
+    keyField ? (item[keyField] as string | number) ?? index : index;
+
+  const addText = addLabel ?? 'Add';
+  const removeText = removeLabel ?? 'Remove';
+  const groupName = label ?? fieldDescription.name;
 
   const handleItemChange = useCallback(
     (index: number, next: Properties) => {
@@ -48,31 +67,34 @@ const FieldGroupInput = ({ fieldDescription, items, onChange }: Props) => {
       {label && <div>{label}</div>}
       {items.map((item, index) => (
         <div
-          key={index}
+          key={itemKey(item, index)}
           style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}
         >
           <div style={{ flex: 1 }}>
             <MultiFieldInput
               fieldDescriptions={fields}
               properties={item}
+              rootData={rootData}
               onChange={(next) => handleItemChange(index, next)}
             />
           </div>
           <button
             type="button"
+            aria-label={`${removeText} ${groupName} ${index + 1}`}
             onClick={() => handleRemove(index)}
             disabled={!canRemoveGroupItem(fieldDescription, items)}
           >
-            {removeLabel ?? 'Remove'}
+            {removeText}
           </button>
         </div>
       ))}
       <button
         type="button"
+        aria-label={`${addText} ${groupName}`}
         onClick={handleAdd}
         disabled={!canAddGroupItem(fieldDescription, items)}
       >
-        {addLabel ?? 'Add'}
+        {addText}
       </button>
     </div>
   );

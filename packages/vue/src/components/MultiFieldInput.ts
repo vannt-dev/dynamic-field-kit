@@ -57,6 +57,13 @@ const MultiFieldInput = defineComponent({
       type: [Object, String] as PropType<LayoutConfig>,
       default: undefined,
     },
+    // Top-level form data, threaded down through repeatable groups so a nested
+    // field's appearCondition/computeValue can read the root form. Omitted at
+    // the top level, where the form's own data is the root.
+    rootData: {
+      type: Object as PropType<Properties>,
+      default: undefined,
+    },
   },
 
   setup(props) {
@@ -74,7 +81,11 @@ const MultiFieldInput = defineComponent({
         }
         Object.assign(
           data,
-          applyComputedValues(props.fieldDescriptions, { ...data })
+          applyComputedValues(
+            props.fieldDescriptions,
+            { ...data },
+            props.rootData
+          )
         );
       },
       { immediate: true, deep: true }
@@ -82,7 +93,8 @@ const MultiFieldInput = defineComponent({
 
     const visibleFields = computed(() =>
       props.fieldDescriptions.filter(
-        (f) => !f.appearCondition || f.appearCondition(data)
+        (f) =>
+          !f.appearCondition || f.appearCondition(data, props.rootData ?? data)
       )
     );
 
@@ -93,7 +105,10 @@ const MultiFieldInput = defineComponent({
     const commitData = (next: Properties) => {
       // Assign in place (never delete+replace) so Vue's per-key dependency
       // tracking only invalidates the keys that actually changed value.
-      Object.assign(data, applyComputedValues(props.fieldDescriptions, next));
+      Object.assign(
+        data,
+        applyComputedValues(props.fieldDescriptions, next, props.rootData)
+      );
       props.onChange?.({ ...data });
     };
 
@@ -135,9 +150,21 @@ const MultiFieldInput = defineComponent({
       });
     };
 
+    const itemKey = (
+      field: FieldDescription,
+      item: Properties,
+      index: number
+    ): string | number =>
+      field.keyField
+        ? (item[field.keyField] as string | number) ?? index
+        : index;
+
     const renderGroupField = (field: FieldDescription) => {
       const items = getItems(field);
       const fields = field.fields ?? [];
+      const groupName = field.label ?? field.name;
+      const addText = field.addLabel ?? 'Add';
+      const removeText = field.removeLabel ?? 'Remove';
 
       return h('div', { class: field.className }, [
         field.label ? h('div', field.label) : null,
@@ -145,7 +172,7 @@ const MultiFieldInput = defineComponent({
           h(
             'div',
             {
-              key: index,
+              key: itemKey(field, item, index),
               style: { display: 'flex', alignItems: 'flex-start', gap: '8px' },
             },
             [
@@ -153,6 +180,7 @@ const MultiFieldInput = defineComponent({
                 h(multiFieldInputSelfRef, {
                   fieldDescriptions: fields,
                   properties: item,
+                  rootData: props.rootData ?? data,
                   onChange: (next: Properties) =>
                     handleGroupItemChange(field, index, next),
                 }),
@@ -161,10 +189,11 @@ const MultiFieldInput = defineComponent({
                 'button',
                 {
                   type: 'button',
+                  'aria-label': `${removeText} ${groupName} ${index + 1}`,
                   onClick: () => handleGroupItemRemove(field, index),
                   disabled: !canRemoveGroupItem(field, items),
                 },
-                field.removeLabel ?? 'Remove'
+                removeText
               ),
             ]
           )
@@ -173,10 +202,11 @@ const MultiFieldInput = defineComponent({
           'button',
           {
             type: 'button',
+            'aria-label': `${addText} ${groupName}`,
             onClick: () => handleGroupItemAdd(field),
             disabled: !canAddGroupItem(field, items),
           },
-          field.addLabel ?? 'Add'
+          addText
         ),
       ]);
     };

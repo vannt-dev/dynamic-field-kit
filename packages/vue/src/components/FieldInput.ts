@@ -20,8 +20,16 @@ const FieldInput = defineComponent({
   },
   setup(props) {
     return () => {
-      const { name, type, label, options, className, description } =
-        props.fieldDescription;
+      const {
+        name,
+        type,
+        label,
+        options,
+        className,
+        description,
+        disabled,
+        props: extraProps,
+      } = props.fieldDescription;
 
       return h(DynamicInput, {
         type,
@@ -30,6 +38,8 @@ const FieldInput = defineComponent({
         options,
         className,
         description,
+        disabled,
+        extraProps,
         onChange: (v: unknown) => props.onValueChangeField(v, name),
       });
     };

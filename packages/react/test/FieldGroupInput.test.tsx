@@ -66,7 +66,7 @@ describe('FieldGroupInput (repeatable field group)', () => {
 
     expect(screen.queryAllByTestId('input')).toHaveLength(0);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Add' }));
+    await userEvent.click(screen.getByRole('button', { name: /Add/ }));
 
     expect(screen.getAllByTestId('input')).toHaveLength(1);
     expect(onChange).toHaveBeenLastCalledWith(
@@ -86,7 +86,7 @@ describe('FieldGroupInput (repeatable field group)', () => {
       />
     );
 
-    await userEvent.click(screen.getAllByRole('button', { name: 'Remove' })[0]);
+    await userEvent.click(screen.getAllByRole('button', { name: /Remove/ })[0]);
 
     expect(screen.getAllByTestId('input')).toHaveLength(1);
     expect(onChange).toHaveBeenLastCalledWith(
@@ -130,9 +130,9 @@ describe('FieldGroupInput (repeatable field group)', () => {
       />
     );
 
-    expect(screen.getByRole('button', { name: 'Add' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Add/ })).toBeDisabled();
 
-    await userEvent.click(screen.getAllByRole('button', { name: 'Remove' })[0]);
-    expect(screen.getByRole('button', { name: 'Remove' })).toBeDisabled();
+    await userEvent.click(screen.getAllByRole('button', { name: /Remove/ })[0]);
+    expect(screen.getByRole('button', { name: /Remove/ })).toBeDisabled();
   });
 });

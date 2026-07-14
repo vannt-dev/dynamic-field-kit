@@ -1,6 +1,6 @@
 {
   "name": "@dynamic-field-kit/angular",
-  "version": "1.3.0",
+  "version": "1.3.3",
   "description": "Angular renderer for dynamic-field-kit",
   "license": "MIT",
   "private": false,

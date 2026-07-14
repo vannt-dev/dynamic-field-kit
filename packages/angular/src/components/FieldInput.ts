@@ -21,7 +21,7 @@ import { DynamicInput } from './DynamicInput';
     <dfk-dynamic-input
       *ngIf="shouldRender"
       [type]="fieldDescription!.type"
-      [value]="getFieldValue()"
+      [value]="value"
       [label]="fieldDescription!.label"
       [placeholder]="fieldDescription!.placeholder"
       [required]="fieldDescription!.required"
@@ -31,8 +31,8 @@ import { DynamicInput } from './DynamicInput';
       (valueChange)="
         onValueChangeField.emit({ value: $event, key: fieldDescription!.name })
       "
-      [disabled]="false"
-      [errorMessage]="''"
+      [disabled]="fieldDescription!.disabled"
+      [extraProps]="fieldDescription!.props"
     ></dfk-dynamic-input>
   `,
 })
@@ -51,17 +51,5 @@ export class FieldInput implements OnChanges {
   ngOnChanges(_changes: SimpleChanges): void {
     this.shouldRender = !!this.fieldDescription;
     this.cdr.markForCheck();
-  }
-
-  getFieldValue(): unknown {
-    if (!this.fieldDescription) {
-      return undefined;
-    }
-
-    if (this.value === undefined && this.fieldDescription.type === 'text') {
-      return '';
-    }
-
-    return this.value;
   }
 }

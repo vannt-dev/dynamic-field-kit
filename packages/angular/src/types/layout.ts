@@ -1,36 +1,14 @@
-export interface GridLayoutConfig {
-  type: 'grid';
-  columns?: number;
-  gap?: number;
-  width?: string;
-}
+// Layout config types live in @dynamic-field-kit/core so the contract stays
+// identical across every framework adapter. Re-exported here (with the
+// historical Angular ...Config aliases) to preserve existing import paths.
+import type { BaseLayout, ResponsiveLayout } from '@dynamic-field-kit/core';
 
-export interface RowLayoutConfig {
-  type: 'row';
-  gap?: number;
-  width?: string;
-  flex?: boolean;
-}
+export type {
+  ColumnLayoutConfig,
+  RowLayoutConfig,
+  GridLayoutConfig,
+  LayoutConfig,
+} from '@dynamic-field-kit/core';
 
-export interface ColumnLayoutConfig {
-  type: 'column';
-  gap?: number;
-  width?: string;
-}
-
-export type BaseLayoutConfig =
-  | 'column'
-  | 'row'
-  | 'grid'
-  | GridLayoutConfig
-  | RowLayoutConfig
-  | ColumnLayoutConfig;
-
-export interface ResponsiveLayoutConfig {
-  type: 'responsive';
-  mobile: BaseLayoutConfig;
-  desktop: BaseLayoutConfig;
-  breakpoint?: number;
-}
-
-export type LayoutConfig = BaseLayoutConfig | ResponsiveLayoutConfig;
+export type BaseLayoutConfig = BaseLayout;
+export type ResponsiveLayoutConfig = ResponsiveLayout;
