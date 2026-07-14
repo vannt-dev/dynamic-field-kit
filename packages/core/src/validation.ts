@@ -13,7 +13,8 @@ export function resolveDisabled(
   rootData?: Properties
 ): boolean {
   return (
-    field.disabled === true || field.disabledCondition?.(data, rootData) === true
+    field.disabled === true ||
+    field.disabledCondition?.(data, rootData) === true
   );
 }
 

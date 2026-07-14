@@ -17,23 +17,26 @@ afterEach(() => {
 });
 
 function registerTextRenderer() {
-  fieldRegistry.register(
-    'text',
-    (({ value, onValueChange, error, disabled, readOnly }: any) => (
-      <div>
-        <input
-          data-testid="input"
-          disabled={!!disabled}
-          readOnly={!!readOnly}
-          value={value || ''}
-          onChange={(e: any) => onValueChange?.(e.target.value)}
-        />
-        {error ? (
-          <span data-testid="error">{[].concat(error).join(',')}</span>
-        ) : null}
-      </div>
-    )) as any
-  );
+  fieldRegistry.register('text', (({
+    value,
+    onValueChange,
+    error,
+    disabled,
+    readOnly,
+  }: any) => (
+    <div>
+      <input
+        data-testid="input"
+        disabled={!!disabled}
+        readOnly={!!readOnly}
+        value={value || ''}
+        onChange={(e: any) => onValueChange?.(e.target.value)}
+      />
+      {error ? (
+        <span data-testid="error">{[].concat(error).join(',')}</span>
+      ) : null}
+    </div>
+  )) as any);
 }
 
 describe('React validation wiring', () => {

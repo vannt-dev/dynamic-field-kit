@@ -59,7 +59,12 @@ describe('Vue validation wiring', () => {
   it('does not surface an error for a disabled field', () => {
     registerTextRenderer();
     const fields: FieldDescription[] = [
-      { name: 'email', type: 'text', disabled: true, validate: () => 'Invalid' },
+      {
+        name: 'email',
+        type: 'text',
+        disabled: true,
+        validate: () => 'Invalid',
+      },
     ];
     const wrapper = mount(MultiFieldInput, {
       props: { fieldDescriptions: fields, properties: { email: '' } },

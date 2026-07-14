@@ -203,6 +203,33 @@ const fields: FieldDescription[] = [
 | minItems / maxItems    | Bounds enforced on the "Remove" / "Add" controls. Unbounded when omitted.                                                                                                                         |
 | addLabel / removeLabel | Custom button text (defaults to "Add" / "Remove").                                                                                                                                                |
 
+**Validation & conditions**
+
+Fields can declare an app-supplied `validate` hook plus dynamic
+`disabledCondition` / `readOnlyCondition`. The library ships no rule logic and
+holds no form state: it runs your functions and surfaces the result. _When_ to
+display an error is the renderer's/app's decision.
+
+| Property          | Description                                                                       |
+| ----------------- | --------------------------------------------------------------------------------- |
+| validate          | `(value, data, rootData?) => string \| string[] \| undefined`. Falsy means valid. |
+| disabledCondition | `(data, rootData?) => boolean`. OR-ed with the static `disabled` flag.            |
+| readOnlyCondition | `(data, rootData?) => boolean`.                                                   |
+
+`MultiFieldInput` passes each field's current `error` and effective
+`disabled`/`readOnly` to its renderer (via `FieldRendererProps`), and emits an
+`onValidityChange` (`validityChange` in Angular) event with `{ valid, errors }`
+on every change. Disabled and hidden (`appearCondition`) fields are skipped -
+they never produce errors. For submit-time validation of a whole form (including
+group items) call the exported pure function:
+
+```ts
+import { validateFields } from '@dynamic-field-kit/core';
+
+const { valid, errors } = validateFields(fields, data);
+// errors: { "email": ["Invalid"], "contacts[1].email": ["Required"] }
+```
+
 **Field Registry (Render Layer)**
 
 The library does **not** ship UI components. Instead, applications register their own renderers using the `fieldRegistry` from the framework adapter (`@dynamic-field-kit/react`, `@dynamic-field-kit/angular`, etc.).

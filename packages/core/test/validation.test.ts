@@ -78,7 +78,7 @@ describe('resolveDisabled / resolveReadOnly', () => {
 });
 
 describe('validateFields', () => {
-  const required = (msg: string) => (v: unknown) => (v ? undefined : msg);
+  const required = (msg: string) => (v: unknown) => v ? undefined : msg;
 
   test('collects leaf errors and reports overall validity', () => {
     const fields: FieldDescription[] = [
