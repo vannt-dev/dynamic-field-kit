@@ -3,6 +3,7 @@ import {
   resolveDisabled,
   resolveReadOnly,
   validateField,
+  validateFields,
 } from '../src/validation';
 import type { FieldDescription } from '../src';
 
@@ -73,5 +74,82 @@ describe('resolveDisabled / resolveReadOnly', () => {
         { frozen: true }
       )
     ).toBe(true);
+  });
+});
+
+describe('validateFields', () => {
+  const required = (msg: string) => (v: unknown) => (v ? undefined : msg);
+
+  test('collects leaf errors and reports overall validity', () => {
+    const fields: FieldDescription[] = [
+      { name: 'name', type: 'text', validate: required('Name required') },
+      { name: 'email', type: 'text' },
+    ];
+    const result = validateFields(fields, { name: '', email: 'x' });
+    expect(result.valid).toBe(false);
+    expect(result.errors).toEqual({ name: ['Name required'] });
+  });
+
+  test('is valid when everything passes', () => {
+    const fields: FieldDescription[] = [
+      { name: 'name', type: 'text', validate: required('r') },
+    ];
+    expect(validateFields(fields, { name: 'Ada' })).toEqual({
+      valid: true,
+      errors: {},
+    });
+  });
+
+  test('skips fields hidden by appearCondition', () => {
+    const fields: FieldDescription[] = [
+      {
+        name: 'company',
+        type: 'text',
+        appearCondition: (d) => d.type === 'business',
+        validate: required('Company required'),
+      },
+    ];
+    expect(validateFields(fields, { type: 'personal' }).valid).toBe(true);
+  });
+
+  test('skips disabled fields but still validates readOnly ones', () => {
+    const fields: FieldDescription[] = [
+      { name: 'a', type: 'text', disabled: true, validate: required('A') },
+      {
+        name: 'b',
+        type: 'text',
+        disabledCondition: () => true,
+        validate: required('B'),
+      },
+      {
+        name: 'c',
+        type: 'text',
+        readOnlyCondition: () => true,
+        validate: required('C'),
+      },
+    ];
+    const result = validateFields(fields, { a: '', b: '', c: '' });
+    expect(result.errors).toEqual({ c: ['C'] });
+  });
+
+  test('descends into groups with indexed path keys and threads rootData', () => {
+    const fields: FieldDescription[] = [
+      {
+        name: 'contacts',
+        type: 'text',
+        fields: [
+          {
+            name: 'email',
+            type: 'text',
+            validate: (v, _d, rootData) =>
+              rootData?.strict && !v ? 'Email required' : undefined,
+          },
+        ],
+      },
+    ];
+    const data = { strict: true, contacts: [{ email: 'a@b' }, { email: '' }] };
+    const result = validateFields(fields, data);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toEqual({ 'contacts[1].email': ['Email required'] });
   });
 });
