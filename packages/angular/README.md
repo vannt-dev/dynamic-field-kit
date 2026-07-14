@@ -29,6 +29,8 @@ npm install @dynamic-field-kit/core@^1.0.12 @dynamic-field-kit/angular@^1.2.3
 - `MultiFieldInput`
 - `DynamicFieldKitModule`
 - `fieldRegistry`
+- `FieldRegistry` (class, for scoped registries)
+- `FIELD_REGISTRY` (injection token)
 
 ## Basic setup (Angular 19+)
 
@@ -139,6 +141,7 @@ fields: FieldDescription[] = [
       { name: 'phone', type: 'text', label: 'Phone' },
     ],
     defaultItem: { email: '', phone: '' },
+    keyField: 'id', // optional: stable trackBy key instead of the array index
     minItems: 1,
     maxItems: 5,
   },
@@ -147,6 +150,34 @@ fields: FieldDescription[] = [
 
 ```html
 <dfk-multi-field-input [fieldDescriptions]="fields"></dfk-multi-field-input>
+```
+
+## Scoped registries
+
+`fieldRegistry` is a process-wide singleton. To give a component or route its own renderers, provide the `FIELD_REGISTRY` token with an isolated `FieldRegistry`. Components without an override keep using the global singleton.
+
+```ts
+import { FieldRegistry, FIELD_REGISTRY } from '@dynamic-field-kit/angular';
+
+const registry = new FieldRegistry();
+registry.register('text', TextFieldComponent as any);
+
+@Component({
+  selector: 'app-scoped-form',
+  standalone: true,
+  imports: [MultiFieldInput],
+  providers: [{ provide: FIELD_REGISTRY, useValue: registry }],
+  template: `<dfk-multi-field-input [fieldDescriptions]="fields" />`,
+})
+export class ScopedFormComponent {}
+```
+
+## Passing renderer-specific props
+
+The generic adapter forwards only the shared `FieldRendererProps`. For inputs specific to one renderer (e.g. `acceptFile`, `maxLength`), pass them per field via `FieldDescription.props`; they are set on the renderer instance verbatim.
+
+```ts
+{ name: 'avatar', type: 'file', props: { acceptFile: 'image/*' } }
 ```
 
 ## Legacy setup (Angular 14 and earlier with NgModule)

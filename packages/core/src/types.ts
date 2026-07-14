@@ -12,6 +12,7 @@ export interface FieldRendererProps<T = unknown> {
   label?: string;
   placeholder?: string;
   required?: boolean;
+  disabled?: boolean;
   options?: Properties[];
   className?: string;
   description?: unknown;
@@ -23,18 +24,32 @@ export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {
   label?: string;
   placeholder?: string;
   required?: boolean;
-  appearCondition?: (data: Properties) => boolean;
+  disabled?: boolean;
+  /**
+   * Runtime visibility condition. `data` is the data at this field's own level
+   * (the group item, when the field lives inside a repeatable group); `rootData`
+   * is always the top-level form data, so a field nested in a group can still
+   * branch on a top-level value.
+   */
+  appearCondition?: (data: Properties, rootData?: Properties) => boolean;
   /**
    * Derives this field's value from the rest of the form data (e.g. a "full
    * name" field computed from firstName + lastName). Re-evaluated once,
    * against the post-change data, whenever any field's value changes - it is
    * not re-run to a fixed point, so avoid chaining computeValue fields off
-   * one another in a cycle.
+   * one another in a cycle. `data` is this field's own level; `rootData` is the
+   * top-level form data (equal to `data` outside a group).
    */
-  computeValue?: (data: Properties) => unknown;
+  computeValue?: (data: Properties, rootData?: Properties) => unknown;
   options?: Properties[];
   className?: string;
   description?: unknown;
+  /**
+   * Extra, framework-agnostic props forwarded verbatim to the registered
+   * renderer (e.g. `acceptFile`, `maxLength`). Keeps domain-specific inputs out
+   * of the generic adapter layer while still letting renderers receive them.
+   */
+  props?: Properties;
   /**
    * Declares this field as a repeatable group instead of a registry-rendered
    * leaf field: `data[name]` becomes an array of items, each shaped by
@@ -44,6 +59,12 @@ export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {
   fields?: FieldDescription[];
   /** Values to seed a newly-added item with. Defaults to `{}`. */
   defaultItem?: Properties;
+  /**
+   * Property on each group item to use as its stable React key / Vue key /
+   * Angular trackBy identity. When omitted, the array index is used - which is
+   * unsafe if items can be reordered or removed from the middle.
+   */
+  keyField?: string;
   minItems?: number;
   maxItems?: number;
   addLabel?: string;

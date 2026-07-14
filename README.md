@@ -106,10 +106,31 @@ export interface FieldRendererProps<T = any> {
   value?: T;
   onValueChange?: (value: T) => void;
   label?: string;
+  placeholder?: string;
+  required?: boolean;
+  disabled?: boolean;
+  options?: Record<string, unknown>[];
+  className?: string;
+  description?: unknown;
 }
 ```
 
 👉 A common contract for all field renderers
+
+**How a renderer reports a new value (per framework)**
+
+The value/props flow in is the same everywhere, but each adapter emits changes
+using its framework's native idiom. Write your renderer to the row for your
+framework:
+
+| Framework | How the renderer emits a change                             | Notes                                   |
+| --------- | ----------------------------------------------------------- | --------------------------------------- |
+| React     | Call the `onValueChange(value)` prop                        | Matches `FieldRendererProps` directly   |
+| Angular   | `@Output() valueChange` (or `onValueChange`) `EventEmitter` | The adapter subscribes to either output |
+| Vue       | `emit('update:value', value)`                               | The standard `v-model` update event     |
+
+All three receive the same inbound props (`value`, `label`, `disabled`,
+anything from `FieldDescription.props`, ...).
 
 ---
 
@@ -148,8 +169,10 @@ const fields: FieldDescription[] = [
 | type | Field renderer key |
 | label | UI label |
 | value | Default value |
-| appearCondition | Runtime visibility condition |
-| computeValue | Derives this field's value from the rest of the form data (e.g. a total or full name) whenever any field changes. Evaluated once per change, not to a fixed point, so avoid chaining `computeValue` fields into a cycle. |
+| disabled | Forwarded to the renderer as `disabled` |
+| props | Extra, framework-agnostic props forwarded verbatim to the renderer (e.g. `acceptFile`, `maxLength`) - keeps domain-specific inputs out of the adapter layer |
+| appearCondition | Runtime visibility condition. Called as `(data, rootData)`: `data` is this field's own level (the group item, inside a repeatable group), `rootData` is always the top-level form data |
+| computeValue | Derives this field's value from the rest of the form data (e.g. a total or full name) whenever any field changes. Called as `(data, rootData)` like `appearCondition`. Evaluated once per change, not to a fixed point, so avoid chaining `computeValue` fields into a cycle, and return a primitive or a stable reference (a fresh object/array each call defeats render-skipping). |
 
 **Repeatable Field Groups**
 
@@ -172,12 +195,13 @@ const fields: FieldDescription[] = [
 ];
 ```
 
-| Property               | Description                                                                       |
-| ---------------------- | --------------------------------------------------------------------------------- |
-| fields                 | Sub-fields rendered per item. Presence of `fields` is what marks this as a group. |
-| defaultItem            | Values a newly-added item starts with. Defaults to `{}`.                          |
-| minItems / maxItems    | Bounds enforced on the "Remove" / "Add" controls. Unbounded when omitted.         |
-| addLabel / removeLabel | Custom button text (defaults to "Add" / "Remove").                                |
+| Property               | Description                                                                                                                                                                                       |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| fields                 | Sub-fields rendered per item. Presence of `fields` is what marks this as a group.                                                                                                                 |
+| defaultItem            | Values a newly-added item starts with. Defaults to `{}`.                                                                                                                                          |
+| keyField               | Property on each item to use as its stable list key (React key / Vue key / Angular trackBy). Falls back to the array index, which is unsafe if items can be reordered or removed from the middle. |
+| minItems / maxItems    | Bounds enforced on the "Remove" / "Add" controls. Unbounded when omitted.                                                                                                                         |
+| addLabel / removeLabel | Custom button text (defaults to "Add" / "Remove").                                                                                                                                                |
 
 **Field Registry (Render Layer)**
 
@@ -188,6 +212,33 @@ import { fieldRegistry } from '@dynamic-field-kit/react'; // or /angular
 
 fieldRegistry.register('text', myTextRenderer);
 fieldRegistry.register('checkbox', myCheckboxRenderer);
+```
+
+The registry also exposes `has(type)`, `unregister(type)`, and `list()` for
+introspection and teardown.
+
+**Scoped Registries**
+
+`fieldRegistry` is a process-wide singleton, which is convenient but means every
+form shares one set of renderers. To give part of an app its own renderers (e.g.
+two design systems side by side), create an isolated `FieldRegistry` and provide
+it with your framework's native mechanism - existing code that never provides one
+keeps using the global singleton:
+
+```tsx
+// React
+import { FieldRegistry, FieldRegistryProvider } from '@dynamic-field-kit/react';
+const registry = new FieldRegistry();
+registry.register('text', myTextRenderer);
+
+<FieldRegistryProvider registry={registry}>
+  <MultiFieldInput fieldDescriptions={fields} />
+</FieldRegistryProvider>;
+```
+
+```ts
+// Vue: provideFieldRegistry(registry) in a parent's setup()
+// Angular: { provide: FIELD_REGISTRY, useValue: registry } in a component/route
 ```
 
 ---

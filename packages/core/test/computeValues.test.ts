@@ -41,6 +41,41 @@ describe('applyComputedValues', () => {
     expect(applyComputedValues(fields, data)).toBe(data);
   });
 
+  test('passes top-level rootData as the second argument', () => {
+    const seen: Array<Record<string, unknown>> = [];
+    const fields: FieldDescription[] = [
+      {
+        name: 'label',
+        type: 'text',
+        computeValue: (data, rootData) => {
+          seen.push({ data, rootData });
+          return `${rootData?.currency ?? ''}${data.amount ?? ''}`;
+        },
+      },
+    ];
+
+    const item = { amount: 10 };
+    const root = { currency: '$', items: [item] };
+    const result = applyComputedValues(fields, item, root);
+
+    expect(result.label).toBe('$10');
+    expect(seen[0].rootData).toBe(root);
+    expect(seen[0].data).toBe(item);
+  });
+
+  test('rootData defaults to data when omitted', () => {
+    const fields: FieldDescription[] = [
+      {
+        name: 'echo',
+        type: 'text',
+        computeValue: (_data, rootData) => rootData?.name,
+      },
+    ];
+
+    const result = applyComputedValues(fields, { name: 'Ada' });
+    expect(result.echo).toBe('Ada');
+  });
+
   test('applies multiple computed fields in declaration order', () => {
     const fields: FieldDescription[] = [
       { name: 'a', type: 'number' },

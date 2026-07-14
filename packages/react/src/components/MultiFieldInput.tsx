@@ -19,6 +19,12 @@ interface Props {
   properties?: Properties;
   onChange?: (data: Properties) => void;
   layout?: LayoutConfig;
+  /**
+   * Top-level form data, threaded down through repeatable groups so a nested
+   * field's `appearCondition`/`computeValue` can read the root form. Omitted at
+   * the top level, where the form's own data is the root.
+   */
+  rootData?: Properties;
 }
 
 function resolveLayout(layout?: LayoutConfig) {
@@ -36,23 +42,28 @@ const MultiFieldInput = ({
   properties,
   onChange,
   layout,
+  rootData,
 }: Props) => {
   const [data, setData] = useState<Properties>({});
 
   useEffect(() => {
     if (properties) {
-      setData(applyComputedValues(fieldDescriptions, properties));
+      setData(applyComputedValues(fieldDescriptions, properties, rootData));
     }
     // Only re-run when `properties` itself changes; recomputing on every
     // fieldDescriptions identity change would fight user edits mid-session.
   }, [properties]);
 
+  // The root data seen by this level: the prop when nested in a group, else
+  // this form's own data at the top level.
+  const effectiveRoot = rootData ?? data;
+
   const visibleFields = useMemo(
     () =>
       fieldDescriptions.filter(
-        (f) => !f.appearCondition || f.appearCondition(data)
+        (f) => !f.appearCondition || f.appearCondition(data, effectiveRoot)
       ),
-    [fieldDescriptions, data]
+    [fieldDescriptions, data, effectiveRoot]
   );
 
   // Keep the latest data/onChange in refs so handleValueChangeField can stay
@@ -64,12 +75,16 @@ const MultiFieldInput = ({
   onChangeRef.current = onChange;
   const fieldDescriptionsRef = useRef(fieldDescriptions);
   fieldDescriptionsRef.current = fieldDescriptions;
+  const rootDataRef = useRef(rootData);
+  rootDataRef.current = rootData;
 
   const handleValueChangeField = useCallback((value: unknown, key: string) => {
-    const next = applyComputedValues(fieldDescriptionsRef.current, {
-      ...dataRef.current,
-      [key]: value,
-    });
+    const merged = { ...dataRef.current, [key]: value };
+    const next = applyComputedValues(
+      fieldDescriptionsRef.current,
+      merged,
+      rootDataRef.current
+    );
     dataRef.current = next;
     setData(next);
     onChangeRef.current?.(next);
@@ -90,6 +105,7 @@ const MultiFieldInput = ({
           key={f.name}
           fieldDescription={f}
           renderInfos={data}
+          rootData={effectiveRoot}
           onValueChangeField={handleValueChangeField}
         />
       ))}

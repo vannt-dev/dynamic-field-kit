@@ -1,16 +1,11 @@
-type BaseLayout =
-  | 'column'
-  | 'row'
-  | {
-      type: 'grid';
-      columns?: number;
-      gap?: number;
-    };
-
-export type LayoutConfig =
-  | BaseLayout
-  | {
-      type: 'responsive';
-      mobile: BaseLayout;
-      desktop: BaseLayout;
-    };
+// Layout config types live in @dynamic-field-kit/core so the contract stays
+// identical across every framework adapter. Re-exported here to preserve the
+// existing `@dynamic-field-kit/react` import path.
+export type {
+  BaseLayout,
+  ColumnLayoutConfig,
+  RowLayoutConfig,
+  GridLayoutConfig,
+  ResponsiveLayout,
+  LayoutConfig,
+} from '@dynamic-field-kit/core';

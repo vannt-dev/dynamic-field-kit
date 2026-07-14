@@ -23,11 +23,14 @@ Note: Core is shared runtime. Install core separately and ensure a single versio
 - `MultiFieldInput`
 - `layoutRegistry`
 - `fieldRegistry`
+- `FieldRegistry` (class, for scoped registries)
+- `FieldRegistryProvider` / `useFieldRegistry` / `FieldRegistryProviderProps`
 - `ReactFieldRenderer`
 - `ReactFieldRegistry`
 - `FieldDescription`
 - `FieldTypeKey`
 - `FieldRendererProps`
+- `LayoutConfig`
 
 `FieldGroupInput` (repeatable field groups) is used internally by `FieldInput` and doesn't need to be imported directly - see "Repeatable field groups" below.
 
@@ -166,12 +169,32 @@ const fields: FieldDescription[] = [
       { name: 'phone', type: 'text', label: 'Phone' },
     ],
     defaultItem: { email: '', phone: '' },
+    keyField: 'id', // optional: stable list key instead of the array index
     minItems: 1,
     maxItems: 5,
   },
 ];
 
 <MultiFieldInput fieldDescriptions={fields} />;
+```
+
+## Scoped registries
+
+`fieldRegistry` is a process-wide singleton. To give a subtree its own renderers, create an isolated `FieldRegistry` and wrap the subtree in `FieldRegistryProvider`. Anything not wrapped keeps using the global singleton.
+
+```tsx
+import {
+  FieldRegistry,
+  FieldRegistryProvider,
+  MultiFieldInput,
+} from '@dynamic-field-kit/react';
+
+const registry = new FieldRegistry();
+registry.register('text', MyTextRenderer);
+
+<FieldRegistryProvider registry={registry}>
+  <MultiFieldInput fieldDescriptions={fields} />
+</FieldRegistryProvider>;
 ```
 
 ## Type augmentation

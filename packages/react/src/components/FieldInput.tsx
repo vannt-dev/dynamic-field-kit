@@ -6,16 +6,27 @@ import FieldGroupInput from './FieldGroupInput';
 interface Props {
   fieldDescription: FieldDescription;
   renderInfos: Properties;
+  rootData?: Properties;
   onValueChangeField: (value: unknown, key: string) => void;
 }
 
 const FieldInputInner = ({
   fieldDescription,
   renderInfos,
+  rootData,
   onValueChangeField,
 }: Props) => {
-  const { name, type, label, options, className, description, fields } =
-    fieldDescription;
+  const {
+    name,
+    type,
+    label,
+    options,
+    className,
+    description,
+    disabled,
+    props,
+    fields,
+  } = fieldDescription;
 
   // Stable per-field handler so DynamicInput's memoization isn't defeated
   // by a freshly-allocated closure on every parent render.
@@ -33,6 +44,7 @@ const FieldInputInner = ({
       <FieldGroupInput
         fieldDescription={fieldDescription}
         items={items}
+        rootData={rootData}
         onChange={handleChange}
       />
     );
@@ -46,6 +58,8 @@ const FieldInputInner = ({
       options={options}
       className={className}
       description={description as React.ReactNode}
+      disabled={disabled}
+      extraProps={props}
       onChange={handleChange}
     />
   );
@@ -59,6 +73,7 @@ const FieldInput = React.memo(FieldInputInner, (prev, next) => {
   return (
     prev.fieldDescription === next.fieldDescription &&
     prev.onValueChangeField === next.onValueChangeField &&
+    prev.rootData === next.rootData &&
     prev.renderInfos[name] === next.renderInfos[name]
   );
 });
