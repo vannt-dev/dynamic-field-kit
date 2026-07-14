@@ -39,6 +39,14 @@ const DynamicInput = defineComponent({
       type: Boolean,
       default: undefined,
     },
+    readOnly: {
+      type: Boolean,
+      default: undefined,
+    },
+    error: {
+      type: [String, Array] as PropType<string | string[]>,
+      default: undefined,
+    },
     // Extra, framework-agnostic props forwarded verbatim to the renderer.
     extraProps: {
       type: Object as PropType<Properties>,
@@ -64,6 +72,8 @@ const DynamicInput = defineComponent({
         class: props.className,
         description: props.description,
         disabled: props.disabled,
+        readOnly: props.readOnly,
+        error: props.error,
       });
     };
   },

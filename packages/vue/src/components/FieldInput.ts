@@ -1,4 +1,10 @@
-import { FieldDescription, Properties } from '@dynamic-field-kit/core';
+import {
+  resolveDisabled,
+  resolveReadOnly,
+  validateField,
+  FieldDescription,
+  Properties,
+} from '@dynamic-field-kit/core';
 import { defineComponent, h, PropType } from 'vue';
 import DynamicInput from './DynamicInput';
 
@@ -12,6 +18,10 @@ const FieldInput = defineComponent({
     renderInfos: {
       type: Object as PropType<Properties>,
       required: true,
+    },
+    rootData: {
+      type: Object as PropType<Properties>,
+      default: undefined,
     },
     onValueChangeField: {
       type: Function as PropType<(value: unknown, key: string) => void>,
@@ -27,9 +37,27 @@ const FieldInput = defineComponent({
         options,
         className,
         description,
-        disabled,
         props: extraProps,
       } = props.fieldDescription;
+
+      const disabled = resolveDisabled(
+        props.fieldDescription,
+        props.renderInfos,
+        props.rootData
+      );
+      const readOnly = resolveReadOnly(
+        props.fieldDescription,
+        props.renderInfos,
+        props.rootData
+      );
+      const errors = disabled
+        ? []
+        : validateField(
+            props.fieldDescription,
+            props.renderInfos[name],
+            props.renderInfos,
+            props.rootData
+          );
 
       return h(DynamicInput, {
         type,
@@ -39,6 +67,8 @@ const FieldInput = defineComponent({
         className,
         description,
         disabled,
+        readOnly,
+        error: errors.length > 0 ? errors : undefined,
         extraProps,
         onChange: (v: unknown) => props.onValueChangeField(v, name),
       });
