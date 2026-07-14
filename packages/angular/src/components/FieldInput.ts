@@ -31,7 +31,9 @@ import { DynamicInput } from './DynamicInput';
       (valueChange)="
         onValueChangeField.emit({ value: $event, key: fieldDescription!.name })
       "
-      [disabled]="fieldDescription!.disabled"
+      [disabled]="disabled"
+      [readOnly]="readOnly"
+      [error]="$any(error)"
       [extraProps]="fieldDescription!.props"
     ></dfk-dynamic-input>
   `,
@@ -39,6 +41,9 @@ import { DynamicInput } from './DynamicInput';
 export class FieldInput implements OnChanges {
   @Input() fieldDescription?: FieldDescription;
   @Input() value?: unknown;
+  @Input() disabled?: boolean;
+  @Input() readOnly?: boolean;
+  @Input() error?: string | string[];
   @Output() onValueChangeField = new EventEmitter<{
     value: unknown;
     key: string;
