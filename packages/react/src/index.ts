@@ -25,3 +25,10 @@ export {
   type FieldDescription,
   type FieldRendererProps,
 } from '@dynamic-field-kit/core';
+export {
+  validateField,
+  validateFields,
+  resolveDisabled,
+  resolveReadOnly,
+  type ValidationResult,
+} from '@dynamic-field-kit/core';
