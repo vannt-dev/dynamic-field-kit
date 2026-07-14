@@ -5,6 +5,7 @@ import {
   Component,
   ComponentRef,
   EventEmitter,
+  inject,
   Input,
   OnChanges,
   OnDestroy,
@@ -14,10 +15,13 @@ import {
   ViewChild,
   ViewContainerRef,
 } from '@angular/core';
-import { fieldRegistry, FieldTypeKey } from '@dynamic-field-kit/core';
+import { FieldTypeKey, Properties } from '@dynamic-field-kit/core';
 import { Subscription } from 'rxjs';
+import { FIELD_REGISTRY } from '../fieldRegistryToken';
 import { BaseInputComponent } from './BaseInput';
 
+// Only the framework-agnostic FieldRendererProps keys. Domain-specific props
+// reach the renderer through `extraProps` (FieldDescription.props) instead.
 const KNOWN_PROPS = [
   'value',
   'label',
@@ -27,11 +31,6 @@ const KNOWN_PROPS = [
   'options',
   'className',
   'description',
-  'errorMessage',
-  'acceptFile',
-  'maxLength',
-  'minNumber',
-  'maxNumber',
 ] as const;
 
 @Component({
@@ -46,8 +45,12 @@ export class DynamicInput
   implements OnChanges, AfterViewInit, OnDestroy
 {
   @Input() type!: FieldTypeKey;
+  // Extra, framework-agnostic props forwarded verbatim to the renderer.
+  @Input() extraProps?: Properties;
   @Output() override valueChange = new EventEmitter<unknown>();
   @Output() onChange = new EventEmitter<unknown>();
+
+  private registry = inject(FIELD_REGISTRY);
 
   @ViewChild('host', { read: ViewContainerRef, static: false })
   host!: ViewContainerRef;
@@ -89,6 +92,9 @@ export class DynamicInput
         )[prop];
       }
     }
+    if (changes['extraProps']) {
+      this.applyExtraProps(this.inputInstance);
+    }
     this.compRef?.changeDetectorRef?.detectChanges();
   }
 
@@ -109,7 +115,7 @@ export class DynamicInput
   }
 
   private render(): void {
-    const Renderer = fieldRegistry.get(this.type);
+    const Renderer = this.registry.get(this.type);
     this.cleanup();
     this.host.clear();
 
@@ -171,16 +177,16 @@ export class DynamicInput
 
   private getFallbackProps(): Record<string, unknown> {
     return {
+      ...this.extraProps,
       value: this.value,
       onValueChange: (v: unknown) => this.emitValue(v),
       label: this.label ?? '',
       placeholder: this.placeholder ?? '',
       required: this.required ?? false,
+      disabled: this.disabled ?? false,
       options: this.options ?? [],
       className: this.className ?? '',
       description: this.description ?? '',
-      disabled: this.disabled ?? false,
-      errorMessage: this.errorMessage ?? '',
     };
   }
 
@@ -190,6 +196,17 @@ export class DynamicInput
       if (prop in this && prop in instanceObj) {
         instanceObj[prop] = (this as Record<string, unknown>)[prop];
       }
+    }
+    this.applyExtraProps(instance);
+  }
+
+  private applyExtraProps(instance: unknown): void {
+    if (!instance || !this.extraProps) {
+      return;
+    }
+    const instanceObj = instance as Record<string, unknown>;
+    for (const [key, value] of Object.entries(this.extraProps)) {
+      instanceObj[key] = value;
     }
   }
 

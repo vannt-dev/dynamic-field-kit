@@ -20,6 +20,24 @@ export class FieldRegistry {
   ): FieldRenderer<FieldTypeMap[K]> | undefined {
     return this.registry[type as string] as FieldRenderer<FieldTypeMap[K]>;
   }
+
+  has(type: keyof FieldTypeMap): boolean {
+    return (type as string) in this.registry;
+  }
+
+  unregister(type: keyof FieldTypeMap): boolean {
+    const key = type as string;
+    if (key in this.registry) {
+      delete this.registry[key];
+      return true;
+    }
+    return false;
+  }
+
+  /** Type keys of every currently-registered renderer. */
+  list(): string[] {
+    return Object.keys(this.registry);
+  }
 }
 
 export const fieldRegistry = new FieldRegistry();

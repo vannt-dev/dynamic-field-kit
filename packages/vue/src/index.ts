@@ -6,9 +6,16 @@ export { default as DynamicInput } from './components/DynamicInput';
 export { default as FieldInput } from './components/FieldInput';
 export { default as MultiFieldInput } from './components/MultiFieldInput';
 
+export {
+  provideFieldRegistry,
+  useFieldRegistry,
+  FieldRegistryKey,
+} from './fieldRegistryContext';
+
 // Re-export selected core APIs
 export {
   fieldRegistry,
+  FieldRegistry,
   type FieldDescription,
   type FieldRendererProps,
   type FieldTypeKey,

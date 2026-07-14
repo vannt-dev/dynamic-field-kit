@@ -7,6 +7,12 @@ import {
 } from '../src';
 import type { FieldDescription } from '../src';
 
+declare module '../src' {
+  interface FieldTypeMap {
+    group: unknown;
+  }
+}
+
 describe('fieldGroup', () => {
   const groupField: FieldDescription = {
     name: 'contacts',

@@ -73,6 +73,28 @@ describe('FieldRegistry', () => {
     });
   });
 
+  describe('lifecycle', () => {
+    test('has() reflects registration and unregistration', () => {
+      expect(registry.has('text')).toBe(false);
+      registry.register('text', vi.fn() as any);
+      expect(registry.has('text')).toBe(true);
+
+      expect(registry.unregister('text')).toBe(true);
+      expect(registry.has('text')).toBe(false);
+    });
+
+    test('unregister() returns false for an unknown type', () => {
+      expect(registry.unregister('number')).toBe(false);
+    });
+
+    test('list() returns every registered type key', () => {
+      registry.register('text', vi.fn() as any);
+      registry.register('number', vi.fn() as any);
+
+      expect(registry.list().sort()).toEqual(['number', 'text']);
+    });
+  });
+
   describe('singleton instance', () => {
     test('should export singleton fieldRegistry instance', () => {
       expect(fieldRegistry).toBeDefined();

@@ -4,7 +4,7 @@ import {
   Properties,
 } from '@dynamic-field-kit/core';
 import React, { ReactNode, useMemo } from 'react';
-import { fieldRegistry } from '../fieldRegistry';
+import { useFieldRegistry } from '../FieldRegistryContext';
 
 interface Props<T extends FieldTypeKey> {
   type: T;
@@ -14,6 +14,9 @@ interface Props<T extends FieldTypeKey> {
   options?: Properties[];
   className?: string;
   description?: ReactNode;
+  disabled?: boolean;
+  /** Extra, framework-agnostic props forwarded verbatim to the renderer. */
+  extraProps?: Properties;
 }
 
 const DynamicInputInner = <T extends FieldTypeKey>({
@@ -24,11 +27,15 @@ const DynamicInputInner = <T extends FieldTypeKey>({
   options,
   className,
   description,
+  disabled,
+  extraProps,
 }: Props<T>) => {
+  const registry = useFieldRegistry();
+
   // Memoize renderer lookup to avoid unnecessary work on re-renders
   const Renderer = useMemo(
-    () => fieldRegistry.get(type) as React.ComponentType<FieldRendererProps>,
-    [type]
+    () => registry.get(type) as React.ComponentType<FieldRendererProps>,
+    [registry, type]
   );
 
   if (!Renderer) {
@@ -36,12 +43,14 @@ const DynamicInputInner = <T extends FieldTypeKey>({
   }
 
   return React.createElement(Renderer, {
+    ...extraProps,
     value,
     onValueChange: onChange,
     label,
     options,
     className,
     description,
+    disabled,
   });
 };
 

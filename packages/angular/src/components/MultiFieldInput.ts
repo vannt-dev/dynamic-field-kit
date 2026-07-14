@@ -62,7 +62,7 @@ const DEFAULT_BREAKPOINT = 768;
             *ngFor="
               let item of getItems(field);
               let i = index;
-              trackBy: trackByIndex
+              trackBy: groupTrackBy(field)
             "
             style="display: flex; align-items: flex-start; gap: 8px;"
           >
@@ -70,11 +70,19 @@ const DEFAULT_BREAKPOINT = 768;
               <dfk-multi-field-input
                 [fieldDescriptions]="field.fields"
                 [properties]="item"
+                [rootData]="rootData ?? data"
                 (onChange)="onGroupItemChange(field, i, $event)"
               ></dfk-multi-field-input>
             </div>
             <button
               type="button"
+              [attr.aria-label]="
+                (field.removeLabel || 'Remove') +
+                ' ' +
+                (field.label || field.name) +
+                ' ' +
+                (i + 1)
+              "
               (click)="onGroupItemRemove(field, i)"
               [disabled]="!canRemoveItem(field)"
             >
@@ -83,6 +91,9 @@ const DEFAULT_BREAKPOINT = 768;
           </div>
           <button
             type="button"
+            [attr.aria-label]="
+              (field.addLabel || 'Add') + ' ' + (field.label || field.name)
+            "
             (click)="onGroupItemAdd(field)"
             [disabled]="!canAddItem(field)"
           >
@@ -98,6 +109,10 @@ export class MultiFieldInput implements OnInit, OnChanges {
   @Input() properties?: Properties;
   @Output() onChange = new EventEmitter<Properties>();
   @Input() layout: LayoutConfig = 'column';
+  // Top-level form data, threaded down through repeatable groups so a nested
+  // field's appearCondition/computeValue can read the root form. Omitted at
+  // the top level, where the form's own data is the root.
+  @Input() rootData?: Properties;
 
   data: Properties = {};
   visibleFields: FieldDescription[] = [];
@@ -150,6 +165,26 @@ export class MultiFieldInput implements OnInit, OnChanges {
     return index;
   }
 
+  private groupTrackByCache = new WeakMap<
+    FieldDescription,
+    (index: number, item: Properties) => unknown
+  >();
+
+  // Returns a stable trackBy per group field: item[keyField] when configured,
+  // else the index. Cached by field reference so the template hands Angular the
+  // same function each change-detection pass.
+  groupTrackBy(
+    field: FieldDescription
+  ): (index: number, item: Properties) => unknown {
+    let fn = this.groupTrackByCache.get(field);
+    if (!fn) {
+      fn = (index: number, item: Properties) =>
+        field.keyField ? item[field.keyField] ?? index : index;
+      this.groupTrackByCache.set(field, fn);
+    }
+    return fn;
+  }
+
   ngOnInit() {
     this.updateIsMobile();
     this.init();
@@ -170,16 +205,19 @@ export class MultiFieldInput implements OnInit, OnChanges {
 
   private init() {
     if (this.properties) {
-      this.data = applyComputedValues(this.fieldDescriptions, {
-        ...this.properties,
-      });
+      this.data = applyComputedValues(
+        this.fieldDescriptions,
+        { ...this.properties },
+        this.rootData
+      );
     }
     this.updateVisibleFields();
   }
 
   private updateVisibleFields() {
+    const root = this.rootData ?? this.data;
     this.visibleFields = this.fieldDescriptions.filter(
-      (f) => !f.appearCondition || f.appearCondition(this.data)
+      (f) => !f.appearCondition || f.appearCondition(this.data, root)
     );
   }
 
@@ -230,7 +268,11 @@ export class MultiFieldInput implements OnInit, OnChanges {
   }
 
   private commitData(nextData: Properties): void {
-    this.data = applyComputedValues(this.fieldDescriptions, nextData);
+    this.data = applyComputedValues(
+      this.fieldDescriptions,
+      nextData,
+      this.rootData
+    );
     this.updateVisibleFields();
     this.onChange.emit(this.data);
     this.cdr.markForCheck();

@@ -1,22 +1,11 @@
 import React from 'react';
 
-export type BaseLayout =
-  | 'column'
-  | 'row'
-  | {
-      type: 'grid';
-      columns?: number;
-      gap?: number;
-    };
-
-export type ResponsiveLayout = {
-  type: 'responsive';
-  mobile: BaseLayout;
-  desktop: BaseLayout;
-  breakpoint?: number;
-};
-
-export type LayoutConfig = BaseLayout | ResponsiveLayout;
+// Single source of truth for layout config shapes.
+export type {
+  BaseLayout,
+  ResponsiveLayout,
+  LayoutConfig,
+} from '@dynamic-field-kit/core';
 
 export type LayoutRenderer<C = unknown> = (props: {
   children: React.ReactNode;
