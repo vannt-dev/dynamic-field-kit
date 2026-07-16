@@ -31,6 +31,7 @@ Note: Core is shared runtime. Install core separately and ensure a single versio
 - `FieldTypeKey`
 - `FieldRendererProps`
 - `LayoutConfig`
+- `validateField` / `validateFields` / `resolveDisabled` / `resolveReadOnly` / `ValidationResult`
 
 `FieldGroupInput` (repeatable field groups) is used internally by `FieldInput` and doesn't need to be imported directly - see "Repeatable field groups" below.
 
@@ -152,6 +153,36 @@ const fields: FieldDescription[] = [
       `${data.firstName ?? ''} ${data.lastName ?? ''}`.trim(),
   },
 ];
+```
+
+## Validation & conditions
+
+Declare a `validate` hook and dynamic `disabledCondition`/`readOnlyCondition`;
+your renderer receives `error`, `disabled`, and `readOnly`. `MultiFieldInput`
+emits `onValidityChange`:
+
+```tsx
+<MultiFieldInput
+  fieldDescriptions={fields}
+  properties={data}
+  onChange={setData}
+  onValidityChange={({ valid, errors }) => setCanSubmit(valid)}
+/>
+```
+
+Read the props inside a renderer:
+
+```tsx
+fieldRegistry.register('text', ({ value, onValueChange, error, disabled }) => (
+  <label>
+    <input
+      disabled={disabled}
+      value={value ?? ''}
+      onChange={(e) => onValueChange?.(e.target.value)}
+    />
+    {error && <span className="error">{[].concat(error).join(', ')}</span>}
+  </label>
+));
 ```
 
 ## Repeatable field groups

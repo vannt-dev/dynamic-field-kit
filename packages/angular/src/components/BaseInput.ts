@@ -17,6 +17,8 @@ export interface FieldInputProps {
   placeholder?: string;
   required?: boolean;
   disabled?: boolean;
+  readOnly?: boolean;
+  error?: string | string[];
   options?: unknown[];
   className?: string;
   description?: string;
@@ -31,6 +33,8 @@ export abstract class BaseInputComponent implements OnChanges {
   @Input() placeholder?: string;
   @Input() required?: boolean;
   @Input() disabled?: boolean;
+  @Input() readOnly?: boolean;
+  @Input() error?: string | string[];
   @Input() options?: unknown[];
   @Input() className?: string;
   @Input() description?: string;

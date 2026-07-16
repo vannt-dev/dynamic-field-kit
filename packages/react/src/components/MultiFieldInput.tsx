@@ -1,7 +1,9 @@
 import {
   applyComputedValues,
+  validateFields,
   FieldDescription,
   Properties,
+  type ValidationResult,
 } from '@dynamic-field-kit/core';
 import React, {
   useCallback,
@@ -25,6 +27,12 @@ interface Props {
    * the top level, where the form's own data is the root.
    */
   rootData?: Properties;
+  /**
+   * Called with the recursive validation result ({ valid, errors }) on every
+   * change. On the top-level component this covers the whole form (groups
+   * included).
+   */
+  onValidityChange?: (result: ValidationResult) => void;
 }
 
 function resolveLayout(layout?: LayoutConfig) {
@@ -43,6 +51,7 @@ const MultiFieldInput = ({
   onChange,
   layout,
   rootData,
+  onValidityChange,
 }: Props) => {
   const [data, setData] = useState<Properties>({});
 
@@ -77,6 +86,14 @@ const MultiFieldInput = ({
   fieldDescriptionsRef.current = fieldDescriptions;
   const rootDataRef = useRef(rootData);
   rootDataRef.current = rootData;
+  const onValidityChangeRef = useRef(onValidityChange);
+  onValidityChangeRef.current = onValidityChange;
+
+  useEffect(() => {
+    onValidityChangeRef.current?.(
+      validateFields(fieldDescriptions, data, rootData)
+    );
+  }, [data, fieldDescriptions, rootData]);
 
   const handleValueChangeField = useCallback((value: unknown, key: string) => {
     const merged = { ...dataRef.current, [key]: value };

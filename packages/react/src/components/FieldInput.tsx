@@ -1,4 +1,10 @@
-import { FieldDescription, Properties } from '@dynamic-field-kit/core';
+import {
+  resolveDisabled,
+  resolveReadOnly,
+  validateField,
+  FieldDescription,
+  Properties,
+} from '@dynamic-field-kit/core';
 import React, { useCallback } from 'react';
 import DynamicInput from './DynamicInput';
 import FieldGroupInput from './FieldGroupInput';
@@ -16,17 +22,8 @@ const FieldInputInner = ({
   rootData,
   onValueChangeField,
 }: Props) => {
-  const {
-    name,
-    type,
-    label,
-    options,
-    className,
-    description,
-    disabled,
-    props,
-    fields,
-  } = fieldDescription;
+  const { name, type, label, options, className, description, props, fields } =
+    fieldDescription;
 
   // Stable per-field handler so DynamicInput's memoization isn't defeated
   // by a freshly-allocated closure on every parent render.
@@ -50,6 +47,17 @@ const FieldInputInner = ({
     );
   }
 
+  const effectiveDisabled = resolveDisabled(
+    fieldDescription,
+    renderInfos,
+    rootData
+  );
+  const readOnly = resolveReadOnly(fieldDescription, renderInfos, rootData);
+  const errors = effectiveDisabled
+    ? []
+    : validateField(fieldDescription, renderInfos[name], renderInfos, rootData);
+  const error = errors.length > 0 ? errors : undefined;
+
   return (
     <DynamicInput
       type={type}
@@ -58,7 +66,9 @@ const FieldInputInner = ({
       options={options}
       className={className}
       description={description as React.ReactNode}
-      disabled={disabled}
+      disabled={effectiveDisabled}
+      readOnly={readOnly}
+      error={error}
       extraProps={props}
       onChange={handleChange}
     />

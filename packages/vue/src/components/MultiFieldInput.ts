@@ -3,9 +3,11 @@ import {
   canAddGroupItem,
   canRemoveGroupItem,
   createGroupItem,
+  validateFields,
   FieldDescription,
   Properties,
 } from '@dynamic-field-kit/core';
+import type { ValidationResult } from '@dynamic-field-kit/core';
 import type { Component } from 'vue';
 import { computed, defineComponent, h, PropType, reactive, watch } from 'vue';
 import { layoutRegistry } from '../layout';
@@ -64,6 +66,10 @@ const MultiFieldInput = defineComponent({
       type: Object as PropType<Properties>,
       default: undefined,
     },
+    onValidityChange: {
+      type: Function as PropType<(result: ValidationResult) => void>,
+      default: undefined,
+    },
   },
 
   setup(props) {
@@ -86,6 +92,16 @@ const MultiFieldInput = defineComponent({
             { ...data },
             props.rootData
           )
+        );
+      },
+      { immediate: true, deep: true }
+    );
+
+    watch(
+      () => [props.fieldDescriptions, { ...data }] as const,
+      () => {
+        props.onValidityChange?.(
+          validateFields(props.fieldDescriptions, { ...data }, props.rootData)
         );
       },
       { immediate: true, deep: true }
@@ -223,6 +239,7 @@ const MultiFieldInput = defineComponent({
               key: f.name,
               fieldDescription: f,
               renderInfos: data,
+              rootData: props.rootData ?? data,
               onValueChangeField: handleValueChange,
             })
       );

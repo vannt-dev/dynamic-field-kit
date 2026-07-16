@@ -30,6 +30,7 @@ Note: @dynamic-field-kit/core is a shared runtime and should be installed in you
 - `FieldRendererProps`
 - `Properties`
 - `LayoutConfig`
+- `validateField` / `validateFields` / `resolveDisabled` / `resolveReadOnly` / `ValidationResult`
 
 Default layouts are registered automatically when you import the package root.
 
@@ -159,6 +160,24 @@ const fields: FieldDescription[] = [
   },
 ];
 ```
+
+## Validation & conditions
+
+Declare a `validate` hook and dynamic `disabledCondition`/`readOnlyCondition`;
+your renderer receives `error`, `disabled`, and `readOnly`, and `MultiFieldInput`
+emits `onValidityChange`:
+
+```vue
+<MultiFieldInput
+  :fieldDescriptions="fields"
+  :properties="formData"
+  :onChange="handleChange"
+  :onValidityChange="({ valid }) => (canSubmit = valid)"
+/>
+```
+
+A renderer reads the props (`error`, `disabled`, `readOnly`) it declares, the
+same way it reads `value`/`label`.
 
 ## Repeatable field groups
 

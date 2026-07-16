@@ -14,6 +14,7 @@ Demo app: https://github.com/vannt-dev/dynamic-field-kit-demo
 - `fieldRegistry` as the shared runtime registry instance, plus the `FieldRegistry` class for isolated (scoped) registries
 - Layout config types (`LayoutConfig`, `BaseLayout`, `ResponsiveLayout`, `ColumnLayoutConfig`, `RowLayoutConfig`, `GridLayoutConfig`) - the single source of truth re-exported by every adapter
 - `applyComputedValues` to resolve `computeValue` fields against form data
+- `validateField`, `validateFields`, `resolveDisabled`, `resolveReadOnly` and the `ValidationResult` type for opt-in, app-supplied validation and dynamic disabled/readOnly conditions
 - `isFieldGroup`, `createGroupItem`, `canAddGroupItem`, `canRemoveGroupItem` to work with repeatable field groups (`FieldDescription.fields`)
 
 ## Install
@@ -149,6 +150,30 @@ applyComputedValues(fields, { firstName: 'Ada', lastName: 'Lovelace' });
 ```
 
 Adapters call `applyComputedValues` for you whenever `MultiFieldInput`'s data changes; you normally only need to import it directly when working with form data outside of a component (e.g. on submit).
+
+## Validation & conditions
+
+`validate`, `disabledCondition`, and `readOnlyCondition` are app-supplied hooks
+on `FieldDescription` (the library ships no rule logic and no form state).
+
+```ts
+const fields: FieldDescription[] = [
+  {
+    name: 'email',
+    type: 'text',
+    validate: (value) =>
+      String(value).includes('@') ? undefined : 'Invalid email',
+    readOnlyCondition: (data, rootData) => (rootData ?? data).frozen === true,
+  },
+];
+```
+
+`validateFields(fields, data, rootData?)` returns `{ valid, errors }`, recursing
+into repeatable groups (keys like `contacts[0].email`) and skipping fields that
+are hidden by `appearCondition` or disabled. Adapters call `validateField` /
+`resolveDisabled` / `resolveReadOnly` per field to surface `error`, `disabled`,
+and `readOnly` to renderers reactively; display timing is the renderer's/app's
+concern.
 
 ## Repeatable field groups
 
