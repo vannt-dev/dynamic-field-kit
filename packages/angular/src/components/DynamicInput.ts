@@ -135,10 +135,12 @@ export class DynamicInput
     }
   }
 
+  // Angular component classes carry a static ɵcmp. Checked instead of
+  // reflectComponentType() because the peer range starts at Angular 13 and
+  // reflectComponentType is v14+. Plain function renderers have no ɵcmp and
+  // fall through to renderFallback.
   private isComponentType(renderer: unknown): boolean {
-    return (
-      typeof renderer === 'object' && renderer !== null && 'cmp' in renderer
-    );
+    return typeof renderer === 'function' && 'ɵcmp' in renderer;
   }
 
   private renderComponent(compType: Type<unknown>): void {
