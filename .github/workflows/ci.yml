@@ -58,10 +58,9 @@ jobs:
             coverage-name: vue
           - package: angular
             build-cmd: npm run build --workspace=@dynamic-field-kit/core
-            test-cmd: npm run test:coverage --workspace=@dynamic-field-kit/angular
+            test-cmd: npm run test --workspace=@dynamic-field-kit/angular -- --coverage
             coverage-file: packages/angular/coverage/lcov.info
             coverage-name: angular
-            needs-chrome: true
     steps:
       - uses: actions/checkout@v6
 
@@ -70,12 +69,6 @@ jobs:
         with:
           node-version: '24'
           cache: 'npm'
-
-      - name: Install Chrome
-        if: matrix.needs-chrome == true
-        uses: browser-actions/setup-chrome@latest
-        with:
-          chrome-version: stable
 
       - name: Install dependencies
         run: npm ci
