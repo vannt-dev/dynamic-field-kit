@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { DynamicInput } from '../src/components/DynamicInput';
 import { FIELD_REGISTRY } from '../src/fieldRegistryToken';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -176,15 +177,15 @@ describe('DynamicInput', () => {
     fixture.componentRef.setInput('type', 'text');
     fixture.detectChanges();
 
+    const rendererInstance = fixture.debugElement.query(
+      By.directive(TextRendererComponent)
+    ).componentInstance as TextRendererComponent;
+
     const seen: unknown[] = [];
     fixture.componentInstance.valueChange.subscribe((v) => seen.push(v));
 
-    const input: HTMLInputElement =
-      fixture.nativeElement.querySelector('input.txt');
     fixture.destroy();
-
-    input.value = 'after destroy';
-    input.dispatchEvent(new Event('input'));
+    rendererInstance.valueChange.emit('after destroy'); // bypasses DOM entirely
 
     expect(seen).toEqual([]);
   });
