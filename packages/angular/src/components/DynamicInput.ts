@@ -196,10 +196,20 @@ export class DynamicInput
     };
   }
 
+  // `prop in instanceObj` is deliberately NOT used to gate these
+  // assignments. An `@Input() value?: unknown` with no initializer emits no
+  // runtime property at this package's ES2019 target (useDefineForClassFields
+  // defaults to false below ES2022), so the check tested a TypeScript emit
+  // artifact rather than whether the renderer accepts the prop, and was
+  // always false for the idiomatic way of declaring inputs. Assigning
+  // unconditionally is safe: a prop the renderer never declared is simply
+  // ignored by Angular. `prop in this` is kept - it reflects whether the
+  // prop was actually supplied to DynamicInput, so renderer-side defaults
+  // are not clobbered with undefined.
   private applyProps(instance: unknown): void {
     const instanceObj = instance as Record<string, unknown>;
     for (const prop of KNOWN_PROPS) {
-      if (prop in this && prop in instanceObj) {
+      if (prop in this) {
         instanceObj[prop] = (this as Record<string, unknown>)[prop];
       }
     }
