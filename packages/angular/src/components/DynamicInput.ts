@@ -59,9 +59,18 @@ export class DynamicInput
   private compRef?: ComponentRef<unknown>;
   private inputInstance?: unknown;
   private subscriptions: Subscription[] = [];
+  // Tracks which KNOWN_PROPS were actually supplied to DynamicInput (via
+  // SimpleChanges), independent of TS class-field emit. See applyProps.
+  private supplied = new Set<string>();
 
   ngOnChanges(changes: SimpleChanges): void {
     super.ngOnChanges(changes);
+
+    for (const prop of KNOWN_PROPS) {
+      if (changes[prop]) {
+        this.supplied.add(prop);
+      }
+    }
 
     if (this.inputInstance) {
       this.syncPropsToInstance(changes);
@@ -138,9 +147,15 @@ export class DynamicInput
   // Angular component classes carry a static ɵcmp. Checked instead of
   // reflectComponentType() because the peer range starts at Angular 13 and
   // reflectComponentType is v14+. Plain function renderers have no ɵcmp and
-  // fall through to renderFallback.
+  // fall through to renderFallback. Uses hasOwnProperty (not `in`) so a
+  // class that merely extends a component without its own @Component
+  // decorator - and would otherwise inherit the parent's static ɵcmp via the
+  // prototype chain - is not mistaken for a component in its own right.
   private isComponentType(renderer: unknown): boolean {
-    return typeof renderer === 'function' && 'ɵcmp' in renderer;
+    return (
+      typeof renderer === 'function' &&
+      Object.prototype.hasOwnProperty.call(renderer, 'ɵcmp')
+    );
   }
 
   private renderComponent(compType: Type<unknown>): void {
@@ -196,20 +211,21 @@ export class DynamicInput
     };
   }
 
-  // `prop in instanceObj` is deliberately NOT used to gate these
-  // assignments. An `@Input() value?: unknown` with no initializer emits no
-  // runtime property at this package's ES2019 target (useDefineForClassFields
-  // defaults to false below ES2022), so the check tested a TypeScript emit
-  // artifact rather than whether the renderer accepts the prop, and was
-  // always false for the idiomatic way of declaring inputs. Assigning
-  // unconditionally is safe: a prop the renderer never declared is simply
-  // ignored by Angular. `prop in this` is kept - it reflects whether the
-  // prop was actually supplied to DynamicInput, so renderer-side defaults
-  // are not clobbered with undefined.
+  // Gates on `this.supplied` (populated from SimpleChanges in ngOnChanges),
+  // not on `prop in instanceObj` or `prop in this`. Both `in` checks test a
+  // TypeScript class-field emit artifact rather than intent: whether a
+  // property slot exists at runtime depends on the compile target
+  // (useDefineForClassFields is false below ES2022, true at ES2022+), so the
+  // same source can behave oppositely between this package's test build and
+  // its shipped ES2022 bundle, where every declared field is always an own
+  // property. `this.supplied` instead reflects only whether Angular actually
+  // pushed a value for that input, so renderer-side defaults (e.g.
+  // `@Input() label = 'None'`) are not clobbered with undefined for props
+  // DynamicInput was never given.
   private applyProps(instance: unknown): void {
     const instanceObj = instance as Record<string, unknown>;
     for (const prop of KNOWN_PROPS) {
-      if (prop in this) {
+      if (this.supplied.has(prop)) {
         instanceObj[prop] = (this as Record<string, unknown>)[prop];
       }
     }
