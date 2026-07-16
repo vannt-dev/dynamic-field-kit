@@ -189,4 +189,24 @@ describe('DynamicInput', () => {
 
     expect(seen).toEqual([]);
   });
+
+  it('unsubscribes from the legacy onValueChange output on destroy', () => {
+    registry.register('text', LegacyOutputRendererComponent as never);
+
+    const fixture = TestBed.createComponent(DynamicInput);
+    fixture.componentRef.setInput('type', 'text');
+    fixture.detectChanges();
+
+    const rendererInstance = fixture.debugElement.query(
+      By.directive(LegacyOutputRendererComponent)
+    ).componentInstance as LegacyOutputRendererComponent;
+
+    const seen: unknown[] = [];
+    fixture.componentInstance.valueChange.subscribe((v) => seen.push(v));
+
+    fixture.destroy();
+    rendererInstance.onValueChange.emit('after destroy');
+
+    expect(seen).toEqual([]);
+  });
 });
