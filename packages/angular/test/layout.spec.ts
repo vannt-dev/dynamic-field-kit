@@ -28,6 +28,18 @@ class LayoutHost {
   @ViewChild('tpl', { static: true }) tpl!: TemplateRef<unknown>;
 }
 
+@Component({
+  standalone: true,
+  imports: [GridLayout],
+  template: `
+    <ng-template #tpl><span class="child">x</span></ng-template>
+    <dfk-grid-layout [template]="tpl"></dfk-grid-layout>
+  `,
+})
+class GridDefaultsHost {
+  @ViewChild('tpl', { static: true }) tpl!: TemplateRef<unknown>;
+}
+
 describe('LayoutRegistry', () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -93,5 +105,15 @@ describe('default layouts', () => {
     expect(grid.style.display).toBe('grid');
     expect(grid.style.gridTemplateColumns).toBe('repeat(3, 1fr)');
     expect(grid.style.gap).toBe('12px');
+  });
+
+  it('defaults the grid columns to 2', () => {
+    const fixture = TestBed.createComponent(GridDefaultsHost);
+    fixture.detectChanges();
+
+    const grid: HTMLElement = fixture.nativeElement.querySelector(
+      'dfk-grid-layout > div'
+    );
+    expect(grid.style.gridTemplateColumns).toBe('repeat(2, 1fr)');
   });
 });
