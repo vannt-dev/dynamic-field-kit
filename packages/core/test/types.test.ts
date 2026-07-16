@@ -195,3 +195,33 @@ describe('Edge Cases', () => {
     expect(condition({ role: 'admin', age: 15, tags: ['vip'] })).toBe(false);
   });
 });
+
+describe('validation & condition hooks', () => {
+  test('FieldDescription accepts validate, disabledCondition, readOnlyCondition', () => {
+    const field: FieldDescription = {
+      name: 'email',
+      type: 'text',
+      validate: (value, data, rootData) =>
+        typeof value === 'string' && value.includes('@')
+          ? undefined
+          : 'Invalid email',
+      disabledCondition: (data) => data.locked === true,
+      readOnlyCondition: (data, rootData) => (rootData ?? data).frozen === true,
+    };
+
+    expect(field.validate?.('a', {}, {})).toBe('Invalid email');
+    expect(field.validate?.('a@b', {}, {})).toBeUndefined();
+    expect(field.disabledCondition?.({ locked: true })).toBe(true);
+    expect(field.readOnlyCondition?.({}, { frozen: true })).toBe(true);
+  });
+
+  test('FieldRendererProps accepts error and readOnly', () => {
+    const props: FieldRendererProps = {
+      value: '',
+      error: ['Required'],
+      readOnly: true,
+    };
+    expect(props.error).toEqual(['Required']);
+    expect(props.readOnly).toBe(true);
+  });
+});

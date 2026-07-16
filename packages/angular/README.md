@@ -31,6 +31,7 @@ npm install @dynamic-field-kit/core@^1.0.12 @dynamic-field-kit/angular@^1.2.3
 - `fieldRegistry`
 - `FieldRegistry` (class, for scoped registries)
 - `FIELD_REGISTRY` (injection token)
+- `validateField` / `validateFields` / `resolveDisabled` / `resolveReadOnly` / `ValidationResult`
 
 ## Basic setup (Angular 19+)
 
@@ -125,6 +126,23 @@ fields: FieldDescription[] = [
   },
 ];
 ```
+
+## Validation & conditions
+
+Declare a `validate` hook and dynamic `disabledCondition`/`readOnlyCondition`;
+your renderer component receives `error`, `disabled`, and `readOnly` inputs, and
+`dfk-multi-field-input` emits `(validityChange)`:
+
+```html
+<dfk-multi-field-input
+  [fieldDescriptions]="fields"
+  [properties]="data"
+  (onChange)="onChange($event)"
+  (validityChange)="canSubmit = $event.valid"
+></dfk-multi-field-input>
+```
+
+For submit-time whole-form validation, call `validateFields(fields, data)`.
 
 ## Repeatable field groups
 

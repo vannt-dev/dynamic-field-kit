@@ -13,6 +13,8 @@ export interface FieldRendererProps<T = unknown> {
   placeholder?: string;
   required?: boolean;
   disabled?: boolean;
+  readOnly?: boolean;
+  error?: string | string[];
   options?: Properties[];
   className?: string;
   description?: unknown;
@@ -25,6 +27,17 @@ export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {
   placeholder?: string;
   required?: boolean;
   disabled?: boolean;
+  /**
+   * Returns one or more validation error messages for `value`, or a falsy
+   * value when it is valid. App-supplied, like appearCondition/computeValue -
+   * core ships no rule logic. `rootData` is the top-level form (equal to
+   * `data` outside a group).
+   */
+  validate?: (
+    value: unknown,
+    data: Properties,
+    rootData?: Properties
+  ) => string | string[] | undefined;
   /**
    * Runtime visibility condition. `data` is the data at this field's own level
    * (the group item, when the field lives inside a repeatable group); `rootData`
@@ -41,6 +54,10 @@ export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {
    * top-level form data (equal to `data` outside a group).
    */
   computeValue?: (data: Properties, rootData?: Properties) => unknown;
+  /** Dynamic disabled state, OR-ed with the static `disabled` flag. */
+  disabledCondition?: (data: Properties, rootData?: Properties) => boolean;
+  /** Dynamic read-only state. */
+  readOnlyCondition?: (data: Properties, rootData?: Properties) => boolean;
   options?: Properties[];
   className?: string;
   description?: unknown;

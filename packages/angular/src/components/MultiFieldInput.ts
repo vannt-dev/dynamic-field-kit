@@ -16,9 +16,14 @@ import {
   canAddGroupItem,
   canRemoveGroupItem,
   createGroupItem,
+  resolveDisabled,
+  resolveReadOnly,
+  validateField,
+  validateFields,
   FieldDescription,
   Properties,
 } from '@dynamic-field-kit/core';
+import type { ValidationResult } from '@dynamic-field-kit/core';
 import { BaseLayoutConfig, LayoutConfig } from '../types/layout';
 import { FieldInput } from './FieldInput';
 
@@ -53,6 +58,9 @@ const DEFAULT_BREAKPOINT = 768;
           *ngIf="!field.fields"
           [fieldDescription]="field"
           [value]="data[field.name]"
+          [disabled]="getDisabled(field)"
+          [readOnly]="getReadOnly(field)"
+          [error]="getError(field)"
           (onValueChangeField)="onFieldChange($event)"
         ></dfk-field-input>
 
@@ -108,6 +116,7 @@ export class MultiFieldInput implements OnInit, OnChanges {
   @Input() fieldDescriptions: FieldDescription[] = [];
   @Input() properties?: Properties;
   @Output() onChange = new EventEmitter<Properties>();
+  @Output() validityChange = new EventEmitter<ValidationResult>();
   @Input() layout: LayoutConfig = 'column';
   // Top-level form data, threaded down through repeatable groups so a nested
   // field's appearCondition/computeValue can read the root form. Omitted at
@@ -212,6 +221,9 @@ export class MultiFieldInput implements OnInit, OnChanges {
       );
     }
     this.updateVisibleFields();
+    this.validityChange.emit(
+      validateFields(this.fieldDescriptions, this.data, this.rootData)
+    );
   }
 
   private updateVisibleFields() {
@@ -228,6 +240,27 @@ export class MultiFieldInput implements OnInit, OnChanges {
   getItems(field: FieldDescription): Properties[] {
     const value = this.data[field.name];
     return Array.isArray(value) ? (value as Properties[]) : [];
+  }
+
+  getDisabled(field: FieldDescription): boolean {
+    return resolveDisabled(field, this.data, this.rootData);
+  }
+
+  getReadOnly(field: FieldDescription): boolean {
+    return resolveReadOnly(field, this.data, this.rootData);
+  }
+
+  getError(field: FieldDescription): string[] | undefined {
+    if (this.getDisabled(field)) {
+      return undefined;
+    }
+    const errors = validateField(
+      field,
+      this.data[field.name],
+      this.data,
+      this.rootData
+    );
+    return errors.length > 0 ? errors : undefined;
   }
 
   canAddItem(field: FieldDescription): boolean {
@@ -275,6 +308,9 @@ export class MultiFieldInput implements OnInit, OnChanges {
     );
     this.updateVisibleFields();
     this.onChange.emit(this.data);
+    this.validityChange.emit(
+      validateFields(this.fieldDescriptions, this.data, this.rootData)
+    );
     this.cdr.markForCheck();
   }
 }
