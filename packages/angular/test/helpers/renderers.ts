@@ -53,6 +53,19 @@ export class LegacyOutputRendererComponent {
   @Output() onValueChange = new EventEmitter<unknown>();
 }
 
+@Component({
+  selector: 'dfk-test-defaults',
+  standalone: true,
+  template: `<span class="label">{{ label }}</span>`,
+})
+export class DefaultsRendererComponent {
+  // Initialized input: proves DynamicInput does not overwrite a renderer's
+  // own default with undefined for a prop it was never given.
+  @Input() label = 'None';
+  @Input() value?: unknown;
+  @Output() valueChange = new EventEmitter<unknown>();
+}
+
 export function fallbackRenderer(props: Record<string, unknown>): string {
   return `<span class="fallback">${String(props['label'] ?? '')}:${String(
     props['value'] ?? ''
