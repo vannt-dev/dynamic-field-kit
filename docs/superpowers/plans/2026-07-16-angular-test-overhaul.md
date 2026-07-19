@@ -1400,3 +1400,11 @@ Also update `C:\Users\vance\.claude\projects\C--Git-dynamic-field-kit\memory\pro
 - The registry is provided per test via `FIELD_REGISTRY`. Never touch the module-level `fieldRegistry` singleton in a spec except in `publicApi.spec.ts`, which asserts the token defaults to it.
 - `registry.register('text', X as never)` is the cast used throughout: `FieldRegistry.register` is typed for function renderers, and Angular component classes are passed through it by design (the README uses `as any`).
 - If a test is hard to write, that is a signal about the code, not a reason to weaken the test. Never assert a tautology — the suite this replaces was 36 of them.
+
+## Corrections (post-implementation)
+
+- `tsconfig.spec.json` must NOT be deleted, contrary to what this plan says: `@analogjs/vite-plugin-angular` resolves it for the test compile, and without it every spec file fails to compile with "No test suite found". It was kept and aligned to `target: ES2022` + `useDefineForClassFields: true` to match the shipped fesm2022 emit.
+- `@angular-devkit/build-angular` is an OPTIONAL peer of the analog plugin, not a required install as the plan implies; it auto-installs regardless, and removing it does not help.
+- The destroy test specified in Task 4 could not fail (Angular's own teardown removes the DOM listener, so the assertion passed whether or not `DynamicInput` unsubscribed). It was rewritten to emit directly on the renderer instance.
+- Test counts in the plan are wrong (Task 5 Step 2 says 12 but its code block has 11 `it()` blocks; Task 8 predicts the Angular count drops "far below 36"). Final real state: **43 tests across 6 files**, above the old 36.
+- Scope was extended with the owner's approval beyond the plan's "only `isComponentType` may change": `applyProps` (and its `supplied` gate) in `DynamicInput.ts` were also fixed, after the first mounted test proved a second production bug.

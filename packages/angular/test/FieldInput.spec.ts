@@ -4,7 +4,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BaseInputComponent } from '../src/components/BaseInput';
 import { FieldInput } from '../src/components/FieldInput';
 import { FIELD_REGISTRY } from '../src/fieldRegistryToken';
-import { makeRegistry, TextRendererComponent } from './helpers/renderers';
+import {
+  DefaultsRendererComponent,
+  makeRegistry,
+  TextRendererComponent,
+} from './helpers/renderers';
 
 describe('FieldInput', () => {
   let registry: ReturnType<typeof makeRegistry>;
@@ -18,8 +22,20 @@ describe('FieldInput', () => {
     });
   });
 
-  it('renders nothing without a fieldDescription', () => {
+  it('renders nothing once fieldDescription is cleared', () => {
+    // Mounting with no inputs at all passes on the `shouldRender = false`
+    // field initializer without ever exercising ngOnChanges's guard. Mount
+    // WITH a fieldDescription first, then clear it, so the assertion
+    // actually depends on `shouldRender = !!this.fieldDescription`.
     const fixture = TestBed.createComponent(FieldInput);
+    fixture.componentRef.setInput('fieldDescription', {
+      name: 'first',
+      type: 'text',
+    });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('input.txt')).not.toBeNull();
+
+    fixture.componentRef.setInput('fieldDescription', undefined);
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('input.txt')).toBeNull();
@@ -92,6 +108,27 @@ describe('FieldInput', () => {
     expect(fixture.nativeElement.querySelector('.hint').textContent).toBe(
       'keep it short'
     );
+  });
+
+  it('documents current behaviour: a renderer default IS overwritten on the real FieldInput path', () => {
+    // Unlike mounting DynamicInput directly, FieldInput's template binds
+    // every KNOWN_PROP unconditionally, so DynamicInput sees a firstChange
+    // SimpleChange for `label` even though fieldDescription never set one.
+    // The `supplied` gate in DynamicInput.applyProps therefore does NOT
+    // protect the renderer's own default here - this pins that fact rather
+    // than asserting a guarantee that doesn't hold on this path.
+    registry.register('defaults', DefaultsRendererComponent as never);
+
+    const fixture = TestBed.createComponent(FieldInput);
+    fixture.componentRef.setInput('fieldDescription', {
+      name: 'first',
+      type: 'defaults',
+      // label intentionally omitted.
+    });
+    fixture.detectChanges();
+
+    const label: HTMLElement = fixture.nativeElement.querySelector('.label');
+    expect(label.textContent).toBe('');
   });
 });
 
