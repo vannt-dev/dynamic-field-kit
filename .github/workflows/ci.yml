@@ -34,6 +34,12 @@ jobs:
           npm run build --workspace=@dynamic-field-kit/vue
           npm run build --workspace=@dynamic-field-kit/angular
 
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Type tests
+        run: npm run test:types --workspace=@dynamic-field-kit/core
+
       - name: Show bundle sizes
         run: node scripts/show-sizes.js
 

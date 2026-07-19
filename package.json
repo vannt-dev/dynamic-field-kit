@@ -14,7 +14,7 @@
     "verify-framework-deps": "node scripts/verify-framework-deps.js",
     "lint:fix": "eslint . --ext .ts,.tsx,.js --fix",
     "format-check": "prettier --check .",
-    "typecheck": "node scripts/typecheck-all.js",
+    "typecheck": "npm run typecheck --workspaces --if-present",
     "format": "prettier --write ."
   },
   "//": "root vitest is the hoisted peer target for @vitest/coverage-v8 - do not remove, it looks unused but breaks --coverage repo-wide",
