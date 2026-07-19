@@ -44,6 +44,7 @@
     "prepublishOnly": "npm run clean && npm run build",
     "test": "vitest",
     "test:run": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
     "test:coverage": "vitest run --coverage",
     "release:patch": "npm version patch && npm publish",
     "release:minor": "npm version minor && npm publish",
