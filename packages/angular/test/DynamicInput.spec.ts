@@ -144,6 +144,24 @@ describe('DynamicInput', () => {
     );
   });
 
+  it('rejects a subclass without its own @Component decorator instead of inheriting the parent renderer', () => {
+    // Sub has no own `ɵcmp`: it only inherits TextRendererComponent's via
+    // the prototype chain. isComponentType must use hasOwnProperty (not
+    // `in`) so Sub is not mistaken for a renderable component in its own
+    // right - the DOM must not show TextRendererComponent's template.
+    class Sub extends TextRendererComponent {}
+    registry.register('text', Sub as never);
+
+    const fixture = TestBed.createComponent(DynamicInput);
+    fixture.componentRef.setInput('type', 'text');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('input.txt')).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain(
+      'Failed to render field: text'
+    );
+  });
+
   it('renders an error for an unknown field type', () => {
     const fixture = TestBed.createComponent(DynamicInput);
     fixture.componentRef.setInput('type', 'nope');
