@@ -17,6 +17,7 @@
     "typecheck": "node scripts/typecheck-all.js",
     "format": "prettier --write ."
   },
+  "//": "root vitest is the hoisted peer target for @vitest/coverage-v8 - do not remove, it looks unused but breaks --coverage repo-wide",
   "devDependencies": {
     "@types/react": "^19.2.8",
     "@typescript-eslint/eslint-plugin": "^5.60.0",
