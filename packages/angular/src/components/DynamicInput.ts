@@ -218,10 +218,17 @@ export class DynamicInput
   // (useDefineForClassFields is false below ES2022, true at ES2022+), so the
   // same source can behave oppositely between this package's test build and
   // its shipped ES2022 bundle, where every declared field is always an own
-  // property. `this.supplied` instead reflects only whether Angular actually
-  // pushed a value for that input, so renderer-side defaults (e.g.
-  // `@Input() label = 'None'`) are not clobbered with undefined for props
-  // DynamicInput was never given.
+  // property. `this.supplied` instead reflects only whether Angular ever
+  // fired a SimpleChange for that input, i.e. whether the prop was *bound*
+  // at all - it skips only props DynamicInput was never given a binding
+  // for. It is NOT a general "renderer defaults survive" guarantee: Angular
+  // fires a firstChange SimpleChange for every bound input even when the
+  // bound value is undefined, and FieldInput's template binds all
+  // KNOWN_PROPS unconditionally, so on the real
+  // MultiFieldInput -> FieldInput -> DynamicInput path every prop counts as
+  // supplied and renderer-side defaults (e.g. `@Input() label = 'None'`)
+  // are still overwritten with undefined. This only helps when DynamicInput
+  // is mounted directly with some inputs left unbound.
   private applyProps(instance: unknown): void {
     const instanceObj = instance as Record<string, unknown>;
     for (const prop of KNOWN_PROPS) {
