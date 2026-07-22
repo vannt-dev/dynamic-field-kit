@@ -54,6 +54,8 @@ npm install @dynamic-field-kit/core @dynamic-field-kit/angular
 npm install @dynamic-field-kit/core @dynamic-field-kit/vue
 ```
 
+> **`@dynamic-field-kit/core` is a peer dependency of every adapter** (as is your framework: `react` + `react-dom`, `vue`, or `@angular/*`). Install it explicitly, as shown above — the adapters no longer pull it in automatically. Keeping a single shared `core` version means all adapters resolve the same field registry.
+
 ---
 
 ## 🧱 Core Concepts
