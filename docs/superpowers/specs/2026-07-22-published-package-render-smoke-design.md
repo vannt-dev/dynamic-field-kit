@@ -54,7 +54,7 @@ The gap is specifically **rendering fidelity of the built package**: nothing ass
 
 ## Testing
 
-The smoke *is* the test. Verification of the work itself:
+The smoke _is_ the test. Verification of the work itself:
 
 - Build packages, run `npm run test --workspace=@dynamic-field-kit/smoke` → green.
 - Prove it bites: temporarily break a package's `exports` (or delete a `dist` file) and confirm the smoke fails with the preflight/render error, then revert.

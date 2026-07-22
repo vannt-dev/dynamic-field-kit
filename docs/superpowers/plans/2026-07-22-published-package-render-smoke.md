@@ -22,6 +22,7 @@
 ### Task 1: Scaffold the `smoke/` workspace + React render-smoke
 
 **Files:**
+
 - Create: `smoke/package.json`
 - Create: `smoke/vitest.config.ts`
 - Create: `smoke/globalSetup.ts`
@@ -29,6 +30,7 @@
 - Modify: `package.json` (root) — add `"smoke"` to `workspaces`
 
 **Interfaces:**
+
 - Consumes: from `@dynamic-field-kit/react` (built dist) — `DynamicInput` (default-exported component, prop `type: string`, `value?: unknown`), `FieldRegistryProvider` (props `registry`, `children`), `FieldRegistry` (class with `register(type, renderer)`).
 - Produces: the `@dynamic-field-kit/smoke` workspace with `scripts.test = "vitest run"`; `smoke/globalSetup.ts` default-exports a `() => void` dist preflight reused by later tasks.
 
@@ -192,9 +194,11 @@ git commit -m "test(smoke): render React DynamicInput from built dist"
 ### Task 2: Vue render-smoke
 
 **Files:**
+
 - Create: `smoke/vue.smoke.test.ts`
 
 **Interfaces:**
+
 - Consumes: from `@dynamic-field-kit/vue` (built dist) — `DynamicInput` (default component, props `type`, `value`), `FieldRegistryKey` (vue `InjectionKey`), `FieldRegistry` (class). Uses `@vue/test-utils` `mount` with `global.provide` (the DI mechanism from item 6).
 - Produces: `smoke/vue.smoke.test.ts`, matched by the existing `*.smoke.test.{ts,tsx}` include.
 
@@ -262,10 +266,12 @@ git commit -m "test(smoke): render Vue DynamicInput from built dist"
 ### Task 3: Angular render-smoke (best-effort)
 
 **Files:**
+
 - Create (only if it works cleanly): `smoke/angular.smoke.test.ts`
 - Modify (only if pursued): `smoke/package.json` (add angular deps), `smoke/globalSetup.ts` (add angular artifact), `smoke/vitest.config.ts` (no change expected)
 
 **Interfaces:**
+
 - Consumes: from `@dynamic-field-kit/angular` (built fesm2022) — `DynamicInput` component, `FIELD_REGISTRY` injection token, `FieldRegistry`. Uses `@angular/core/testing` `TestBed` + `@angular/platform-browser-dynamic/testing` + `zone.js`.
 - Produces: either an Angular smoke test, OR a documented decision to skip it (per the spec's best-effort clause).
 
@@ -379,12 +385,14 @@ would and mount a component through the real framework runtime on jsdom.
 - [ ] **Step 5: Commit (either outcome)**
 
 Success case:
+
 ```bash
 git add smoke/angular.smoke.test.ts smoke/package.json smoke/globalSetup.ts package-lock.json
 git commit -m "test(smoke): render Angular DynamicInput from built dist"
 ```
 
 Drop case:
+
 ```bash
 git add smoke/README.md package.json package-lock.json
 git commit -m "docs(smoke): document why Angular is not render-smoked"
@@ -395,9 +403,11 @@ git commit -m "docs(smoke): document why Angular is not render-smoked"
 ### Task 4: Wire the smoke into CI + final verification
 
 **Files:**
+
 - Modify: `.github/workflows/ci.yml` (the `verify` job)
 
 **Interfaces:**
+
 - Consumes: the `@dynamic-field-kit/smoke` workspace `test` script.
 - Produces: a blocking CI step; no downstream consumers.
 
@@ -406,8 +416,8 @@ git commit -m "docs(smoke): document why Angular is not render-smoked"
 In `.github/workflows/ci.yml`, in the `verify` job, immediately after the `Build packages` step, add:
 
 ```yaml
-      - name: Smoke test built packages
-        run: npm run test --workspace=@dynamic-field-kit/smoke
+- name: Smoke test built packages
+  run: npm run test --workspace=@dynamic-field-kit/smoke
 ```
 
 (The `verify` job already runs `npm ci` and builds all four packages before this point, so the smoke's `dist` dependencies are present.)
