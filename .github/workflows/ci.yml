@@ -119,6 +119,9 @@ jobs:
           npm run build --workspace=@dynamic-field-kit/vue
           npm run build --workspace=@dynamic-field-kit/angular
 
+      - name: Smoke test built packages
+        run: npm run test --workspace=@dynamic-field-kit/smoke
+
       - name: Run verification scripts
         run: |
           node scripts/verify-framework-deps.js
