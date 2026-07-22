@@ -17,6 +17,13 @@ export default defineConfig({
       reportsDirectory: 'coverage',
       reporter: ['lcov', 'text-summary'],
       include: ['src/**/*.ts'],
+      // Coverage floor — fails the run when coverage drops below these numbers.
+      thresholds: {
+        statements: 85,
+        branches: 75,
+        functions: 85,
+        lines: 85,
+      },
     },
   },
 });
