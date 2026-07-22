@@ -12,9 +12,7 @@ Demo app: https://github.com/vannt-dev/dynamic-field-kit-demo
 npm install @dynamic-field-kit/core @dynamic-field-kit/angular
 ```
 
-Note: Core is shared runtime. Install core separately and ensure a single version is used across adapters to avoid duplicate registries.
-
-- Install with core: `npm install @dynamic-field-kit/core @dynamic-field-kit/angular`
+Note: `@dynamic-field-kit/core`, `@angular/core`, and `@angular/common` are **peer dependencies** — this adapter does not bundle or auto-install them, so add them to your app explicitly (as shown above). Keep a single `@dynamic-field-kit/core` version across all adapters so they share one registry.
 
 If you need to pin versions explicitly:
 
