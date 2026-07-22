@@ -14,9 +14,6 @@
     "@angular/core": ">=13 <22",
     "@dynamic-field-kit/core": "^1.2.0"
   },
-  "dependencies": {
-    "@dynamic-field-kit/core": "^1.2.0"
-  },
   "publishConfig": {
     "access": "public"
   },
@@ -43,6 +40,7 @@
     "@angular/forms": "^19.0.0",
     "@angular/platform-browser": "^19.0.0",
     "@angular/platform-browser-dynamic": "^19.0.0",
+    "@dynamic-field-kit/core": "^1.2.0",
     "@vitest/coverage-v8": "^1.6.0",
     "jsdom": "^24.0.0",
     "ng-packagr": "^17.3.0",
