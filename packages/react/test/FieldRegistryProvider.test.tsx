@@ -1,12 +1,11 @@
 import type { FieldDescription } from '@dynamic-field-kit/core';
-import { FieldRegistry } from '@dynamic-field-kit/core';
+import { FieldRegistry, fieldRegistry } from '@dynamic-field-kit/core';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import DynamicInput from '../src/components/DynamicInput';
 import MultiFieldInput from '../src/components/MultiFieldInput';
 import { FieldRegistryProvider } from '../src/FieldRegistryContext';
-import { fieldRegistry } from '../src/fieldRegistry';
 import '../src/layout/defaultLayouts';
 
 declare module '@dynamic-field-kit/core' {
@@ -15,8 +14,11 @@ declare module '@dynamic-field-kit/core' {
   }
 }
 
+// These tests intentionally exercise the no-provider fallback to the global
+// singleton, so they register on it directly. Only 'text' is ever registered
+// here — unregister it (public API) instead of poking private state.
 afterEach(() => {
-  (fieldRegistry as any).registry = {};
+  fieldRegistry.unregister('text');
 });
 
 describe('FieldRegistryProvider (scoped registry)', () => {
