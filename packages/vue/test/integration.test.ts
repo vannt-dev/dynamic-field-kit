@@ -1,7 +1,9 @@
 import type { FieldDescription } from '@dynamic-field-kit/core';
+import { FieldRegistry } from '@dynamic-field-kit/core';
 import { mount } from '@vue/test-utils';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DynamicInput, MultiFieldInput, fieldRegistry } from '../src';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { DynamicInput, MultiFieldInput } from '../src';
+import { FieldRegistryKey } from '../src/fieldRegistryContext';
 import '../src/layout/defaultLayouts';
 
 declare module '@dynamic-field-kit/core' {
@@ -15,33 +17,51 @@ declare module '@dynamic-field-kit/core' {
   }
 }
 
+// Build a scoped registry from a map of type -> renderer, so each test is
+// isolated from the global singleton and from every other test.
+function buildRegistry(renderers: Record<string, unknown>): FieldRegistry {
+  const registry = new FieldRegistry();
+  for (const [type, renderer] of Object.entries(renderers)) {
+    registry.register(type as never, renderer as never);
+  }
+  return registry;
+}
+
+// The @vue/test-utils `global` option that injects a scoped registry.
+function withRegistry(registry: FieldRegistry) {
+  return { provide: { [FieldRegistryKey]: registry } };
+}
+
 describe('Integration: Form with multiple fields', () => {
+  let registry: FieldRegistry;
+
   beforeEach(() => {
     vi.clearAllMocks();
-    (fieldRegistry as any).registry['text'] = {
-      props: ['value', 'label', 'onUpdate:value'],
-      emits: ['update:value'],
-      template: `
+    registry = buildRegistry({
+      text: {
+        props: ['value', 'label', 'onUpdate:value'],
+        emits: ['update:value'],
+        template: `
         <div>
           <label>{{ label }}</label>
           <input :value="value" @input="$emit('update:value', $event.target.value)" />
         </div>
       `,
-    };
-    (fieldRegistry as any).registry['checkbox'] = {
-      props: ['value', 'label', 'onUpdate:value'],
-      emits: ['update:value'],
-      template: `
+      },
+      checkbox: {
+        props: ['value', 'label', 'onUpdate:value'],
+        emits: ['update:value'],
+        template: `
         <div>
           <input type="checkbox" :checked="value" @change="$emit('update:value', $event.target.checked)" />
           <span>{{ label }}</span>
         </div>
       `,
-    };
-    (fieldRegistry as any).registry['select'] = {
-      props: ['value', 'label', 'options', 'onUpdate:value'],
-      emits: ['update:value'],
-      template: `
+      },
+      select: {
+        props: ['value', 'label', 'options', 'onUpdate:value'],
+        emits: ['update:value'],
+        template: `
         <div>
           <label>{{ label }}</label>
           <select :value="value" @change="$emit('update:value', $event.target.value)">
@@ -49,11 +69,8 @@ describe('Integration: Form with multiple fields', () => {
           </select>
         </div>
       `,
-    };
-  });
-
-  afterEach(() => {
-    (fieldRegistry as any).registry = {};
+      },
+    });
   });
 
   it('should render a complete form with multiple field types', async () => {
@@ -77,6 +94,7 @@ describe('Integration: Form with multiple fields', () => {
       props: {
         fieldDescriptions: fields,
       },
+      global: withRegistry(registry),
     });
 
     expect(wrapper.text()).toContain('Full Name');
@@ -96,6 +114,7 @@ describe('Integration: Form with multiple fields', () => {
         fieldDescriptions: fields,
         onChange,
       },
+      global: withRegistry(registry),
     });
 
     const inputs = wrapper.findAll('input');
@@ -124,6 +143,7 @@ describe('Integration: Form with multiple fields', () => {
         fieldDescriptions: fields,
         properties: { accountType: 'personal' },
       },
+      global: withRegistry(registry),
     });
 
     expect(wrapper.text()).not.toContain('Company Name');
@@ -145,6 +165,7 @@ describe('Integration: Form with multiple fields', () => {
         fieldDescriptions: fields,
         onChange,
       },
+      global: withRegistry(registry),
     });
 
     const inputs = wrapper.findAll('input');
@@ -159,16 +180,16 @@ describe('Integration: Form with multiple fields', () => {
 });
 
 describe('Integration: Layout variations', () => {
+  let registry: FieldRegistry;
+
   beforeEach(() => {
     vi.clearAllMocks();
-    (fieldRegistry as any).registry['text'] = {
-      props: ['value'],
-      template: '<input :value="value" />',
-    };
-  });
-
-  afterEach(() => {
-    (fieldRegistry as any).registry = {};
+    registry = buildRegistry({
+      text: {
+        props: ['value'],
+        template: '<input :value="value" />',
+      },
+    });
   });
 
   it('should render fields in row layout', async () => {
@@ -182,6 +203,7 @@ describe('Integration: Layout variations', () => {
         fieldDescriptions: fields,
         layout: 'row',
       },
+      global: withRegistry(registry),
     });
 
     const container = wrapper.find('div');
@@ -200,6 +222,7 @@ describe('Integration: Layout variations', () => {
         fieldDescriptions: fields,
         layout: 'grid',
       },
+      global: withRegistry(registry),
     });
 
     const container = wrapper.find('div');
@@ -214,6 +237,7 @@ describe('Integration: Layout variations', () => {
       props: {
         fieldDescriptions: fields,
       },
+      global: withRegistry(registry),
     });
 
     const container = wrapper.find('div');
@@ -223,39 +247,38 @@ describe('Integration: Layout variations', () => {
 });
 
 describe('Integration: DynamicInput with real-world scenarios', () => {
-  afterEach(() => {
-    (fieldRegistry as any).registry = {};
-  });
-
   it('should handle email validation flow', async () => {
-    (fieldRegistry as any).registry['email'] = {
-      props: ['value', 'onUpdate:value'],
-      emits: ['update:value'],
-      data() {
-        return { error: '' };
-      },
-      methods: {
-        validate(email: string) {
-          if (!email.includes('@')) {
-            this.error = 'Invalid email';
-            return;
-          }
-          this.error = '';
-          this.$emit('update:value', email);
+    const registry = buildRegistry({
+      email: {
+        props: ['value', 'onUpdate:value'],
+        emits: ['update:value'],
+        data() {
+          return { error: '' };
         },
-      },
-      template: `
+        methods: {
+          validate(email: string) {
+            if (!email.includes('@')) {
+              this.error = 'Invalid email';
+              return;
+            }
+            this.error = '';
+            this.$emit('update:value', email);
+          },
+        },
+        template: `
         <div>
           <input :value="value" @input="validate($event.target.value)" />
           <span v-if="error">{{ error }}</span>
         </div>
       `,
-    };
+      },
+    });
 
     const wrapper = mount(DynamicInput, {
       props: {
         type: 'email',
       },
+      global: withRegistry(registry),
     });
 
     await wrapper.find('input').setValue('invalid-email');
@@ -263,22 +286,22 @@ describe('Integration: DynamicInput with real-world scenarios', () => {
   });
 
   it('should handle dependent dropdowns', async () => {
-    (fieldRegistry as any).registry['country'] = {
-      props: ['value', 'onUpdate:value', 'options'],
-      emits: ['update:value'],
-      template: `
+    const registry = buildRegistry({
+      country: {
+        props: ['value', 'onUpdate:value', 'options'],
+        emits: ['update:value'],
+        template: `
         <select :value="value" @change="$emit('update:value', $event.target.value)">
           <option value="">Select country</option>
           <option value="us">United States</option>
           <option value="vn">Vietnam</option>
         </select>
       `,
-    };
-
-    (fieldRegistry as any).registry['city'] = {
-      props: ['value', 'onUpdate:value', 'options'],
-      emits: ['update:value'],
-      template: `
+      },
+      city: {
+        props: ['value', 'onUpdate:value', 'options'],
+        emits: ['update:value'],
+        template: `
         <select :value="value" @change="$emit('update:value', $event.target.value)">
           <option value="">Select city</option>
           <option value="ny">New York</option>
@@ -287,7 +310,8 @@ describe('Integration: DynamicInput with real-world scenarios', () => {
           <option value="hcm">Ho Chi Minh</option>
         </select>
       `,
-    };
+      },
+    });
 
     const fields: FieldDescription[] = [
       { name: 'country', type: 'country' },
@@ -302,6 +326,7 @@ describe('Integration: DynamicInput with real-world scenarios', () => {
       props: {
         fieldDescriptions: fields,
       },
+      global: withRegistry(registry),
     });
 
     expect(wrapper.findAll('select')).toHaveLength(1);

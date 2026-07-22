@@ -1,8 +1,9 @@
+import { FieldRegistry } from '@dynamic-field-kit/core';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import DynamicInput from '../src/components/DynamicInput';
-import { fieldRegistry } from '../src/fieldRegistry';
+import { FieldRegistryProvider } from '../src/FieldRegistryContext';
 
 declare module '@dynamic-field-kit/core' {
   interface FieldTypeMap {
@@ -35,24 +36,34 @@ const mockRenderer = vi.fn(
   )
 );
 
+// Render inside a scoped registry so each test gets an isolated set of
+// renderers — no shared global state to reset between tests.
+function renderWithRegistry(ui: React.ReactElement, registry: FieldRegistry) {
+  return render(
+    <FieldRegistryProvider registry={registry as never}>
+      {ui}
+    </FieldRegistryProvider>
+  );
+}
+
 describe('DynamicInput', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  afterEach(() => {
-    fieldRegistry.registry = {};
-  });
-
   it('should render unknown field type message when renderer not found', () => {
-    render(<DynamicInput type="unknown" />);
+    renderWithRegistry(<DynamicInput type="unknown" />, new FieldRegistry());
     expect(screen.getByText(/Unknown field type: unknown/)).toBeInTheDocument();
   });
 
   it('should render registered renderer with props', () => {
-    fieldRegistry.register('text', mockRenderer);
+    const registry = new FieldRegistry();
+    registry.register('text', mockRenderer as never);
 
-    render(<DynamicInput type="text" value="hello" label="Test Label" />);
+    renderWithRegistry(
+      <DynamicInput type="text" value="hello" label="Test Label" />,
+      registry
+    );
 
     expect(screen.getByTestId('label')).toHaveTextContent('Test Label');
     expect(screen.getByTestId('value')).toHaveTextContent('hello');
@@ -61,10 +72,14 @@ describe('DynamicInput', () => {
 
   it('should call onChange when renderer triggers change', async () => {
     const { userEvent } = await import('@testing-library/user-event');
-    fieldRegistry.register('text', mockRenderer);
+    const registry = new FieldRegistry();
+    registry.register('text', mockRenderer as never);
 
     const onChange = vi.fn();
-    render(<DynamicInput type="text" onChange={onChange} />);
+    renderWithRegistry(
+      <DynamicInput type="text" onChange={onChange} />,
+      registry
+    );
 
     await userEvent.click(screen.getByTestId('change-btn'));
 
@@ -81,10 +96,14 @@ describe('DynamicInput', () => {
         </div>
       )
     );
-    fieldRegistry.register('select', optionsRenderer);
+    const registry = new FieldRegistry();
+    registry.register('select', optionsRenderer as never);
 
     const options = [{ label: 'Option 1' }, { label: 'Option 2' }];
-    render(<DynamicInput type="select" options={options} />);
+    renderWithRegistry(
+      <DynamicInput type="select" options={options} />,
+      registry
+    );
 
     expect(screen.getByText('Option 1')).toBeInTheDocument();
     expect(screen.getByText('Option 2')).toBeInTheDocument();
@@ -96,9 +115,13 @@ describe('DynamicInput', () => {
         Test
       </div>
     ));
-    fieldRegistry.register('text', classRenderer);
+    const registry = new FieldRegistry();
+    registry.register('text', classRenderer as never);
 
-    render(<DynamicInput type="text" className="custom-class" />);
+    renderWithRegistry(
+      <DynamicInput type="text" className="custom-class" />,
+      registry
+    );
 
     expect(screen.getByTestId('class-test')).toHaveClass('custom-class');
   });
@@ -109,9 +132,13 @@ describe('DynamicInput', () => {
         <div data-testid="desc-test">{description}</div>
       )
     );
-    fieldRegistry.register('text', descRenderer);
+    const registry = new FieldRegistry();
+    registry.register('text', descRenderer as never);
 
-    render(<DynamicInput type="text" description="Test description" />);
+    renderWithRegistry(
+      <DynamicInput type="text" description="Test description" />,
+      registry
+    );
 
     expect(screen.getByTestId('desc-test')).toHaveTextContent(
       'Test description'

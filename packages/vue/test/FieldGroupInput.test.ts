@@ -1,8 +1,9 @@
 import type { FieldDescription } from '@dynamic-field-kit/core';
-import { fieldRegistry } from '@dynamic-field-kit/core';
+import { FieldRegistry } from '@dynamic-field-kit/core';
 import { mount } from '@vue/test-utils';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import MultiFieldInput from '../src/components/MultiFieldInput';
+import { FieldRegistryKey } from '../src/fieldRegistryContext';
 import '../src/layout/defaultLayouts';
 
 declare module '@dynamic-field-kit/core' {
@@ -27,22 +28,28 @@ const contactsField: FieldDescription = {
 };
 
 describe('FieldGroupInput (repeatable field group)', () => {
+  // A fresh scoped registry per test, injected into each mount, so tests stay
+  // isolated without resetting global state.
+  let registry: FieldRegistry;
+
   beforeEach(() => {
     vi.clearAllMocks();
-    (fieldRegistry as any).registry['text'] = textRenderer;
+    registry = new FieldRegistry();
+    registry.register('text', textRenderer as never);
   });
 
-  afterEach(() => {
-    (fieldRegistry as any).registry = {};
-  });
+  function mountGroup(props: Record<string, unknown>) {
+    return mount(MultiFieldInput, {
+      props,
+      global: { provide: { [FieldRegistryKey]: registry } },
+    });
+  }
 
   it('should render one nested form per item', () => {
-    const wrapper = mount(MultiFieldInput, {
-      props: {
-        fieldDescriptions: [contactsField],
-        properties: {
-          contacts: [{ email: 'a@x.com' }, { email: 'b@x.com' }],
-        },
+    const wrapper = mountGroup({
+      fieldDescriptions: [contactsField],
+      properties: {
+        contacts: [{ email: 'a@x.com' }, { email: 'b@x.com' }],
       },
     });
 
@@ -55,12 +62,10 @@ describe('FieldGroupInput (repeatable field group)', () => {
   it('should add a new item seeded from defaultItem', async () => {
     const onChange = vi.fn();
 
-    const wrapper = mount(MultiFieldInput, {
-      props: {
-        fieldDescriptions: [contactsField],
-        properties: { contacts: [] },
-        onChange,
-      },
+    const wrapper = mountGroup({
+      fieldDescriptions: [contactsField],
+      properties: { contacts: [] },
+      onChange,
     });
 
     expect(wrapper.findAll('input')).toHaveLength(0);
@@ -79,14 +84,12 @@ describe('FieldGroupInput (repeatable field group)', () => {
   it('should remove an item', async () => {
     const onChange = vi.fn();
 
-    const wrapper = mount(MultiFieldInput, {
-      props: {
-        fieldDescriptions: [contactsField],
-        properties: {
-          contacts: [{ email: 'a@x.com' }, { email: 'b@x.com' }],
-        },
-        onChange,
+    const wrapper = mountGroup({
+      fieldDescriptions: [contactsField],
+      properties: {
+        contacts: [{ email: 'a@x.com' }, { email: 'b@x.com' }],
       },
+      onChange,
     });
 
     const removeButtons = wrapper
@@ -103,12 +106,10 @@ describe('FieldGroupInput (repeatable field group)', () => {
   it('should update the item at the edited index when typing in a nested field', async () => {
     const onChange = vi.fn();
 
-    const wrapper = mount(MultiFieldInput, {
-      props: {
-        fieldDescriptions: [contactsField],
-        properties: { contacts: [{ email: '' }, { email: '' }] },
-        onChange,
-      },
+    const wrapper = mountGroup({
+      fieldDescriptions: [contactsField],
+      properties: { contacts: [{ email: '' }, { email: '' }] },
+      onChange,
     });
 
     await wrapper.findAll('input')[1].setValue('x');
@@ -127,12 +128,10 @@ describe('FieldGroupInput (repeatable field group)', () => {
       maxItems: 2,
     };
 
-    const wrapper = mount(MultiFieldInput, {
-      props: {
-        fieldDescriptions: [field],
-        properties: {
-          contacts: [{ email: 'a@x.com' }, { email: 'b@x.com' }],
-        },
+    const wrapper = mountGroup({
+      fieldDescriptions: [field],
+      properties: {
+        contacts: [{ email: 'a@x.com' }, { email: 'b@x.com' }],
       },
     });
 

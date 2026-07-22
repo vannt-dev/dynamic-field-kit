@@ -1,8 +1,9 @@
 import type { FieldDescription } from '@dynamic-field-kit/core';
-import { fieldRegistry } from '@dynamic-field-kit/core';
+import { FieldRegistry } from '@dynamic-field-kit/core';
 import { mount } from '@vue/test-utils';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import MultiFieldInput from '../src/components/MultiFieldInput';
+import { FieldRegistryKey } from '../src/fieldRegistryContext';
 import '../src/layout/defaultLayouts';
 
 declare module '@dynamic-field-kit/core' {
@@ -18,14 +19,24 @@ const createTextRenderer = () => ({
     '<div><label v-if="label">{{ label }}</label><input :value="value" /></div>',
 });
 
+// Mount with a fresh scoped registry injected. Pass a renderer override for the
+// 'text' type when a test needs an interactive input; otherwise a display-only
+// text renderer is used. Each test gets its own isolated registry.
+function mountMulti(
+  props: Record<string, unknown>,
+  textRenderer: unknown = createTextRenderer()
+) {
+  const registry = new FieldRegistry();
+  registry.register('text', textRenderer as never);
+  return mount(MultiFieldInput, {
+    props,
+    global: { provide: { [FieldRegistryKey]: registry } },
+  });
+}
+
 describe('MultiFieldInput', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (fieldRegistry as any).registry['text'] = createTextRenderer();
-  });
-
-  afterEach(() => {
-    (fieldRegistry as any).registry = {};
   });
 
   it('should render all fields from fieldDescriptions', async () => {
@@ -34,10 +45,8 @@ describe('MultiFieldInput', () => {
       { name: 'lastName', type: 'text', label: 'Last Name' },
     ];
 
-    const wrapper = mount(MultiFieldInput, {
-      props: {
-        fieldDescriptions: fields,
-      },
+    const wrapper = mountMulti({
+      fieldDescriptions: fields,
     });
 
     expect(wrapper.text()).toContain('First Name');
@@ -49,11 +58,9 @@ describe('MultiFieldInput', () => {
       { name: 'name', type: 'text', label: 'Name' },
     ];
 
-    const wrapper = mount(MultiFieldInput, {
-      props: {
-        fieldDescriptions: fields,
-        properties: { name: 'John Doe' },
-      },
+    const wrapper = mountMulti({
+      fieldDescriptions: fields,
+      properties: { name: 'John Doe' },
     });
 
     expect(wrapper.find('input').element.value).toBe('John Doe');
@@ -68,16 +75,16 @@ describe('MultiFieldInput', () => {
       template:
         '<input :value="value" @input="$emit(\'update:value\', $event.target.value)" />',
     };
-    (fieldRegistry as any).registry['text'] = textRenderer;
 
     const fields: FieldDescription[] = [{ name: 'name', type: 'text' }];
 
-    const wrapper = mount(MultiFieldInput, {
-      props: {
+    const wrapper = mountMulti(
+      {
         fieldDescriptions: fields,
         onChange,
       },
-    });
+      textRenderer
+    );
 
     await wrapper.find('input').setValue('Jane');
 
@@ -97,11 +104,9 @@ describe('MultiFieldInput', () => {
       },
     ];
 
-    const wrapper = mount(MultiFieldInput, {
-      props: {
-        fieldDescriptions: fields,
-        properties: { firstName: 'John' },
-      },
+    const wrapper = mountMulti({
+      fieldDescriptions: fields,
+      properties: { firstName: 'John' },
     });
 
     expect(wrapper.text()).toContain('First Name');
@@ -119,10 +124,8 @@ describe('MultiFieldInput', () => {
       { name: 'field2', type: 'text' },
     ];
 
-    const wrapper = mount(MultiFieldInput, {
-      props: {
-        fieldDescriptions: fields,
-      },
+    const wrapper = mountMulti({
+      fieldDescriptions: fields,
     });
 
     const container = wrapper.find('div');
@@ -134,11 +137,9 @@ describe('MultiFieldInput', () => {
   it('should throw error for unknown layout', async () => {
     const fields: FieldDescription[] = [{ name: 'field1', type: 'text' }];
 
-    const wrapper = mount(MultiFieldInput, {
-      props: {
-        fieldDescriptions: fields,
-        layout: { type: 'unknown-layout' } as any,
-      },
+    const wrapper = mountMulti({
+      fieldDescriptions: fields,
+      layout: { type: 'unknown-layout' } as any,
     });
 
     expect(wrapper.text()).toContain('Unknown layout: unknown-layout');
@@ -147,11 +148,9 @@ describe('MultiFieldInput', () => {
   it('should update data state when properties prop changes', async () => {
     const fields: FieldDescription[] = [{ name: 'name', type: 'text' }];
 
-    const wrapper = mount(MultiFieldInput, {
-      props: {
-        fieldDescriptions: fields,
-        properties: { name: 'Initial' },
-      },
+    const wrapper = mountMulti({
+      fieldDescriptions: fields,
+      properties: { name: 'Initial' },
     });
 
     expect(wrapper.find('input').element.value).toBe('Initial');
@@ -167,11 +166,9 @@ describe('MultiFieldInput', () => {
       { name: 'field2', type: 'text' },
     ];
 
-    const wrapper = mount(MultiFieldInput, {
-      props: {
-        fieldDescriptions: fields,
-        layout: 'row',
-      },
+    const wrapper = mountMulti({
+      fieldDescriptions: fields,
+      layout: 'row',
     });
 
     const container = wrapper.find('div');
@@ -185,11 +182,9 @@ describe('MultiFieldInput', () => {
       { name: 'field2', type: 'text' },
     ];
 
-    const wrapper = mount(MultiFieldInput, {
-      props: {
-        fieldDescriptions: fields,
-        layout: 'grid',
-      },
+    const wrapper = mountMulti({
+      fieldDescriptions: fields,
+      layout: 'grid',
     });
 
     const container = wrapper.find('div');
@@ -204,11 +199,9 @@ describe('MultiFieldInput', () => {
       { name: 'field3', type: 'text' },
     ];
 
-    const wrapper = mount(MultiFieldInput, {
-      props: {
-        fieldDescriptions: fields,
-        layout: { type: 'grid', columns: 3 },
-      },
+    const wrapper = mountMulti({
+      fieldDescriptions: fields,
+      layout: { type: 'grid', columns: 3 },
     });
 
     const container = wrapper.find('div');
@@ -228,11 +221,9 @@ describe('MultiFieldInput', () => {
       },
     ];
 
-    const wrapper = mount(MultiFieldInput, {
-      props: {
-        fieldDescriptions: fields,
-        properties: { firstName: 'Ada', lastName: 'Lovelace' },
-      },
+    const wrapper = mountMulti({
+      fieldDescriptions: fields,
+      properties: { firstName: 'Ada', lastName: 'Lovelace' },
     });
 
     const inputs = wrapper.findAll('input');
@@ -247,7 +238,6 @@ describe('MultiFieldInput', () => {
       template:
         '<input :value="value" @input="$emit(\'update:value\', $event.target.value)" />',
     };
-    (fieldRegistry as any).registry['text'] = textRenderer;
 
     const fields: FieldDescription[] = [
       { name: 'firstName', type: 'text' },
@@ -258,9 +248,10 @@ describe('MultiFieldInput', () => {
       },
     ];
 
-    const wrapper = mount(MultiFieldInput, {
-      props: { fieldDescriptions: fields, onChange },
-    });
+    const wrapper = mountMulti(
+      { fieldDescriptions: fields, onChange },
+      textRenderer
+    );
 
     await wrapper.findAll('input')[0].setValue('Ada');
 
