@@ -39,13 +39,11 @@
     "dynamic-field-kit",
     "dynamic-field-kit/core"
   ],
-  "dependencies": {
-    "tsup": "^8.0.1"
-  },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@vitest/coverage-istanbul": "^0.34.6",
     "rimraf": "^6.1.3",
+    "tsup": "^8.0.1",
     "vitest": "^0.34.0"
   }
 }
