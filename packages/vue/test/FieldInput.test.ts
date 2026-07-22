@@ -1,8 +1,9 @@
 import type { FieldDescription } from '@dynamic-field-kit/core';
-import { fieldRegistry } from '@dynamic-field-kit/core';
+import { FieldRegistry } from '@dynamic-field-kit/core';
 import { mount } from '@vue/test-utils';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import FieldInput from '../src/components/FieldInput';
+import { FieldRegistryKey } from '../src/fieldRegistryContext';
 import '../src/layout/defaultLayouts';
 
 declare module '@dynamic-field-kit/core' {
@@ -17,18 +18,29 @@ const createMockRenderer = () => ({
   template: '<div>{{ label }}: {{ value }}</div>',
 });
 
+// Mount FieldInput with a scoped registry injected, so each test gets an
+// isolated set of renderers and no global reset is needed between tests.
+function mountField(
+  props: Record<string, unknown>,
+  renderers: Record<string, unknown>
+) {
+  const registry = new FieldRegistry();
+  for (const [type, renderer] of Object.entries(renderers)) {
+    registry.register(type as never, renderer as never);
+  }
+  return mount(FieldInput, {
+    props,
+    global: { provide: { [FieldRegistryKey]: registry } },
+  });
+}
+
 describe('FieldInput', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  afterEach(() => {
-    (fieldRegistry as any).registry = {};
-  });
-
   it('should render DynamicInput with correct props from fieldDescription', async () => {
     const mockRenderer = createMockRenderer();
-    (fieldRegistry as any).registry['text'] = mockRenderer;
 
     const fieldDesc: FieldDescription = {
       name: 'username',
@@ -37,13 +49,14 @@ describe('FieldInput', () => {
       placeholder: 'Enter name',
     };
 
-    const wrapper = mount(FieldInput, {
-      props: {
+    const wrapper = mountField(
+      {
         fieldDescription: fieldDesc,
         renderInfos: { username: 'John' },
         onValueChangeField: vi.fn(),
       },
-    });
+      { text: mockRenderer }
+    );
 
     expect(wrapper.text()).toContain('Username');
     expect(wrapper.text()).toContain('John');
@@ -54,7 +67,6 @@ describe('FieldInput', () => {
       props: ['options'],
       template: '<div>{{ options?.length }} options</div>',
     };
-    (fieldRegistry as any).registry['select'] = mockRenderer;
 
     const fieldDesc: FieldDescription = {
       name: 'country',
@@ -62,13 +74,14 @@ describe('FieldInput', () => {
       options: [{ label: 'USA' }, { label: 'VN' }],
     };
 
-    const wrapper = mount(FieldInput, {
-      props: {
+    const wrapper = mountField(
+      {
         fieldDescription: fieldDesc,
         renderInfos: {},
         onValueChangeField: vi.fn(),
       },
-    });
+      { select: mockRenderer }
+    );
 
     expect(wrapper.text()).toContain('2 options');
   });
@@ -80,7 +93,6 @@ describe('FieldInput', () => {
       template:
         '<input :value="value" @input="$emit(\'update:value\', $event.target.value)" />',
     };
-    (fieldRegistry as any).registry['text'] = mockRenderer;
 
     const onValueChangeField = vi.fn();
 
@@ -89,13 +101,14 @@ describe('FieldInput', () => {
       type: 'text',
     };
 
-    const wrapper = mount(FieldInput, {
-      props: {
+    const wrapper = mountField(
+      {
         fieldDescription: fieldDesc,
         renderInfos: { email: '' },
         onValueChangeField,
       },
-    });
+      { text: mockRenderer }
+    );
 
     await wrapper.find('input').setValue('test@email.com');
 
@@ -109,7 +122,6 @@ describe('FieldInput', () => {
         return null;
       },
     };
-    (fieldRegistry as any).registry['text'] = mockRenderer;
 
     const fieldDesc: FieldDescription = {
       name: 'test',
@@ -117,13 +129,14 @@ describe('FieldInput', () => {
       className: 'my-custom-class',
     };
 
-    mount(FieldInput, {
-      props: {
+    mountField(
+      {
         fieldDescription: fieldDesc,
         renderInfos: {},
         onValueChangeField: vi.fn(),
       },
-    });
+      { text: mockRenderer }
+    );
   });
 
   it('should pass description from fieldDescription', async () => {
@@ -131,7 +144,6 @@ describe('FieldInput', () => {
       props: ['description'],
       template: '<div>{{ description }}</div>',
     };
-    (fieldRegistry as any).registry['text'] = mockRenderer;
 
     const fieldDesc: FieldDescription = {
       name: 'test',
@@ -139,13 +151,14 @@ describe('FieldInput', () => {
       description: 'This is a help text',
     };
 
-    const wrapper = mount(FieldInput, {
-      props: {
+    const wrapper = mountField(
+      {
         fieldDescription: fieldDesc,
         renderInfos: {},
         onValueChangeField: vi.fn(),
       },
-    });
+      { text: mockRenderer }
+    );
 
     expect(wrapper.text()).toContain('This is a help text');
   });
@@ -155,20 +168,20 @@ describe('FieldInput', () => {
       props: ['value'],
       template: '<div>{{ value }}</div>',
     };
-    (fieldRegistry as any).registry['text'] = mockRenderer;
 
     const fieldDesc: FieldDescription = {
       name: 'fullName',
       type: 'text',
     };
 
-    const wrapper = mount(FieldInput, {
-      props: {
+    const wrapper = mountField(
+      {
         fieldDescription: fieldDesc,
         renderInfos: { fullName: 'John Doe' },
         onValueChangeField: vi.fn(),
       },
-    });
+      { text: mockRenderer }
+    );
 
     expect(wrapper.text()).toContain('John Doe');
   });

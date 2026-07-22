@@ -1,8 +1,9 @@
 import type { FieldDescription } from '@dynamic-field-kit/core';
-import { fieldRegistry } from '@dynamic-field-kit/core';
+import { FieldRegistry } from '@dynamic-field-kit/core';
 import { mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import MultiFieldInput from '../src/components/MultiFieldInput';
+import { FieldRegistryKey } from '../src/fieldRegistryContext';
 import '../src/layout/defaultLayouts';
 import '../src/layout/responsiveLayout';
 
@@ -17,17 +18,23 @@ declare module '@dynamic-field-kit/core' {
   }
 }
 
+// Mount with a fresh scoped registry holding a minimal text input, injected so
+// each test is isolated from the global singleton and from every other test.
+function mountLayout(props: Record<string, unknown>) {
+  const registry = new FieldRegistry();
+  registry.register('text', {
+    props: ['value'],
+    template: '<input :value="value" />',
+  } as never);
+  return mount(MultiFieldInput, {
+    props,
+    global: { provide: { [FieldRegistryKey]: registry } },
+  });
+}
+
 describe('Layout: Row', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (fieldRegistry as any).registry['text'] = {
-      props: ['value'],
-      template: '<input :value="value" />',
-    };
-  });
-
-  afterEach(() => {
-    (fieldRegistry as any).registry = {};
   });
 
   it('should render fields in row layout', async () => {
@@ -36,11 +43,9 @@ describe('Layout: Row', () => {
       { name: 'field2', type: 'text' },
     ];
 
-    const wrapper = mount(MultiFieldInput, {
-      props: {
-        fieldDescriptions: fields,
-        layout: 'row',
-      },
+    const wrapper = mountLayout({
+      fieldDescriptions: fields,
+      layout: 'row',
     });
 
     const container = wrapper.find('div');
@@ -54,11 +59,9 @@ describe('Layout: Row', () => {
       { name: 'field2', type: 'text' },
     ];
 
-    const wrapper = mount(MultiFieldInput, {
-      props: {
-        fieldDescriptions: fields,
-        layout: { type: 'row', gap: 20 },
-      },
+    const wrapper = mountLayout({
+      fieldDescriptions: fields,
+      layout: { type: 'row', gap: 20 },
     });
 
     const container = wrapper.find('div');
@@ -71,14 +74,6 @@ describe('Layout: Row', () => {
 describe('Layout: Grid', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (fieldRegistry as any).registry['text'] = {
-      props: ['value'],
-      template: '<input :value="value" />',
-    };
-  });
-
-  afterEach(() => {
-    (fieldRegistry as any).registry = {};
   });
 
   it('should render fields in default grid layout (2 columns)', async () => {
@@ -87,11 +82,9 @@ describe('Layout: Grid', () => {
       { name: 'field2', type: 'text' },
     ];
 
-    const wrapper = mount(MultiFieldInput, {
-      props: {
-        fieldDescriptions: fields,
-        layout: 'grid',
-      },
+    const wrapper = mountLayout({
+      fieldDescriptions: fields,
+      layout: 'grid',
     });
 
     const container = wrapper.find('div');
@@ -107,11 +100,9 @@ describe('Layout: Grid', () => {
       { name: 'field3', type: 'text' },
     ];
 
-    const wrapper = mount(MultiFieldInput, {
-      props: {
-        fieldDescriptions: fields,
-        layout: { type: 'grid', columns: 3 },
-      },
+    const wrapper = mountLayout({
+      fieldDescriptions: fields,
+      layout: { type: 'grid', columns: 3 },
     });
 
     const container = wrapper.find('div');
@@ -126,11 +117,9 @@ describe('Layout: Grid', () => {
       { name: 'field2', type: 'text' },
     ];
 
-    const wrapper = mount(MultiFieldInput, {
-      props: {
-        fieldDescriptions: fields,
-        layout: { type: 'grid', gap: 24 },
-      },
+    const wrapper = mountLayout({
+      fieldDescriptions: fields,
+      layout: { type: 'grid', gap: 24 },
     });
 
     const container = wrapper.find('div');
@@ -143,14 +132,6 @@ describe('Layout: Grid', () => {
 describe('Layout: Column', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (fieldRegistry as any).registry['text'] = {
-      props: ['value'],
-      template: '<input :value="value" />',
-    };
-  });
-
-  afterEach(() => {
-    (fieldRegistry as any).registry = {};
   });
 
   it('should render fields in column layout with default gap', async () => {
@@ -159,11 +140,9 @@ describe('Layout: Column', () => {
       { name: 'field2', type: 'text' },
     ];
 
-    const wrapper = mount(MultiFieldInput, {
-      props: {
-        fieldDescriptions: fields,
-        layout: 'column',
-      },
+    const wrapper = mountLayout({
+      fieldDescriptions: fields,
+      layout: 'column',
     });
 
     const container = wrapper.find('div');
@@ -178,11 +157,9 @@ describe('Layout: Column', () => {
       { name: 'field2', type: 'text' },
     ];
 
-    const wrapper = mount(MultiFieldInput, {
-      props: {
-        fieldDescriptions: fields,
-        layout: { type: 'column', gap: 16 },
-      },
+    const wrapper = mountLayout({
+      fieldDescriptions: fields,
+      layout: { type: 'column', gap: 16 },
     });
 
     const container = wrapper.find('div');
@@ -206,14 +183,9 @@ describe('Layout: Responsive', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (fieldRegistry as any).registry['text'] = {
-      props: ['value'],
-      template: '<input :value="value" />',
-    };
   });
 
   afterEach(() => {
-    (fieldRegistry as any).registry = {};
     setWidth(originalWidth);
   });
 
@@ -221,11 +193,9 @@ describe('Layout: Responsive', () => {
     setWidth(1024);
     const fields: FieldDescription[] = [{ name: 'field1', type: 'text' }];
 
-    const wrapper = mount(MultiFieldInput, {
-      props: {
-        fieldDescriptions: fields,
-        layout: { type: 'responsive', mobile: 'column', desktop: 'row' },
-      },
+    const wrapper = mountLayout({
+      fieldDescriptions: fields,
+      layout: { type: 'responsive', mobile: 'column', desktop: 'row' },
     });
 
     const style = wrapper.find('div').attributes('style');
@@ -236,11 +206,9 @@ describe('Layout: Responsive', () => {
     setWidth(375);
     const fields: FieldDescription[] = [{ name: 'field1', type: 'text' }];
 
-    const wrapper = mount(MultiFieldInput, {
-      props: {
-        fieldDescriptions: fields,
-        layout: { type: 'responsive', mobile: 'column', desktop: 'row' },
-      },
+    const wrapper = mountLayout({
+      fieldDescriptions: fields,
+      layout: { type: 'responsive', mobile: 'column', desktop: 'row' },
     });
 
     const style = wrapper.find('div').attributes('style');
@@ -251,11 +219,9 @@ describe('Layout: Responsive', () => {
     setWidth(1024);
     const fields: FieldDescription[] = [{ name: 'field1', type: 'text' }];
 
-    const wrapper = mount(MultiFieldInput, {
-      props: {
-        fieldDescriptions: fields,
-        layout: { type: 'responsive', mobile: 'column', desktop: 'row' },
-      },
+    const wrapper = mountLayout({
+      fieldDescriptions: fields,
+      layout: { type: 'responsive', mobile: 'column', desktop: 'row' },
     });
 
     expect(wrapper.find('div').attributes('style')).toContain(
@@ -274,15 +240,13 @@ describe('Layout: Responsive', () => {
     setWidth(900);
     const fields: FieldDescription[] = [{ name: 'field1', type: 'text' }];
 
-    const wrapper = mount(MultiFieldInput, {
-      props: {
-        fieldDescriptions: fields,
-        layout: {
-          type: 'responsive',
-          mobile: 'column',
-          desktop: 'row',
-          breakpoint: 1200,
-        },
+    const wrapper = mountLayout({
+      fieldDescriptions: fields,
+      layout: {
+        type: 'responsive',
+        mobile: 'column',
+        desktop: 'row',
+        breakpoint: 1200,
       },
     });
 

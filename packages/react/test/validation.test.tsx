@@ -1,9 +1,10 @@
 import type { FieldDescription } from '@dynamic-field-kit/core';
+import { FieldRegistry } from '@dynamic-field-kit/core';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import MultiFieldInput from '../src/components/MultiFieldInput';
-import { fieldRegistry } from '../src/fieldRegistry';
+import { FieldRegistryProvider } from '../src/FieldRegistryContext';
 import '../src/layout/defaultLayouts';
 
 declare module '@dynamic-field-kit/core' {
@@ -12,12 +13,11 @@ declare module '@dynamic-field-kit/core' {
   }
 }
 
-afterEach(() => {
-  (fieldRegistry as any).registry = {};
-});
-
-function registerTextRenderer() {
-  fieldRegistry.register('text', (({
+// A scoped registry with a text renderer, so each test is isolated from the
+// global singleton and from every other test.
+function registryWithText() {
+  const registry = new FieldRegistry();
+  registry.register('text', (({
     value,
     onValueChange,
     error,
@@ -36,12 +36,20 @@ function registerTextRenderer() {
         <span data-testid="error">{[].concat(error).join(',')}</span>
       ) : null}
     </div>
-  )) as any);
+  )) as never);
+  return registry;
+}
+
+function renderForm(ui: React.ReactElement, registry: FieldRegistry) {
+  return render(
+    <FieldRegistryProvider registry={registry as never}>
+      {ui}
+    </FieldRegistryProvider>
+  );
 }
 
 describe('React validation wiring', () => {
   it('surfaces validate() errors to the renderer', () => {
-    registerTextRenderer();
     const fields: FieldDescription[] = [
       {
         name: 'email',
@@ -49,14 +57,17 @@ describe('React validation wiring', () => {
         validate: (v) => (String(v).includes('@') ? undefined : 'Invalid'),
       },
     ];
-    render(
-      <MultiFieldInput fieldDescriptions={fields} properties={{ email: 'x' }} />
+    renderForm(
+      <MultiFieldInput
+        fieldDescriptions={fields}
+        properties={{ email: 'x' }}
+      />,
+      registryWithText()
     );
     expect(screen.getByTestId('error')).toHaveTextContent('Invalid');
   });
 
   it('does not surface an error for a disabled field', () => {
-    registerTextRenderer();
     const fields: FieldDescription[] = [
       {
         name: 'email',
@@ -65,15 +76,15 @@ describe('React validation wiring', () => {
         validate: () => 'Invalid',
       },
     ];
-    render(
-      <MultiFieldInput fieldDescriptions={fields} properties={{ email: '' }} />
+    renderForm(
+      <MultiFieldInput fieldDescriptions={fields} properties={{ email: '' }} />,
+      registryWithText()
     );
     expect(screen.queryByTestId('error')).toBeNull();
     expect(screen.getByTestId('input')).toBeDisabled();
   });
 
   it('applies disabledCondition dynamically and emits onValidityChange', () => {
-    registerTextRenderer();
     const onValidity = vi.fn();
     const fields: FieldDescription[] = [
       { name: 'type', type: 'text' },
@@ -84,12 +95,13 @@ describe('React validation wiring', () => {
         validate: (v) => (v ? undefined : 'Required'),
       },
     ];
-    render(
+    renderForm(
       <MultiFieldInput
         fieldDescriptions={fields}
         properties={{ type: 'personal', company: '' }}
         onValidityChange={onValidity}
-      />
+      />,
+      registryWithText()
     );
     expect(onValidity).toHaveBeenLastCalledWith({ valid: true, errors: {} });
   });
