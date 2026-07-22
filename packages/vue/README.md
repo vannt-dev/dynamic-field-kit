@@ -12,9 +12,7 @@ Demo app: https://github.com/vannt-dev/dynamic-field-kit-demo
 npm install @dynamic-field-kit/core @dynamic-field-kit/vue vue
 ```
 
-Note: @dynamic-field-kit/core is a shared runtime and should be installed in your app separately. The Vue adapter declares core as a peer dependency to avoid bundling core multiple times across adapters.
-
-- Install with core: `npm install @dynamic-field-kit/core @dynamic-field-kit/vue vue`
+Note: `@dynamic-field-kit/core` and `vue` are **peer dependencies** — this adapter does not bundle or auto-install them, so add them to your app explicitly (as shown above). Keep a single `@dynamic-field-kit/core` version across all adapters so they share one registry.
 
 ## Exports
 
