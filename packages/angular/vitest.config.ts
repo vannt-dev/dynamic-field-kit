@@ -3,7 +3,10 @@ import angular from '@analogjs/vite-plugin-angular';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  plugins: [angular()],
+  // disableTypeChecking:false turns Angular semantic diagnostics (NG2007 etc.)
+  // back on for specs — otherwise only the ng-packagr build typechecks src, and
+  // spec files get no type checking at all.
+  plugins: [angular({ disableTypeChecking: false })],
   test: {
     globals: true,
     environment: 'jsdom',

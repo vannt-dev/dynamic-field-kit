@@ -2,6 +2,18 @@ import { NgIf } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FieldRegistry } from '@dynamic-field-kit/core';
 
+// The field types the specs register. Without this augmentation `keyof
+// FieldTypeMap` is `never`, so `registry.register('text', …)` fails to compile
+// once vitest type-checking is enabled. Every spec imports this helper, so the
+// augmentation applies across the whole test compilation.
+declare module '@dynamic-field-kit/core' {
+  interface FieldTypeMap {
+    text: string;
+    number: number;
+    defaults: string;
+  }
+}
+
 @Component({
   selector: 'dfk-test-text',
   standalone: true,
