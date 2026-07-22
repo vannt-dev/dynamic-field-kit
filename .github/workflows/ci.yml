@@ -51,7 +51,9 @@ jobs:
       matrix:
         include:
           - package: core
-            test-cmd: npm run test --workspace=@dynamic-field-kit/core
+            test-cmd: npm run test --workspace=@dynamic-field-kit/core -- --coverage
+            coverage-file: packages/core/coverage/lcov.info
+            coverage-name: core
           - package: react
             build-cmd: npm run build --workspace=@dynamic-field-kit/core
             test-cmd: npm run test --workspace=@dynamic-field-kit/react -- --coverage
