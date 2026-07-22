@@ -1,9 +1,10 @@
 import type { FieldDescription } from '@dynamic-field-kit/core';
+import { FieldRegistry } from '@dynamic-field-kit/core';
 import { mount } from '@vue/test-utils';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { h } from 'vue';
 import MultiFieldInput from '../src/components/MultiFieldInput';
-import { fieldRegistry } from '../src';
+import { FieldRegistryKey } from '../src/fieldRegistryContext';
 import '../src/layout/defaultLayouts';
 
 declare module '@dynamic-field-kit/core' {
@@ -12,12 +13,11 @@ declare module '@dynamic-field-kit/core' {
   }
 }
 
-afterEach(() => {
-  (fieldRegistry as any).registry = {};
-});
-
-function registerTextRenderer() {
-  (fieldRegistry as any).registry['text'] = {
+// A scoped registry with a text renderer, so each test is isolated from the
+// global singleton and from every other test.
+function registryWithText() {
+  const registry = new FieldRegistry();
+  registry.register('text', {
     props: ['value', 'error', 'disabled', 'readOnly'],
     emits: ['update:value'],
     setup(props: any) {
@@ -37,12 +37,19 @@ function registerTextRenderer() {
             : null,
         ]);
     },
-  };
+  } as never);
+  return registry;
+}
+
+function mountForm(props: Record<string, unknown>) {
+  return mount(MultiFieldInput, {
+    props,
+    global: { provide: { [FieldRegistryKey]: registryWithText() } },
+  });
 }
 
 describe('Vue validation wiring', () => {
   it('surfaces validate() errors to the renderer', () => {
-    registerTextRenderer();
     const fields: FieldDescription[] = [
       {
         name: 'email',
@@ -50,14 +57,14 @@ describe('Vue validation wiring', () => {
         validate: (v) => (String(v).includes('@') ? undefined : 'Invalid'),
       },
     ];
-    const wrapper = mount(MultiFieldInput, {
-      props: { fieldDescriptions: fields, properties: { email: 'x' } },
+    const wrapper = mountForm({
+      fieldDescriptions: fields,
+      properties: { email: 'x' },
     });
     expect(wrapper.find('.error').text()).toBe('Invalid');
   });
 
   it('does not surface an error for a disabled field', () => {
-    registerTextRenderer();
     const fields: FieldDescription[] = [
       {
         name: 'email',
@@ -66,14 +73,14 @@ describe('Vue validation wiring', () => {
         validate: () => 'Invalid',
       },
     ];
-    const wrapper = mount(MultiFieldInput, {
-      props: { fieldDescriptions: fields, properties: { email: '' } },
+    const wrapper = mountForm({
+      fieldDescriptions: fields,
+      properties: { email: '' },
     });
     expect(wrapper.find('.error').exists()).toBe(false);
   });
 
   it('emits onValidityChange with the recursive result', () => {
-    registerTextRenderer();
     const onValidityChange = vi.fn();
     const fields: FieldDescription[] = [
       {
@@ -82,12 +89,10 @@ describe('Vue validation wiring', () => {
         validate: (v) => (v ? undefined : 'Required'),
       },
     ];
-    mount(MultiFieldInput, {
-      props: {
-        fieldDescriptions: fields,
-        properties: { name: '' },
-        onValidityChange,
-      },
+    mountForm({
+      fieldDescriptions: fields,
+      properties: { name: '' },
+      onValidityChange,
     });
     expect(onValidityChange).toHaveBeenLastCalledWith({
       valid: false,
