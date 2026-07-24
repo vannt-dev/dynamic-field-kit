@@ -54,6 +54,10 @@ const MultiFieldInput = ({
   onValidityChange,
 }: Props) => {
   const [data, setData] = useState<Properties>({});
+  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>(
+    {}
+  );
+  const initialPropertiesRef = useRef<Properties>(properties ?? {});
 
   useEffect(() => {
     if (properties) {
@@ -107,6 +111,10 @@ const MultiFieldInput = ({
     onChangeRef.current?.(next);
   }, []);
 
+  const handleBlurField = useCallback((key: string) => {
+    setTouchedFields((prev) => (prev[key] ? prev : { ...prev, [key]: true }));
+  }, []);
+
   const { type, config } = resolveLayout(layout);
 
   const Layout = layoutRegistry.get(type);
@@ -123,6 +131,9 @@ const MultiFieldInput = ({
           fieldDescription={f}
           renderInfos={data}
           rootData={effectiveRoot}
+          touched={Boolean(touchedFields[f.name])}
+          dirty={data[f.name] !== initialPropertiesRef.current[f.name]}
+          onBlurField={handleBlurField}
           onValueChangeField={handleValueChangeField}
         />
       ))}

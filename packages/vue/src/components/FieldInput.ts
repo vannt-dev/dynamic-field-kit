@@ -1,5 +1,6 @@
 import {
   resolveDisabled,
+  resolveOptions,
   resolveReadOnly,
   validateField,
   FieldDescription,
@@ -34,9 +35,9 @@ const FieldInput = defineComponent({
         name,
         type,
         label,
-        options,
         className,
         description,
+        required,
         props: extraProps,
       } = props.fieldDescription;
 
@@ -50,6 +51,11 @@ const FieldInput = defineComponent({
         props.renderInfos,
         props.rootData
       );
+      const resolvedOptions = resolveOptions(
+        props.fieldDescription,
+        props.renderInfos,
+        props.rootData
+      );
       const errors = disabled
         ? []
         : validateField(
@@ -58,17 +64,23 @@ const FieldInput = defineComponent({
             props.renderInfos,
             props.rootData
           );
+      const errorList = errors.length > 0 ? errors : undefined;
+      const fieldId = `dfk-field-${name}`;
 
       return h(DynamicInput, {
+        id: fieldId,
         type,
         label,
         value: props.renderInfos[name],
-        options,
+        options: resolvedOptions,
         className,
         description,
         disabled,
         readOnly,
-        error: errors.length > 0 ? errors : undefined,
+        required,
+        error: errorList,
+        ariaInvalid: Boolean(errorList),
+        ariaRequired: Boolean(required),
         extraProps,
         onChange: (v: unknown) => props.onValueChangeField(v, name),
       });

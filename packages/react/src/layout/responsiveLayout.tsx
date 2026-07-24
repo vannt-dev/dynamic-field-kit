@@ -13,7 +13,13 @@ function resolve(layout: LayoutConfig) {
 }
 
 function checkIsMobile(breakpoint: number) {
-  return typeof window !== 'undefined' && window.innerWidth < breakpoint;
+  if (typeof window === 'undefined') {
+    return false;
+  }
+  if (typeof window.matchMedia === 'function') {
+    return window.matchMedia(`(max-width: ${breakpoint - 1}px)`).matches;
+  }
+  return window.innerWidth < breakpoint;
 }
 
 layoutRegistry.register('responsive', ({ children, config }) => {
@@ -26,10 +32,24 @@ layoutRegistry.register('responsive', ({ children, config }) => {
   const [isMobile, setIsMobile] = useState(() => checkIsMobile(breakpoint));
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(checkIsMobile(breakpoint));
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    if (typeof window === 'undefined') {
+      return;
+    }
+    if (typeof window.matchMedia !== 'function') {
+      const handleResize = () => setIsMobile(checkIsMobile(breakpoint));
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }
+    const mediaQuery = window.matchMedia(`(max-width: ${breakpoint - 1}px)`);
+    const handleChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    setIsMobile(mediaQuery.matches);
+
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
+    }
+    mediaQuery.addListener(handleChange);
+    return () => mediaQuery.removeListener(handleChange);
   }, [breakpoint]);
 
   const current = isMobile ? responsiveConfig.mobile : responsiveConfig.desktop;

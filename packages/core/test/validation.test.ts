@@ -1,9 +1,11 @@
 import { describe, expect, test } from 'vitest';
 import {
   resolveDisabled,
+  resolveOptions,
   resolveReadOnly,
   validateField,
   validateFields,
+  validateFieldsAsync,
 } from '../src/validation';
 import type { FieldDescription } from '../src';
 
@@ -151,5 +153,53 @@ describe('validateFields', () => {
     const result = validateFields(fields, data);
     expect(result.valid).toBe(false);
     expect(result.errors).toEqual({ 'contacts[1].email': ['Email required'] });
+  });
+});
+
+describe('resolveOptions', () => {
+  test('resolves static options array and dynamic options callback', () => {
+    const staticField: FieldDescription = {
+      name: 'role',
+      type: 'text',
+      options: [{ label: 'Admin', value: 'admin' }],
+    };
+    const dynamicField: FieldDescription = {
+      name: 'city',
+      type: 'text',
+      options: (data) =>
+        data.country === 'vn'
+          ? [{ label: 'Hanoi', value: 'hn' }]
+          : [{ label: 'Other', value: 'other' }],
+    };
+
+    expect(resolveOptions(staticField, {})).toEqual([
+      { label: 'Admin', value: 'admin' },
+    ]);
+    expect(resolveOptions(dynamicField, { country: 'vn' })).toEqual([
+      { label: 'Hanoi', value: 'hn' },
+    ]);
+  });
+});
+
+describe('validateFieldsAsync', () => {
+  test('handles async promises in validation hooks', async () => {
+    const fields: FieldDescription[] = [
+      {
+        name: 'username',
+        type: 'text',
+        validate: async (val) => {
+          if (val === 'admin') {
+            return 'Username taken';
+          }
+          return undefined;
+        },
+      },
+    ];
+    const resTaken = await validateFieldsAsync(fields, { username: 'admin' });
+    expect(resTaken.valid).toBe(false);
+    expect(resTaken.errors).toEqual({ username: ['Username taken'] });
+
+    const resOk = await validateFieldsAsync(fields, { username: 'john' });
+    expect(resOk.valid).toBe(true);
   });
 });

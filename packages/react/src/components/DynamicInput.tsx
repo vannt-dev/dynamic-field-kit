@@ -10,13 +10,21 @@ interface Props<T extends FieldTypeKey> {
   type: T;
   value?: unknown;
   onChange?: (value: unknown) => void;
+  onBlur?: () => void;
   label?: string;
   options?: Properties[];
   className?: string;
   description?: ReactNode;
   disabled?: boolean;
   readOnly?: boolean;
+  required?: boolean;
+  touched?: boolean;
+  dirty?: boolean;
   error?: string | string[];
+  id?: string;
+  ariaInvalid?: boolean;
+  ariaDescribedBy?: string;
+  ariaRequired?: boolean;
   /** Extra, framework-agnostic props forwarded verbatim to the renderer. */
   extraProps?: Properties;
 }
@@ -25,13 +33,21 @@ const DynamicInputInner = <T extends FieldTypeKey>({
   type,
   value,
   onChange,
+  onBlur,
   label,
   options,
   className,
   description,
   disabled,
   readOnly,
+  required,
+  touched,
+  dirty,
   error,
+  id,
+  ariaInvalid,
+  ariaDescribedBy,
+  ariaRequired,
   extraProps,
 }: Props<T>) => {
   const registry = useFieldRegistry();
@@ -50,13 +66,21 @@ const DynamicInputInner = <T extends FieldTypeKey>({
     ...extraProps,
     value,
     onValueChange: onChange,
+    onBlur,
     label,
     options,
     className,
     description,
     disabled,
     readOnly,
+    required,
+    touched,
+    dirty,
     error,
+    id,
+    ariaInvalid,
+    ariaDescribedBy,
+    ariaRequired,
   });
 };
 
