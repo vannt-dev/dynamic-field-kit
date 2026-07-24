@@ -1,65 +1,188 @@
 # @dynamic-field-kit/angular
 
-Lightweight Angular adapters for `@dynamic-field-kit/core`.
+Angular adapter for `@dynamic-field-kit/core`.
 
-This package mirrors the React package structure and exposes Angular components that integrate with the shared `fieldRegistry` from `@dynamic-field-kit/core`.
+This package provides Angular components and a convenience module that render field schemas defined with `@dynamic-field-kit/core`.
 
-Quick overview
-- Exports a minimal Angular integration: `DynamicInput`, `FieldInput`, `MultiFieldInput`, layout components and `DynamicFieldKitModule` (see `src/public-api.ts`).
-- Designed for local development (source import) and can be packaged with `ng-packagr` for distribution.
+Demo app: https://github.com/vannt-dev/dynamic-field-kit-demo
 
-Usage (consumer Angular app)
-
-1. Install the package (recommended: use packaged artifact or local `file:` during development):
+## Install
 
 ```bash
-# from your Angular app
 npm install @dynamic-field-kit/core @dynamic-field-kit/angular
 ```
 
-2. Import the module in your `AppModule`:
+Note: Core is shared runtime. Install core separately and ensure a single version is used across adapters to avoid duplicate registries.
+
+- Install with core: `npm install @dynamic-field-kit/core @dynamic-field-kit/angular`
+
+If you need to pin versions explicitly:
+
+```bash
+npm install @dynamic-field-kit/core@^1.0.12 @dynamic-field-kit/angular@^1.2.3
+```
+
+## What it exports
+
+- `DynamicInput`
+- `FieldInput`
+- `MultiFieldInput`
+- `DynamicFieldKitModule`
+- `fieldRegistry`
+
+## Basic setup (Angular 19+)
+
+1. Import the component and register fields before bootstrap.
 
 ```ts
-import { DynamicFieldKitModule } from '@dynamic-field-kit/angular'
+import 'zone.js';
+import { bootstrapApplication } from '@angular/platform-browser';
+import { fieldRegistry } from '@dynamic-field-kit/angular';
+import { AppComponent } from './app/app.component';
+import { TextFieldComponent } from './app/components/text-field.component';
+import { NumberFieldComponent } from './app/components/number-field.component';
+
+fieldRegistry.register('text', TextFieldComponent as any);
+fieldRegistry.register('number', NumberFieldComponent as any);
+
+bootstrapApplication(AppComponent, {
+  providers: [],
+}).catch((err) => console.error(err));
+```
+
+2. Use the component in a standalone component.
+
+```ts
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FieldDescription } from '@dynamic-field-kit/core';
+import { MultiFieldInput } from '@dynamic-field-kit/angular';
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [CommonModule, MultiFieldInput],
+  templateUrl: './app.component.html',
+})
+export class AppComponent {
+  fields: FieldDescription[] = [
+    { name: 'name', type: 'text', label: 'Name' },
+    { name: 'age', type: 'number', label: 'Age' },
+  ];
+
+  data: any = {};
+
+  onChange(data: any) {
+    this.data = data;
+  }
+}
+```
+
+3. Render your schema in a template.
+
+```html
+<dfk-multi-field-input
+  [fieldDescriptions]="fields"
+  [properties]="data"
+  (onChange)="onChange($event)"
+></dfk-multi-field-input>
+```
+
+## Layouts
+
+`MultiFieldInput` supports `column`, `row`, `grid`, and `responsive` (mobile/desktop with a custom breakpoint), matching the React and Vue adapters:
+
+```html
+<dfk-multi-field-input
+  [fieldDescriptions]="fields"
+  [layout]="{ type: 'grid', columns: 3, gap: 16 }"
+></dfk-multi-field-input>
+
+<dfk-multi-field-input
+  [fieldDescriptions]="fields"
+  [layout]="{
+    type: 'responsive',
+    mobile: 'column',
+    desktop: { type: 'grid', columns: 2, gap: 12 }
+  }"
+></dfk-multi-field-input>
+```
+
+## Derived fields with `computeValue`
+
+Give a field a `computeValue` to derive its value from the rest of the form data whenever any field changes:
+
+```ts
+fields: FieldDescription[] = [
+  { name: 'firstName', type: 'text' },
+  { name: 'lastName', type: 'text' },
+  {
+    name: 'fullName',
+    type: 'text',
+    computeValue: (data) => `${data.firstName ?? ''} ${data.lastName ?? ''}`.trim(),
+  },
+];
+```
+
+## Repeatable field groups
+
+A field with `fields` renders as a repeatable group: `data[name]` becomes an array of items, each shaped by the nested `fields`, with "Add"/"Remove" controls rendered automatically.
+
+```ts
+fields: FieldDescription[] = [
+  {
+    name: 'contacts',
+    type: 'group',
+    label: 'Contacts',
+    fields: [
+      { name: 'email', type: 'text', label: 'Email' },
+      { name: 'phone', type: 'text', label: 'Phone' },
+    ],
+    defaultItem: { email: '', phone: '' },
+    minItems: 1,
+    maxItems: 5,
+  },
+];
+```
+
+```html
+<dfk-multi-field-input [fieldDescriptions]="fields"></dfk-multi-field-input>
+```
+
+## Legacy setup (Angular 14 and earlier with NgModule)
+
+```ts
+import { BrowserModule } from '@angular/platform-browser';
+import { NgModule } from '@angular/core';
+import { DynamicFieldKitModule } from '@dynamic-field-kit/angular';
 
 @NgModule({
-	imports: [BrowserModule, DynamicFieldKitModule],
+  imports: [BrowserModule, DynamicFieldKitModule],
 })
 export class AppModule {}
 ```
 
-3. Register Angular component classes into the shared registry at app startup (example):
+## Type augmentation
 
 ```ts
-// src/main.ts
-import '@dynamic-field-kit/angular/src/examples' // registers example component into fieldRegistry
+import '@dynamic-field-kit/core';
+
+declare module '@dynamic-field-kit/core' {
+  interface FieldTypeMap {
+    text: string;
+    number: number;
+  }
+}
 ```
 
-Then use the Angular adapter components (`dfk-multi-field-input`, etc.) in templates.
+## Notes
 
-Local development
-- You can import the package source directly in your Angular app using `file:` references in `package.json` (see `example/angular-instructions.md` and `example/angular-app/` for a scaffold).
+- Register Angular component classes in `fieldRegistry`.
+- Do not register React or Vue renderers in the Angular adapter.
+- `MultiFieldInput` supports `column`, `row`, `grid`, and `responsive` layouts, and derives fields using `computeValue`.
+- Fields with `fields` render as repeatable groups instead of going through `fieldRegistry`.
+- The shared schema and field types still come from `@dynamic-field-kit/core`.
 
-Build & publish
-- This package supports `ng-packagr`. To build locally:
+## License
 
-```bash
-cd packages/angular
-npm install --no-audit --no-fund --save-dev ng-packagr rimraf
-npm run build
-```
-
-- To publish to npm (scoped package), ensure `publishConfig.access` is `public` and run:
-
-```bash
-cd packages/angular
-npm publish --access public
-```
-
-Notes & caveats
-- The Angular adapter expects consumers to register Angular component classes (not React components) in `fieldRegistry` when using the Angular runtime.
-- The package exports a `DynamicFieldKitModule` to simplify consumer imports, and also provides standalone components for more advanced composition.
-
-Examples & docs
-- See `example/angular-instructions.md` for detailed wiring steps.
-- Try the local scaffold at `example/angular-app/` for a hands-on demo.
+MIT

@@ -1,28 +1,48 @@
-import { layoutRegistry } from "./layoutRegistry"
-import { LayoutConfig } from "../types/layout"
+import React, { useEffect, useState } from 'react';
+import {
+  LayoutConfig,
+  ResponsiveLayout,
+  layoutRegistry,
+} from './layoutRegistry';
 
 function resolve(layout: LayoutConfig) {
-    if (typeof layout === "string") {
-        return { type: layout, config: {} }
-    }
-    return { type: layout.type, config: layout }
+  if (typeof layout === 'string') {
+    return { type: layout, config: {} };
+  }
+  return { type: layout.type, config: layout };
 }
 
-layoutRegistry.register("responsive", ({ children, config }) => {
-    const isMobile =
-        typeof window !== "undefined" && window.innerWidth < 768
+function checkIsMobile(breakpoint: number) {
+  return typeof window !== 'undefined' && window.innerWidth < breakpoint;
+}
 
-    const current = isMobile ? config.mobile : config.desktop
-    if (!current) return <>{ children } </>
+layoutRegistry.register('responsive', ({ children, config }) => {
+  const responsiveConfig = config as ResponsiveLayout;
+  const breakpoint = responsiveConfig.breakpoint ?? 768;
 
-    const { type, config: childConfig } = resolve(current)
-    const Renderer = layoutRegistry.get(type)
+  // Registered as a real component (invoked via JSX in MultiFieldInput), so
+  // hooks are safe here and let the layout react to viewport resizes instead
+  // of freezing whatever the width happened to be on first render.
+  const [isMobile, setIsMobile] = useState(() => checkIsMobile(breakpoint));
 
-    if (!Renderer) return <>{ children } </>
+  useEffect(() => {
+    const handleResize = () => setIsMobile(checkIsMobile(breakpoint));
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [breakpoint]);
 
-    return (
-        <Renderer config= { childConfig } >
-        { children }
-        </Renderer>
-    )
-})
+  const current = isMobile ? responsiveConfig.mobile : responsiveConfig.desktop;
+  if (!current) {
+    return <>{children} </>;
+  }
+
+  const { type, config: childConfig } = resolve(current);
+  const Renderer = layoutRegistry.get(type);
+
+  if (!Renderer) {
+    return <>{children} </>;
+  }
+
+  return <Renderer config={childConfig}>{children}</Renderer>;
+});

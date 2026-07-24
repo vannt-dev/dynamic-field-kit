@@ -1,21 +1,21 @@
-import { registerDefaults } from "./registerDefaults"
+import './layout/defaultLayouts';
+import './layout/responsiveLayout';
 
-registerDefaults()
+export { layoutRegistry } from './layout';
 
-
-export { layoutRegistry } from "./layout"
-
-
-export { default as DynamicInput } from "./components/DynamicInput"
-export { default as FieldInput } from "./components/FieldInput"
-export { default as MultiFieldInput } from "./components/MultiFieldInput"
-
-
-export type { LayoutConfig } from "./types/layout"
-// 🔁 Re-export từ core (CÙNG INSTANCE ĐÃ BUNDLE)
+export { default as DynamicInput } from './components/DynamicInput';
+export { default as FieldInput } from './components/FieldInput';
+export { default as MultiFieldInput } from './components/MultiFieldInput';
 export {
-    fieldRegistry,
-    type FieldTypeKey,
-    type FieldDescription,
-    type FieldRendererProps,
-} from "@dynamic-field-kit/core"
+  fieldRegistry,
+  type ReactFieldRenderer,
+  type ReactFieldRegistry,
+} from './fieldRegistry';
+
+export type { LayoutConfig } from './types/layout';
+// Re-export selected core APIs
+export {
+  type FieldTypeKey,
+  type FieldDescription,
+  type FieldRendererProps,
+} from '@dynamic-field-kit/core';
