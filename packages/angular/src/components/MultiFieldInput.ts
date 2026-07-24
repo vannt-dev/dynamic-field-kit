@@ -17,6 +17,7 @@ import {
   canRemoveGroupItem,
   createGroupItem,
   resolveDisabled,
+  resolveOptions,
   resolveReadOnly,
   validateField,
   validateFields,
@@ -58,6 +59,7 @@ const DEFAULT_BREAKPOINT = 768;
           *ngIf="!field.fields"
           [fieldDescription]="field"
           [value]="data[field.name]"
+          [options]="getResolvedOptions(field)"
           [disabled]="getDisabled(field)"
           [readOnly]="getReadOnly(field)"
           [error]="getError(field)"
@@ -240,6 +242,10 @@ export class MultiFieldInput implements OnInit, OnChanges {
   getItems(field: FieldDescription): Properties[] {
     const value = this.data[field.name];
     return Array.isArray(value) ? (value as Properties[]) : [];
+  }
+
+  getResolvedOptions(field: FieldDescription): Properties[] | undefined {
+    return resolveOptions(field, this.data, this.rootData);
   }
 
   getDisabled(field: FieldDescription): boolean {

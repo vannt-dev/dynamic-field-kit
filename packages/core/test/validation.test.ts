@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import {
   resolveDisabled,
+  resolveOptions,
   resolveReadOnly,
   validateField,
   validateFields,
@@ -151,5 +152,30 @@ describe('validateFields', () => {
     const result = validateFields(fields, data);
     expect(result.valid).toBe(false);
     expect(result.errors).toEqual({ 'contacts[1].email': ['Email required'] });
+  });
+});
+
+describe('resolveOptions', () => {
+  test('resolves static options array and dynamic options callback', () => {
+    const staticField: FieldDescription = {
+      name: 'role',
+      type: 'text',
+      options: [{ label: 'Admin', value: 'admin' }],
+    };
+    const dynamicField: FieldDescription = {
+      name: 'city',
+      type: 'text',
+      options: (data) =>
+        data.country === 'vn'
+          ? [{ label: 'Hanoi', value: 'hn' }]
+          : [{ label: 'Other', value: 'other' }],
+    };
+
+    expect(resolveOptions(staticField, {})).toEqual([
+      { label: 'Admin', value: 'admin' },
+    ]);
+    expect(resolveOptions(dynamicField, { country: 'vn' })).toEqual([
+      { label: 'Hanoi', value: 'hn' },
+    ]);
   });
 });

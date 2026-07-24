@@ -27,6 +27,21 @@ export function resolveReadOnly(
   return field.readOnlyCondition?.(data, rootData) === true;
 }
 
+/** Resolves dynamic options or returns static options list. */
+export function resolveOptions(
+  field: FieldDescription,
+  data: Properties,
+  rootData?: Properties
+): Properties[] | undefined {
+  if (!field.options) {
+    return undefined;
+  }
+  if (typeof field.options === 'function') {
+    return field.options(data, rootData);
+  }
+  return field.options;
+}
+
 /** Run one field's validate hook; always returns an array (empty when valid). */
 export function validateField(
   field: FieldDescription,

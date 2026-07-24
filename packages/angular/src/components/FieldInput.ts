@@ -26,7 +26,7 @@ import { DynamicInput } from './DynamicInput';
       [placeholder]="fieldDescription!.placeholder"
       [required]="fieldDescription!.required"
       [description]="$any(fieldDescription!.description)"
-      [options]="fieldDescription!.options"
+      [options]="resolvedOptions"
       [className]="fieldDescription!.className"
       (valueChange)="
         onValueChangeField.emit({ value: $event, key: fieldDescription!.name })
@@ -41,6 +41,7 @@ import { DynamicInput } from './DynamicInput';
 export class FieldInput implements OnChanges {
   @Input() fieldDescription?: FieldDescription;
   @Input() value?: unknown;
+  @Input() options?: Record<string, unknown>[];
   @Input() disabled?: boolean;
   @Input() readOnly?: boolean;
   @Input() error?: string | string[];
@@ -50,6 +51,19 @@ export class FieldInput implements OnChanges {
   }>();
 
   shouldRender = false;
+
+  get resolvedOptions(): Record<string, unknown>[] | undefined {
+    if (this.options) {
+      return this.options;
+    }
+    if (!this.fieldDescription?.options) {
+      return undefined;
+    }
+    if (typeof this.fieldDescription.options === 'function') {
+      return undefined;
+    }
+    return this.fieldDescription.options;
+  }
 
   constructor(private cdr: ChangeDetectorRef) {}
 

@@ -58,7 +58,8 @@ export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {
   disabledCondition?: (data: Properties, rootData?: Properties) => boolean;
   /** Dynamic read-only state. */
   readOnlyCondition?: (data: Properties, rootData?: Properties) => boolean;
-  options?: Properties[];
+  /** Dynamic options list or static mảng options. */
+  options?: Properties[] | ((data: Properties, rootData?: Properties) => Properties[]);
   className?: string;
   description?: unknown;
   /**
