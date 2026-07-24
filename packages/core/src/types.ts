@@ -18,6 +18,10 @@ export interface FieldRendererProps<T = unknown> {
   options?: Properties[];
   className?: string;
   description?: unknown;
+  id?: string;
+  ariaInvalid?: boolean;
+  ariaDescribedBy?: string;
+  ariaRequired?: boolean;
 }
 
 export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {

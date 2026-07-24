@@ -1,5 +1,6 @@
 import {
   resolveDisabled,
+  resolveOptions,
   resolveReadOnly,
   validateField,
   FieldDescription,
@@ -22,7 +23,7 @@ const FieldInputInner = ({
   rootData,
   onValueChangeField,
 }: Props) => {
-  const { name, type, label, options, className, description, props, fields } =
+  const { name, type, label, className, description, props, fields, required } =
     fieldDescription;
 
   // Stable per-field handler so DynamicInput's memoization isn't defeated
@@ -53,22 +54,32 @@ const FieldInputInner = ({
     rootData
   );
   const readOnly = resolveReadOnly(fieldDescription, renderInfos, rootData);
+  const resolvedOptionsList = resolveOptions(
+    fieldDescription,
+    renderInfos,
+    rootData
+  );
   const errors = effectiveDisabled
     ? []
     : validateField(fieldDescription, renderInfos[name], renderInfos, rootData);
   const error = errors.length > 0 ? errors : undefined;
+  const fieldId = `dfk-field-${name}`;
 
   return (
     <DynamicInput
+      id={fieldId}
       type={type}
       label={label}
       value={renderInfos[name]}
-      options={options}
+      options={resolvedOptionsList}
       className={className}
       description={description as React.ReactNode}
       disabled={effectiveDisabled}
       readOnly={readOnly}
+      required={required}
       error={error}
+      ariaInvalid={Boolean(error)}
+      ariaRequired={Boolean(required)}
       extraProps={props}
       onChange={handleChange}
     />
