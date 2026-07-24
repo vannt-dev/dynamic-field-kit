@@ -5,6 +5,7 @@ import {
   resolveReadOnly,
   validateField,
   validateFields,
+  validateFieldsAsync,
 } from '../src/validation';
 import type { FieldDescription } from '../src';
 
@@ -177,5 +178,28 @@ describe('resolveOptions', () => {
     expect(resolveOptions(dynamicField, { country: 'vn' })).toEqual([
       { label: 'Hanoi', value: 'hn' },
     ]);
+  });
+});
+
+describe('validateFieldsAsync', () => {
+  test('handles async promises in validation hooks', async () => {
+    const fields: FieldDescription[] = [
+      {
+        name: 'username',
+        type: 'text',
+        validate: async (val) => {
+          if (val === 'admin') {
+            return 'Username taken';
+          }
+          return undefined;
+        },
+      },
+    ];
+    const resTaken = await validateFieldsAsync(fields, { username: 'admin' });
+    expect(resTaken.valid).toBe(false);
+    expect(resTaken.errors).toEqual({ username: ['Username taken'] });
+
+    const resOk = await validateFieldsAsync(fields, { username: 'john' });
+    expect(resOk.valid).toBe(true);
   });
 });

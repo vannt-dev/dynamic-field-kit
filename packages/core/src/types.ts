@@ -29,15 +29,14 @@ export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {
   disabled?: boolean;
   /**
    * Returns one or more validation error messages for `value`, or a falsy
-   * value when it is valid. App-supplied, like appearCondition/computeValue -
-   * core ships no rule logic. `rootData` is the top-level form (equal to
-   * `data` outside a group).
+   * value when it is valid. Can return a Promise for async validation.
+   * `rootData` is the top-level form (equal to `data` outside a group).
    */
   validate?: (
     value: unknown,
     data: Properties,
     rootData?: Properties
-  ) => string | string[] | undefined;
+  ) => string | string[] | undefined | Promise<string | string[] | undefined>;
   /**
    * Runtime visibility condition. `data` is the data at this field's own level
    * (the group item, when the field lives inside a repeatable group); `rootData`
