@@ -142,7 +142,11 @@ export async function validateFieldsAsync(
         ? (data[field.name] as Properties[])
         : [];
       for (let index = 0; index < items.length; index++) {
-        const sub = await validateFieldsAsync(field.fields, items[index], rootData);
+        const sub = await validateFieldsAsync(
+          field.fields,
+          items[index],
+          rootData
+        );
         for (const [key, messages] of Object.entries(sub.errors)) {
           errors[`${field.name}[${index}].${key}`] = messages;
         }

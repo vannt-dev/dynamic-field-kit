@@ -54,7 +54,9 @@ const MultiFieldInput = ({
   onValidityChange,
 }: Props) => {
   const [data, setData] = useState<Properties>({});
-  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
+  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>(
+    {}
+  );
   const initialPropertiesRef = useRef<Properties>(properties ?? {});
 
   useEffect(() => {
