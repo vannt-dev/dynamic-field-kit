@@ -10,6 +10,7 @@ interface Props<T extends FieldTypeKey> {
   type: T;
   value?: unknown;
   onChange?: (value: unknown) => void;
+  onBlur?: () => void;
   label?: string;
   options?: Properties[];
   className?: string;
@@ -17,6 +18,8 @@ interface Props<T extends FieldTypeKey> {
   disabled?: boolean;
   readOnly?: boolean;
   required?: boolean;
+  touched?: boolean;
+  dirty?: boolean;
   error?: string | string[];
   id?: string;
   ariaInvalid?: boolean;
@@ -30,6 +33,7 @@ const DynamicInputInner = <T extends FieldTypeKey>({
   type,
   value,
   onChange,
+  onBlur,
   label,
   options,
   className,
@@ -37,6 +41,8 @@ const DynamicInputInner = <T extends FieldTypeKey>({
   disabled,
   readOnly,
   required,
+  touched,
+  dirty,
   error,
   id,
   ariaInvalid,
@@ -60,6 +66,7 @@ const DynamicInputInner = <T extends FieldTypeKey>({
     ...extraProps,
     value,
     onValueChange: onChange,
+    onBlur,
     label,
     options,
     className,
@@ -67,6 +74,8 @@ const DynamicInputInner = <T extends FieldTypeKey>({
     disabled,
     readOnly,
     required,
+    touched,
+    dirty,
     error,
     id,
     ariaInvalid,

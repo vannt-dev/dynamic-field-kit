@@ -16,7 +16,7 @@ function checkIsMobile(breakpoint: number) {
   if (typeof window === 'undefined') {
     return false;
   }
-  if (window.matchMedia) {
+  if (typeof window.matchMedia === 'function') {
     return window.matchMedia(`(max-width: ${breakpoint - 1}px)`).matches;
   }
   return window.innerWidth < breakpoint;
@@ -34,6 +34,11 @@ layoutRegistry.register('responsive', ({ children, config }) => {
   useEffect(() => {
     if (typeof window === 'undefined') {
       return;
+    }
+    if (typeof window.matchMedia !== 'function') {
+      const handleResize = () => setIsMobile(checkIsMobile(breakpoint));
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
     }
     const mediaQuery = window.matchMedia(`(max-width: ${breakpoint - 1}px)`);
     const handleChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);

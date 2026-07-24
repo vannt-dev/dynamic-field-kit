@@ -9,11 +9,14 @@ export type Properties = Record<string, unknown>;
 export interface FieldRendererProps<T = unknown> {
   value?: T;
   onValueChange?: (value: T) => void;
+  onBlur?: () => void;
   label?: string;
   placeholder?: string;
   required?: boolean;
   disabled?: boolean;
   readOnly?: boolean;
+  touched?: boolean;
+  dirty?: boolean;
   error?: string | string[];
   options?: Properties[];
   className?: string;
