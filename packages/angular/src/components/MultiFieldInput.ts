@@ -210,8 +210,14 @@ export class MultiFieldInput implements OnInit, OnChanges {
       typeof this.layout === 'object' && this.layout.type === 'responsive'
         ? this.layout.breakpoint ?? DEFAULT_BREAKPOINT
         : DEFAULT_BREAKPOINT;
-    this.isMobile =
-      typeof window !== 'undefined' && window.innerWidth < breakpoint;
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      this.isMobile = window.matchMedia(
+        `(max-width: ${breakpoint - 1}px)`
+      ).matches;
+    } else {
+      this.isMobile =
+        typeof window !== 'undefined' && window.innerWidth < breakpoint;
+    }
   }
 
   private init() {
