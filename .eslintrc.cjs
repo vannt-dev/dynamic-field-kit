@@ -56,4 +56,12 @@ module.exports = {
       { ignore: ['^@angular', '^vue', '^@dynamic-field-kit'] },
     ],
   },
+  overrides: [
+    {
+      files: ['scripts/**/*.js', '*.cjs'],
+      rules: {
+        '@typescript-eslint/no-var-requires': 'off',
+      },
+    },
+  ],
 };
