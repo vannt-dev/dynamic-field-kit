@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     branches:
-      - main
+      - master
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
@@ -34,7 +34,7 @@ jobs:
           publish: npm run release
           commit: 'chore: release packages'
           title: 'chore(release): version packages'
-          branch: changeset-release/main
+          branch: changeset-release/master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
