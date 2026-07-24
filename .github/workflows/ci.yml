@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [master, main, develop]
   pull_request:
 
 concurrency:
@@ -13,12 +13,12 @@ jobs:
   lint-and-build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '20'
           cache: 'npm'
 
       - name: Install dependencies
@@ -85,12 +85,12 @@ jobs:
             coverage-file: packages/angular/coverage/lcov.info
             coverage-name: angular
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '20'
           cache: 'npm'
 
       - name: Install dependencies
@@ -105,7 +105,7 @@ jobs:
 
       - name: Upload coverage
         if: matrix.coverage-file != '' && success()
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v4
         with:
           files: ${{ matrix.coverage-file }}
           flags: unittests
@@ -116,12 +116,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: [lint-and-build, test]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '20'
           cache: 'npm'
 
       - name: Install dependencies
