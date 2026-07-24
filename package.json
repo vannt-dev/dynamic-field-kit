@@ -6,7 +6,7 @@
     "smoke"
   ],
   "scripts": {
-    "build": "npm run build --workspaces --if-present",
+    "build": "npm run build --workspace=@dynamic-field-kit/core && npm run build --workspace=@dynamic-field-kit/react && npm run build --workspace=@dynamic-field-kit/vue && npm run build --workspace=@dynamic-field-kit/angular",
     "build:changed": "node scripts/build-changed.js",
     "dev": "npm run dev --workspaces",
     "test": "npm run test --workspaces --if-present",
