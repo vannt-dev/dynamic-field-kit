@@ -2,16 +2,20 @@
 const { spawnSync } = require('child_process');
 
 function runBuild() {
-  const res = spawnSync('npm', ['run', 'build', '--workspaces', '--if-present'], {
-    stdio: 'inherit',
-    shell: true,
-    windowsHide: false,
-  });
+  const res = spawnSync(
+    'npm',
+    ['run', 'build', '--workspaces', '--if-present'],
+    {
+      stdio: 'inherit',
+      shell: true,
+      windowsHide: false,
+    }
+  );
   return res.status === 0;
 }
 
 console.log('Attempting full workspace build...');
-let ok = runBuild();
+const ok = runBuild();
 if (!ok) {
   // naive heuristic: detect common core resolution errors and retry once
   console.log('Initial build failed. Checking for core resolution hints...');
