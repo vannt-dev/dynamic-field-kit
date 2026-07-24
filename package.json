@@ -6,7 +6,7 @@
     "smoke"
   ],
   "scripts": {
-    "build": "npm run build --workspaces",
+    "build": "npm run build --workspaces --if-present",
     "build:changed": "node scripts/build-changed.js",
     "dev": "npm run dev --workspaces",
     "test": "npm run test --workspaces --if-present",
