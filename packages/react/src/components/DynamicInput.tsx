@@ -1,26 +1,56 @@
-import { fieldRegistry, FieldTypeKey, Properties } from "@dynamic-field-kit/core"
-import { ReactNode } from "react"
+import {
+  FieldRendererProps,
+  FieldTypeKey,
+  Properties,
+} from '@dynamic-field-kit/core';
+import React, { ReactNode, useMemo } from 'react';
+import { fieldRegistry } from '../fieldRegistry';
 
 interface Props<T extends FieldTypeKey> {
-    type: T
-    value?: any
-    onChange?: (value: any) => void
-    label?: string
-    options?: Properties[]
-    className?: string
-    description?: ReactNode
+  type: T;
+  value?: unknown;
+  onChange?: (value: unknown) => void;
+  label?: string;
+  options?: Properties[];
+  className?: string;
+  description?: ReactNode;
 }
 
+const DynamicInputInner = <T extends FieldTypeKey>({
+  type,
+  value,
+  onChange,
+  label,
+  options,
+  className,
+  description,
+}: Props<T>) => {
+  // Memoize renderer lookup to avoid unnecessary work on re-renders
+  const Renderer = useMemo(
+    () => fieldRegistry.get(type) as React.ComponentType<FieldRendererProps>,
+    [type]
+  );
 
-const DynamicInput = <T extends FieldTypeKey>({ type, value, onChange, label, options, className, description }: Props<T>) => {
-    const Renderer = fieldRegistry.get(type)
+  if (!Renderer) {
+    return <div>Unknown field type: {type}</div>;
+  }
 
+  return React.createElement(Renderer, {
+    value,
+    onValueChange: onChange,
+    label,
+    options,
+    className,
+    description,
+  });
+};
 
-    if (!Renderer) return <div>Unknown field type: {type}</div>
+// Skip re-render when none of the rendered props actually changed, so
+// unaffected fields don't re-render every time a sibling field's value changes.
+// React.memo erases the generic signature, so restore it via an `unknown`
+// round-trip (plain `as typeof DynamicInputInner` fails dts generation).
+const DynamicInput = React.memo(
+  DynamicInputInner
+) as unknown as typeof DynamicInputInner;
 
-
-    return <Renderer value={value} onValueChange={onChange} label={label} options={options} className={className} description={description} />
-}
-
-
-export default DynamicInput
+export default DynamicInput;

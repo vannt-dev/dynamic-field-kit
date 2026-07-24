@@ -1,22 +1,35 @@
-# Example Angular App (development scaffold)
+# Angular App
 
-This folder is a minimal Angular app scaffold to help you wire the `@dynamic-field-kit/angular` source during development. It is intentionally small — you must install Angular CLI and dependencies locally before running.
+Angular demo app for `@dynamic-field-kit/angular`.
 
-Quick start
+## What It Does
 
-1. From the repository root, install dependencies for the example app (this will also install the local package references):
+- Registers Angular field components in `src/app/fieldRegistry.ts`
+- Renders a dynamic form from `src/app/app.component.ts`
+- Updates and displays the submitted object as field values change
+
+Current demo fields:
+
+- `name` as `text`
+- `age` as `number`
+
+## Run
 
 ```bash
-cd example/angular-app
 npm install
-```
-
-2. Run the app (Angular CLI will serve it):
-
-```bash
 npm start
 ```
 
-Notes
-- This scaffold references monorepo packages using `file:` paths in `package.json`. After `npm install`, the example app will use the local `packages/core` and `packages/angular` sources.
-- If you prefer not to run `npm install`, you can still follow the integration steps in `example/angular-instructions.md` to wire the Angular example into an existing Angular project.
+## Build
+
+```bash
+npm run build
+```
+
+## Main Files
+
+- `src/app/app.component.ts`
+- `src/app/app.component.html`
+- `src/app/fieldRegistry.ts`
+- `src/app/components/text-field.component.ts`
+- `src/app/components/number-field.component.ts`

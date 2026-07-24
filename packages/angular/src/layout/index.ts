@@ -1,2 +1,2 @@
-export { layoutRegistry } from "./layoutRegistry"
-export * from "./defaultLayouts"
+export * from './defaultLayouts';
+export { layoutRegistry, LayoutRegistry } from './layoutRegistry';
