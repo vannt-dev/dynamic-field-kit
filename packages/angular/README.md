@@ -12,9 +12,7 @@ Demo app: https://github.com/vannt-dev/dynamic-field-kit-demo
 npm install @dynamic-field-kit/core @dynamic-field-kit/angular
 ```
 
-Note: Core is shared runtime. Install core separately and ensure a single version is used across adapters to avoid duplicate registries.
-
-- Install with core: `npm install @dynamic-field-kit/core @dynamic-field-kit/angular`
+Note: `@dynamic-field-kit/core`, `@angular/core`, and `@angular/common` are **peer dependencies** — this adapter does not bundle or auto-install them, so add them to your app explicitly (as shown above). Keep a single `@dynamic-field-kit/core` version across all adapters so they share one registry.
 
 If you need to pin versions explicitly:
 
@@ -29,6 +27,9 @@ npm install @dynamic-field-kit/core@^1.0.12 @dynamic-field-kit/angular@^1.2.3
 - `MultiFieldInput`
 - `DynamicFieldKitModule`
 - `fieldRegistry`
+- `FieldRegistry` (class, for scoped registries)
+- `FIELD_REGISTRY` (injection token)
+- `validateField` / `validateFields` / `resolveDisabled` / `resolveReadOnly` / `ValidationResult`
 
 ## Basic setup (Angular 19+)
 
@@ -124,6 +125,23 @@ fields: FieldDescription[] = [
 ];
 ```
 
+## Validation & conditions
+
+Declare a `validate` hook and dynamic `disabledCondition`/`readOnlyCondition`;
+your renderer component receives `error`, `disabled`, and `readOnly` inputs, and
+`dfk-multi-field-input` emits `(validityChange)`:
+
+```html
+<dfk-multi-field-input
+  [fieldDescriptions]="fields"
+  [properties]="data"
+  (onChange)="onChange($event)"
+  (validityChange)="canSubmit = $event.valid"
+></dfk-multi-field-input>
+```
+
+For submit-time whole-form validation, call `validateFields(fields, data)`.
+
 ## Repeatable field groups
 
 A field with `fields` renders as a repeatable group: `data[name]` becomes an array of items, each shaped by the nested `fields`, with "Add"/"Remove" controls rendered automatically.
@@ -139,6 +157,7 @@ fields: FieldDescription[] = [
       { name: 'phone', type: 'text', label: 'Phone' },
     ],
     defaultItem: { email: '', phone: '' },
+    keyField: 'id', // optional: stable trackBy key instead of the array index
     minItems: 1,
     maxItems: 5,
   },
@@ -147,6 +166,34 @@ fields: FieldDescription[] = [
 
 ```html
 <dfk-multi-field-input [fieldDescriptions]="fields"></dfk-multi-field-input>
+```
+
+## Scoped registries
+
+`fieldRegistry` is a process-wide singleton. To give a component or route its own renderers, provide the `FIELD_REGISTRY` token with an isolated `FieldRegistry`. Components without an override keep using the global singleton.
+
+```ts
+import { FieldRegistry, FIELD_REGISTRY } from '@dynamic-field-kit/angular';
+
+const registry = new FieldRegistry();
+registry.register('text', TextFieldComponent as any);
+
+@Component({
+  selector: 'app-scoped-form',
+  standalone: true,
+  imports: [MultiFieldInput],
+  providers: [{ provide: FIELD_REGISTRY, useValue: registry }],
+  template: `<dfk-multi-field-input [fieldDescriptions]="fields" />`,
+})
+export class ScopedFormComponent {}
+```
+
+## Passing renderer-specific props
+
+The generic adapter forwards only the shared `FieldRendererProps`. For inputs specific to one renderer (e.g. `acceptFile`, `maxLength`), pass them per field via `FieldDescription.props`; they are set on the renderer instance verbatim.
+
+```ts
+{ name: 'avatar', type: 'file', props: { acceptFile: 'image/*' } }
 ```
 
 ## Legacy setup (Angular 14 and earlier with NgModule)

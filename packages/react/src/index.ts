@@ -11,6 +11,12 @@ export {
   type ReactFieldRenderer,
   type ReactFieldRegistry,
 } from './fieldRegistry';
+export {
+  FieldRegistryProvider,
+  useFieldRegistry,
+  type FieldRegistryProviderProps,
+} from './FieldRegistryContext';
+export { FieldRegistry } from '@dynamic-field-kit/core';
 
 export type { LayoutConfig } from './types/layout';
 // Re-export selected core APIs
@@ -18,4 +24,11 @@ export {
   type FieldTypeKey,
   type FieldDescription,
   type FieldRendererProps,
+} from '@dynamic-field-kit/core';
+export {
+  validateField,
+  validateFields,
+  resolveDisabled,
+  resolveReadOnly,
+  type ValidationResult,
 } from '@dynamic-field-kit/core';

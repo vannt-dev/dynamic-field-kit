@@ -11,8 +11,10 @@ Demo app: https://github.com/vannt-dev/dynamic-field-kit-demo
 - `FieldDescription` for schema-driven field definitions
 - `FieldRendererProps` as the shared renderer contract
 - `FieldTypeMap` for module augmentation and custom field typing
-- `fieldRegistry` as the shared runtime registry instance
+- `fieldRegistry` as the shared runtime registry instance, plus the `FieldRegistry` class for isolated (scoped) registries
+- Layout config types (`LayoutConfig`, `BaseLayout`, `ResponsiveLayout`, `ColumnLayoutConfig`, `RowLayoutConfig`, `GridLayoutConfig`) - the single source of truth re-exported by every adapter
 - `applyComputedValues` to resolve `computeValue` fields against form data
+- `validateField`, `validateFields`, `resolveDisabled`, `resolveReadOnly` and the `ValidationResult` type for opt-in, app-supplied validation and dynamic disabled/readOnly conditions
 - `isFieldGroup`, `createGroupItem`, `canAddGroupItem`, `canRemoveGroupItem` to work with repeatable field groups (`FieldDescription.fields`)
 
 ## Install
@@ -79,11 +81,16 @@ export interface FieldRendererProps<T = any> {
   label?: string;
   placeholder?: string;
   required?: boolean;
+  disabled?: boolean;
   options?: Record<string, any>[];
   className?: string;
   description?: any;
 }
 ```
+
+Each adapter feeds a renderer the same inbound props but reports changes with its
+framework's native idiom: React calls the `onValueChange` prop, Angular emits a
+`valueChange` (or `onValueChange`) `EventEmitter`, and Vue emits `update:value`.
 
 ```ts
 export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {
@@ -92,14 +99,27 @@ export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {
   label?: string;
   placeholder?: string;
   required?: boolean;
-  appearCondition?: (data: Record<string, any>) => boolean;
-  computeValue?: (data: Record<string, any>) => unknown;
+  disabled?: boolean;
+  // `rootData` is the top-level form data; `data` is this field's own level
+  // (the group item when nested in a repeatable group).
+  appearCondition?: (
+    data: Record<string, any>,
+    rootData?: Record<string, any>
+  ) => boolean;
+  computeValue?: (
+    data: Record<string, any>,
+    rootData?: Record<string, any>
+  ) => unknown;
   options?: Record<string, any>[];
   className?: string;
   description?: any;
+  // Extra props forwarded verbatim to the renderer (e.g. acceptFile, maxLength).
+  props?: Record<string, any>;
   // Repeatable field group (see "Repeatable field groups" below)
   fields?: FieldDescription[];
   defaultItem?: Record<string, any>;
+  // Item property used as the stable list key; falls back to the array index.
+  keyField?: string;
   minItems?: number;
   maxItems?: number;
   addLabel?: string;
@@ -109,7 +129,7 @@ export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {
 
 ## Derived fields with `computeValue`
 
-`computeValue` derives a field's value from the rest of the form data (e.g. a `fullName` computed from `firstName` + `lastName`). Every adapter's `MultiFieldInput` re-evaluates it once per change, against the post-change data - it is not re-run to a fixed point, so avoid chaining `computeValue` fields into a cycle.
+`computeValue` derives a field's value from the rest of the form data (e.g. a `fullName` computed from `firstName` + `lastName`). It is called as `(data, rootData)` - `rootData` is the top-level form even for fields nested in a group. Every adapter's `MultiFieldInput` re-evaluates it once per change, against the post-change data - it is not re-run to a fixed point, so avoid chaining `computeValue` fields into a cycle, and return a primitive or a stable reference (returning a fresh object/array each call defeats the render-skipping optimisation). In development, `applyComputedValues` warns when a `computeValue` chain does not converge in one pass.
 
 ```ts
 import { applyComputedValues } from '@dynamic-field-kit/core';
@@ -130,6 +150,30 @@ applyComputedValues(fields, { firstName: 'Ada', lastName: 'Lovelace' });
 ```
 
 Adapters call `applyComputedValues` for you whenever `MultiFieldInput`'s data changes; you normally only need to import it directly when working with form data outside of a component (e.g. on submit).
+
+## Validation & conditions
+
+`validate`, `disabledCondition`, and `readOnlyCondition` are app-supplied hooks
+on `FieldDescription` (the library ships no rule logic and no form state).
+
+```ts
+const fields: FieldDescription[] = [
+  {
+    name: 'email',
+    type: 'text',
+    validate: (value) =>
+      String(value).includes('@') ? undefined : 'Invalid email',
+    readOnlyCondition: (data, rootData) => (rootData ?? data).frozen === true,
+  },
+];
+```
+
+`validateFields(fields, data, rootData?)` returns `{ valid, errors }`, recursing
+into repeatable groups (keys like `contacts[0].email`) and skipping fields that
+are hidden by `appearCondition` or disabled. Adapters call `validateField` /
+`resolveDisabled` / `resolveReadOnly` per field to surface `error`, `disabled`,
+and `readOnly` to renderers reactively; display timing is the renderer's/app's
+concern.
 
 ## Repeatable field groups
 
@@ -152,7 +196,24 @@ const fields: FieldDescription[] = [
 ];
 ```
 
+Set `keyField` to an item property (e.g. an `id`) so each item keeps a stable list identity; without it the array index is used, which reassociates item state when an item is reordered or removed from the middle.
+
 The `isFieldGroup`, `createGroupItem`, `canAddGroupItem`, and `canRemoveGroupItem` helpers back this feature and are exported for adapters (or apps) that need to replicate the same add/remove bounds logic outside of `MultiFieldInput`.
+
+## Scoped registries
+
+`fieldRegistry` is a process-wide singleton shared by every adapter. To give part of an app its own renderers, construct an isolated `FieldRegistry` and provide it with your framework's mechanism (React `FieldRegistryProvider`, Vue `provideFieldRegistry`, Angular `FIELD_REGISTRY` token). Code that never provides one keeps using the global singleton.
+
+```ts
+import { FieldRegistry } from '@dynamic-field-kit/core';
+
+const registry = new FieldRegistry();
+registry.register('text', myRenderer);
+
+registry.has('text'); // true
+registry.list(); // ['text']
+registry.unregister('text'); // true
+```
 
 ## Register renderers through an adapter
 

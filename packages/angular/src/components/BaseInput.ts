@@ -8,20 +8,20 @@ import {
   SimpleChanges,
 } from '@angular/core';
 
+// Mirrors the framework-agnostic FieldRendererProps. Domain-specific inputs
+// (acceptFile, maxLength, ...) intentionally live on the individual renderer,
+// not here - pass them per field via FieldDescription.props instead.
 export interface FieldInputProps {
   value?: unknown;
   label?: string;
   placeholder?: string;
   required?: boolean;
   disabled?: boolean;
+  readOnly?: boolean;
+  error?: string | string[];
   options?: unknown[];
   className?: string;
   description?: string;
-  errorMessage?: string;
-  acceptFile?: string;
-  maxLength?: number;
-  minNumber?: number;
-  maxNumber?: number;
 }
 
 @Component({
@@ -33,14 +33,11 @@ export abstract class BaseInputComponent implements OnChanges {
   @Input() placeholder?: string;
   @Input() required?: boolean;
   @Input() disabled?: boolean;
+  @Input() readOnly?: boolean;
+  @Input() error?: string | string[];
   @Input() options?: unknown[];
   @Input() className?: string;
   @Input() description?: string;
-  @Input() errorMessage?: string;
-  @Input() acceptFile?: string;
-  @Input() maxLength?: number;
-  @Input() minNumber?: number;
-  @Input() maxNumber?: number;
 
   @Output() valueChange = new EventEmitter<unknown>();
 

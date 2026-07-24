@@ -5,6 +5,7 @@ import {
   Component,
   ComponentRef,
   EventEmitter,
+  inject,
   Input,
   OnChanges,
   OnDestroy,
@@ -14,24 +15,24 @@ import {
   ViewChild,
   ViewContainerRef,
 } from '@angular/core';
-import { fieldRegistry, FieldTypeKey } from '@dynamic-field-kit/core';
+import { FieldTypeKey, Properties } from '@dynamic-field-kit/core';
 import { Subscription } from 'rxjs';
+import { FIELD_REGISTRY } from '../fieldRegistryToken';
 import { BaseInputComponent } from './BaseInput';
 
+// Only the framework-agnostic FieldRendererProps keys. Domain-specific props
+// reach the renderer through `extraProps` (FieldDescription.props) instead.
 const KNOWN_PROPS = [
   'value',
   'label',
   'placeholder',
   'required',
   'disabled',
+  'readOnly',
+  'error',
   'options',
   'className',
   'description',
-  'errorMessage',
-  'acceptFile',
-  'maxLength',
-  'minNumber',
-  'maxNumber',
 ] as const;
 
 @Component({
@@ -46,17 +47,30 @@ export class DynamicInput
   implements OnChanges, AfterViewInit, OnDestroy
 {
   @Input() type!: FieldTypeKey;
+  // Extra, framework-agnostic props forwarded verbatim to the renderer.
+  @Input() extraProps?: Properties;
   @Output() override valueChange = new EventEmitter<unknown>();
   @Output() onChange = new EventEmitter<unknown>();
+
+  private registry = inject(FIELD_REGISTRY);
 
   @ViewChild('host', { read: ViewContainerRef, static: false })
   host!: ViewContainerRef;
   private compRef?: ComponentRef<unknown>;
   private inputInstance?: unknown;
   private subscriptions: Subscription[] = [];
+  // Tracks which KNOWN_PROPS were actually supplied to DynamicInput (via
+  // SimpleChanges), independent of TS class-field emit. See applyProps.
+  private supplied = new Set<string>();
 
   ngOnChanges(changes: SimpleChanges): void {
     super.ngOnChanges(changes);
+
+    for (const prop of KNOWN_PROPS) {
+      if (changes[prop]) {
+        this.supplied.add(prop);
+      }
+    }
 
     if (this.inputInstance) {
       this.syncPropsToInstance(changes);
@@ -89,6 +103,9 @@ export class DynamicInput
         )[prop];
       }
     }
+    if (changes['extraProps']) {
+      this.applyExtraProps(this.inputInstance);
+    }
     this.compRef?.changeDetectorRef?.detectChanges();
   }
 
@@ -109,7 +126,7 @@ export class DynamicInput
   }
 
   private render(): void {
-    const Renderer = fieldRegistry.get(this.type);
+    const Renderer = this.registry.get(this.type);
     this.cleanup();
     this.host.clear();
 
@@ -127,9 +144,17 @@ export class DynamicInput
     }
   }
 
+  // Angular component classes carry a static ɵcmp. Checked instead of
+  // reflectComponentType() because the peer range starts at Angular 13 and
+  // reflectComponentType is v14+. Plain function renderers have no ɵcmp and
+  // fall through to renderFallback. Uses hasOwnProperty (not `in`) so a
+  // class that merely extends a component without its own @Component
+  // decorator - and would otherwise inherit the parent's static ɵcmp via the
+  // prototype chain - is not mistaken for a component in its own right.
   private isComponentType(renderer: unknown): boolean {
     return (
-      typeof renderer === 'object' && renderer !== null && 'cmp' in renderer
+      typeof renderer === 'function' &&
+      Object.prototype.hasOwnProperty.call(renderer, 'ɵcmp')
     );
   }
 
@@ -171,25 +196,56 @@ export class DynamicInput
 
   private getFallbackProps(): Record<string, unknown> {
     return {
+      ...this.extraProps,
       value: this.value,
       onValueChange: (v: unknown) => this.emitValue(v),
       label: this.label ?? '',
       placeholder: this.placeholder ?? '',
       required: this.required ?? false,
+      disabled: this.disabled ?? false,
+      readOnly: this.readOnly ?? false,
+      error: this.error,
       options: this.options ?? [],
       className: this.className ?? '',
       description: this.description ?? '',
-      disabled: this.disabled ?? false,
-      errorMessage: this.errorMessage ?? '',
     };
   }
 
+  // Gates on `this.supplied` (populated from SimpleChanges in ngOnChanges),
+  // not on `prop in instanceObj` or `prop in this`. Both `in` checks test a
+  // TypeScript class-field emit artifact rather than intent: whether a
+  // property slot exists at runtime depends on the compile target
+  // (useDefineForClassFields is false below ES2022, true at ES2022+), so the
+  // same source can behave oppositely between this package's test build and
+  // its shipped ES2022 bundle, where every declared field is always an own
+  // property. `this.supplied` instead reflects only whether Angular ever
+  // fired a SimpleChange for that input, i.e. whether the prop was *bound*
+  // at all - it skips only props DynamicInput was never given a binding
+  // for. It is NOT a general "renderer defaults survive" guarantee: Angular
+  // fires a firstChange SimpleChange for every bound input even when the
+  // bound value is undefined, and FieldInput's template binds all
+  // KNOWN_PROPS unconditionally, so on the real
+  // MultiFieldInput -> FieldInput -> DynamicInput path every prop counts as
+  // supplied and renderer-side defaults (e.g. `@Input() label = 'None'`)
+  // are still overwritten with undefined. This only helps when DynamicInput
+  // is mounted directly with some inputs left unbound.
   private applyProps(instance: unknown): void {
     const instanceObj = instance as Record<string, unknown>;
     for (const prop of KNOWN_PROPS) {
-      if (prop in this && prop in instanceObj) {
+      if (this.supplied.has(prop)) {
         instanceObj[prop] = (this as Record<string, unknown>)[prop];
       }
+    }
+    this.applyExtraProps(instance);
+  }
+
+  private applyExtraProps(instance: unknown): void {
+    if (!instance || !this.extraProps) {
+      return;
+    }
+    const instanceObj = instance as Record<string, unknown>;
+    for (const [key, value] of Object.entries(this.extraProps)) {
+      instanceObj[key] = value;
     }
   }
 

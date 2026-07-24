@@ -12,9 +12,7 @@ Demo app: https://github.com/vannt-dev/dynamic-field-kit-demo
 npm install @dynamic-field-kit/core @dynamic-field-kit/vue vue
 ```
 
-Note: @dynamic-field-kit/core is a shared runtime and should be installed in your app separately. The Vue adapter declares core as a peer dependency to avoid bundling core multiple times across adapters.
-
-- Install with core: `npm install @dynamic-field-kit/core @dynamic-field-kit/vue vue`
+Note: `@dynamic-field-kit/core` and `vue` are **peer dependencies** — this adapter does not bundle or auto-install them, so add them to your app explicitly (as shown above). Keep a single `@dynamic-field-kit/core` version across all adapters so they share one registry.
 
 ## Exports
 
@@ -23,11 +21,14 @@ Note: @dynamic-field-kit/core is a shared runtime and should be installed in you
 - `MultiFieldInput`
 - `layoutRegistry`
 - `fieldRegistry`
+- `FieldRegistry` (class, for scoped registries)
+- `provideFieldRegistry` / `useFieldRegistry` / `FieldRegistryKey`
 - `FieldDescription`
 - `FieldTypeKey`
 - `FieldRendererProps`
 - `Properties`
 - `LayoutConfig`
+- `validateField` / `validateFields` / `resolveDisabled` / `resolveReadOnly` / `ValidationResult`
 
 Default layouts are registered automatically when you import the package root.
 
@@ -158,6 +159,24 @@ const fields: FieldDescription[] = [
 ];
 ```
 
+## Validation & conditions
+
+Declare a `validate` hook and dynamic `disabledCondition`/`readOnlyCondition`;
+your renderer receives `error`, `disabled`, and `readOnly`, and `MultiFieldInput`
+emits `onValidityChange`:
+
+```vue
+<MultiFieldInput
+  :fieldDescriptions="fields"
+  :properties="formData"
+  :onChange="handleChange"
+  :onValidityChange="({ valid }) => (canSubmit = valid)"
+/>
+```
+
+A renderer reads the props (`error`, `disabled`, `readOnly`) it declares, the
+same way it reads `value`/`label`.
+
 ## Repeatable field groups
 
 A field with `fields` renders as a repeatable group: `data[name]` becomes an array of items, each shaped by the nested `fields`, with "Add"/"Remove" controls rendered automatically.
@@ -173,6 +192,7 @@ const fields: FieldDescription[] = [
       { name: 'phone', type: 'text', label: 'Phone' },
     ],
     defaultItem: { email: '', phone: '' },
+    keyField: 'id', // optional: stable list key instead of the array index
     minItems: 1,
     maxItems: 5,
   },
@@ -181,6 +201,19 @@ const fields: FieldDescription[] = [
 
 ```vue
 <MultiFieldInput :fieldDescriptions="fields" />
+```
+
+## Scoped registries
+
+`fieldRegistry` is a process-wide singleton. To give a component subtree its own renderers, create an isolated `FieldRegistry` and provide it from a parent's `setup()` with `provideFieldRegistry`. Descendants that don't have a provider keep using the global singleton.
+
+```ts
+import { FieldRegistry, provideFieldRegistry } from '@dynamic-field-kit/vue';
+
+// in a parent component's setup()
+const registry = new FieldRegistry();
+registry.register('text', MyTextRenderer);
+provideFieldRegistry(registry);
 ```
 
 ## Type augmentation
