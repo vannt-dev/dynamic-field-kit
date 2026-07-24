@@ -27,7 +27,22 @@ export function resolveReadOnly(
   return field.readOnlyCondition?.(data, rootData) === true;
 }
 
-/** Run one field's validate hook; always returns an array (empty when valid). */
+/** Resolves dynamic options or returns static options list. */
+export function resolveOptions(
+  field: FieldDescription,
+  data: Properties,
+  rootData?: Properties
+): Properties[] | undefined {
+  if (!field.options) {
+    return undefined;
+  }
+  if (typeof field.options === 'function') {
+    return field.options(data, rootData);
+  }
+  return field.options;
+}
+
+/** Run one field's validate hook; always returns an array (empty when valid). Synchronous. */
 export function validateField(
   field: FieldDescription,
   value: unknown,
@@ -38,6 +53,23 @@ export function validateField(
     return [];
   }
   const result = field.validate(value, data, rootData);
+  if (!result || result instanceof Promise) {
+    return [];
+  }
+  return Array.isArray(result) ? result : [result];
+}
+
+/** Run one field's validate hook asynchronously; always returns a Promise resolving to string[]. */
+export async function validateFieldAsync(
+  field: FieldDescription,
+  value: unknown,
+  data: Properties,
+  rootData?: Properties
+): Promise<string[]> {
+  if (!field.validate) {
+    return [];
+  }
+  const result = await field.validate(value, data, rootData);
   if (!result) {
     return [];
   }
@@ -79,6 +111,55 @@ export function validateFields(
     }
 
     const fieldErrors = validateField(field, data[field.name], data, rootData);
+    if (fieldErrors.length > 0) {
+      errors[field.name] = fieldErrors;
+    }
+  }
+
+  return { valid: Object.keys(errors).length === 0, errors };
+}
+
+/**
+ * Recursively validate `fields` against `data` asynchronously, supporting Promise-based validation hooks.
+ */
+export async function validateFieldsAsync(
+  fields: FieldDescription[],
+  data: Properties,
+  rootData: Properties = data
+): Promise<ValidationResult> {
+  const errors: Record<string, string[]> = {};
+
+  for (const field of fields) {
+    if (field.appearCondition && !field.appearCondition(data, rootData)) {
+      continue;
+    }
+    if (resolveDisabled(field, data, rootData)) {
+      continue;
+    }
+
+    if (isFieldGroup(field)) {
+      const items = Array.isArray(data[field.name])
+        ? (data[field.name] as Properties[])
+        : [];
+      for (let index = 0; index < items.length; index++) {
+        const sub = await validateFieldsAsync(
+          field.fields,
+          items[index],
+          rootData
+        );
+        for (const [key, messages] of Object.entries(sub.errors)) {
+          errors[`${field.name}[${index}].${key}`] = messages;
+        }
+      }
+      continue;
+    }
+
+    const fieldErrors = await validateFieldAsync(
+      field,
+      data[field.name],
+      data,
+      rootData
+    );
     if (fieldErrors.length > 0) {
       errors[field.name] = fieldErrors;
     }
