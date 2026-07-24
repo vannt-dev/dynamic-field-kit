@@ -1,0 +1,25 @@
+{
+  "name": "@dynamic-field-kit/smoke",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Render smoke tests against the built (dist) packages, as a real consumer.",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@dynamic-field-kit/core": "*",
+    "@dynamic-field-kit/react": "*",
+    "@dynamic-field-kit/vue": "*"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^10.0.0",
+    "@testing-library/react": "^16.0.0",
+    "@vitejs/plugin-react": "^4.2.0",
+    "@vue/test-utils": "^2.4.6",
+    "jsdom": "^24.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "vitest": "^1.6.0",
+    "vue": "^3.5.0"
+  }
+}

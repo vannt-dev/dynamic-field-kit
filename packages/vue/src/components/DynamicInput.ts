@@ -1,10 +1,7 @@
 /* eslint-disable import/order, import/no-unresolved */
 import { defineComponent, computed, h, PropType } from 'vue';
-import {
-  fieldRegistry,
-  FieldTypeKey,
-  Properties,
-} from '@dynamic-field-kit/core';
+import { FieldTypeKey, Properties } from '@dynamic-field-kit/core';
+import { useFieldRegistry } from '../fieldRegistryContext';
 
 const DynamicInput = defineComponent({
   name: 'DynamicInput',
@@ -38,10 +35,28 @@ const DynamicInput = defineComponent({
       type: null,
       default: undefined,
     },
+    disabled: {
+      type: Boolean,
+      default: undefined,
+    },
+    readOnly: {
+      type: Boolean,
+      default: undefined,
+    },
+    error: {
+      type: [String, Array] as PropType<string | string[]>,
+      default: undefined,
+    },
+    // Extra, framework-agnostic props forwarded verbatim to the renderer.
+    extraProps: {
+      type: Object as PropType<Properties>,
+      default: undefined,
+    },
   },
 
   setup(props) {
-    const Renderer = computed(() => fieldRegistry.get(props.type));
+    const registry = useFieldRegistry();
+    const Renderer = computed(() => registry.get(props.type));
 
     return () => {
       if (!Renderer.value) {
@@ -49,12 +64,16 @@ const DynamicInput = defineComponent({
       }
 
       return h(Renderer.value, {
+        ...props.extraProps,
         value: props.value,
         'onUpdate:value': props.onChange,
         label: props.label,
         options: props.options,
         class: props.className,
         description: props.description,
+        disabled: props.disabled,
+        readOnly: props.readOnly,
+        error: props.error,
       });
     };
   },

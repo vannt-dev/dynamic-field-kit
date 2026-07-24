@@ -16,9 +16,15 @@ import {
   canAddGroupItem,
   canRemoveGroupItem,
   createGroupItem,
+  resolveDisabled,
+  resolveOptions,
+  resolveReadOnly,
+  validateField,
+  validateFields,
   FieldDescription,
   Properties,
 } from '@dynamic-field-kit/core';
+import type { ValidationResult } from '@dynamic-field-kit/core';
 import { BaseLayoutConfig, LayoutConfig } from '../types/layout';
 import { FieldInput } from './FieldInput';
 
@@ -53,6 +59,10 @@ const DEFAULT_BREAKPOINT = 768;
           *ngIf="!field.fields"
           [fieldDescription]="field"
           [value]="data[field.name]"
+          [options]="getResolvedOptions(field)"
+          [disabled]="getDisabled(field)"
+          [readOnly]="getReadOnly(field)"
+          [error]="getError(field)"
           (onValueChangeField)="onFieldChange($event)"
         ></dfk-field-input>
 
@@ -62,7 +72,7 @@ const DEFAULT_BREAKPOINT = 768;
             *ngFor="
               let item of getItems(field);
               let i = index;
-              trackBy: trackByIndex
+              trackBy: groupTrackBy(field)
             "
             style="display: flex; align-items: flex-start; gap: 8px;"
           >
@@ -70,11 +80,19 @@ const DEFAULT_BREAKPOINT = 768;
               <dfk-multi-field-input
                 [fieldDescriptions]="field.fields"
                 [properties]="item"
+                [rootData]="rootData ?? data"
                 (onChange)="onGroupItemChange(field, i, $event)"
               ></dfk-multi-field-input>
             </div>
             <button
               type="button"
+              [attr.aria-label]="
+                (field.removeLabel || 'Remove') +
+                ' ' +
+                (field.label || field.name) +
+                ' ' +
+                (i + 1)
+              "
               (click)="onGroupItemRemove(field, i)"
               [disabled]="!canRemoveItem(field)"
             >
@@ -83,6 +101,9 @@ const DEFAULT_BREAKPOINT = 768;
           </div>
           <button
             type="button"
+            [attr.aria-label]="
+              (field.addLabel || 'Add') + ' ' + (field.label || field.name)
+            "
             (click)="onGroupItemAdd(field)"
             [disabled]="!canAddItem(field)"
           >
@@ -97,7 +118,12 @@ export class MultiFieldInput implements OnInit, OnChanges {
   @Input() fieldDescriptions: FieldDescription[] = [];
   @Input() properties?: Properties;
   @Output() onChange = new EventEmitter<Properties>();
+  @Output() validityChange = new EventEmitter<ValidationResult>();
   @Input() layout: LayoutConfig = 'column';
+  // Top-level form data, threaded down through repeatable groups so a nested
+  // field's appearCondition/computeValue can read the root form. Omitted at
+  // the top level, where the form's own data is the root.
+  @Input() rootData?: Properties;
 
   data: Properties = {};
   visibleFields: FieldDescription[] = [];
@@ -150,6 +176,26 @@ export class MultiFieldInput implements OnInit, OnChanges {
     return index;
   }
 
+  private groupTrackByCache = new WeakMap<
+    FieldDescription,
+    (index: number, item: Properties) => unknown
+  >();
+
+  // Returns a stable trackBy per group field: item[keyField] when configured,
+  // else the index. Cached by field reference so the template hands Angular the
+  // same function each change-detection pass.
+  groupTrackBy(
+    field: FieldDescription
+  ): (index: number, item: Properties) => unknown {
+    let fn = this.groupTrackByCache.get(field);
+    if (!fn) {
+      fn = (index: number, item: Properties) =>
+        field.keyField ? item[field.keyField] ?? index : index;
+      this.groupTrackByCache.set(field, fn);
+    }
+    return fn;
+  }
+
   ngOnInit() {
     this.updateIsMobile();
     this.init();
@@ -164,22 +210,37 @@ export class MultiFieldInput implements OnInit, OnChanges {
       typeof this.layout === 'object' && this.layout.type === 'responsive'
         ? this.layout.breakpoint ?? DEFAULT_BREAKPOINT
         : DEFAULT_BREAKPOINT;
-    this.isMobile =
-      typeof window !== 'undefined' && window.innerWidth < breakpoint;
+    if (
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function'
+    ) {
+      this.isMobile = window.matchMedia(
+        `(max-width: ${breakpoint - 1}px)`
+      ).matches;
+    } else {
+      this.isMobile =
+        typeof window !== 'undefined' && window.innerWidth < breakpoint;
+    }
   }
 
   private init() {
     if (this.properties) {
-      this.data = applyComputedValues(this.fieldDescriptions, {
-        ...this.properties,
-      });
+      this.data = applyComputedValues(
+        this.fieldDescriptions,
+        { ...this.properties },
+        this.rootData
+      );
     }
     this.updateVisibleFields();
+    this.validityChange.emit(
+      validateFields(this.fieldDescriptions, this.data, this.rootData)
+    );
   }
 
   private updateVisibleFields() {
+    const root = this.rootData ?? this.data;
     this.visibleFields = this.fieldDescriptions.filter(
-      (f) => !f.appearCondition || f.appearCondition(this.data)
+      (f) => !f.appearCondition || f.appearCondition(this.data, root)
     );
   }
 
@@ -190,6 +251,31 @@ export class MultiFieldInput implements OnInit, OnChanges {
   getItems(field: FieldDescription): Properties[] {
     const value = this.data[field.name];
     return Array.isArray(value) ? (value as Properties[]) : [];
+  }
+
+  getResolvedOptions(field: FieldDescription): Properties[] | undefined {
+    return resolveOptions(field, this.data, this.rootData);
+  }
+
+  getDisabled(field: FieldDescription): boolean {
+    return resolveDisabled(field, this.data, this.rootData);
+  }
+
+  getReadOnly(field: FieldDescription): boolean {
+    return resolveReadOnly(field, this.data, this.rootData);
+  }
+
+  getError(field: FieldDescription): string[] | undefined {
+    if (this.getDisabled(field)) {
+      return undefined;
+    }
+    const errors = validateField(
+      field,
+      this.data[field.name],
+      this.data,
+      this.rootData
+    );
+    return errors.length > 0 ? errors : undefined;
   }
 
   canAddItem(field: FieldDescription): boolean {
@@ -230,9 +316,16 @@ export class MultiFieldInput implements OnInit, OnChanges {
   }
 
   private commitData(nextData: Properties): void {
-    this.data = applyComputedValues(this.fieldDescriptions, nextData);
+    this.data = applyComputedValues(
+      this.fieldDescriptions,
+      nextData,
+      this.rootData
+    );
     this.updateVisibleFields();
     this.onChange.emit(this.data);
+    this.validityChange.emit(
+      validateFields(this.fieldDescriptions, this.data, this.rootData)
+    );
     this.cdr.markForCheck();
   }
 }

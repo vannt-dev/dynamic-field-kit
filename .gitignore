@@ -28,3 +28,6 @@ Thumbs.db
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# scratch/planning docs, not subject to version control
+.superpowers/

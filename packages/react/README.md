@@ -12,9 +12,7 @@ Demo app: https://github.com/vannt-dev/dynamic-field-kit-demo
 npm install @dynamic-field-kit/core @dynamic-field-kit/react react
 ```
 
-Note: Core is shared runtime. Install core separately and ensure a single version is used across adapters to avoid duplicate registries.
-
-- Install with core: `npm install @dynamic-field-kit/core @dynamic-field-kit/react`
+Note: `@dynamic-field-kit/core`, `react`, and `react-dom` are **peer dependencies** — this adapter does not bundle or auto-install them, so add them to your app explicitly (as shown above). Keep a single `@dynamic-field-kit/core` version across all adapters so they share one registry.
 
 ## Exports
 
@@ -23,11 +21,15 @@ Note: Core is shared runtime. Install core separately and ensure a single versio
 - `MultiFieldInput`
 - `layoutRegistry`
 - `fieldRegistry`
+- `FieldRegistry` (class, for scoped registries)
+- `FieldRegistryProvider` / `useFieldRegistry` / `FieldRegistryProviderProps`
 - `ReactFieldRenderer`
 - `ReactFieldRegistry`
 - `FieldDescription`
 - `FieldTypeKey`
 - `FieldRendererProps`
+- `LayoutConfig`
+- `validateField` / `validateFields` / `resolveDisabled` / `resolveReadOnly` / `ValidationResult`
 
 `FieldGroupInput` (repeatable field groups) is used internally by `FieldInput` and doesn't need to be imported directly - see "Repeatable field groups" below.
 
@@ -151,6 +153,36 @@ const fields: FieldDescription[] = [
 ];
 ```
 
+## Validation & conditions
+
+Declare a `validate` hook and dynamic `disabledCondition`/`readOnlyCondition`;
+your renderer receives `error`, `disabled`, and `readOnly`. `MultiFieldInput`
+emits `onValidityChange`:
+
+```tsx
+<MultiFieldInput
+  fieldDescriptions={fields}
+  properties={data}
+  onChange={setData}
+  onValidityChange={({ valid, errors }) => setCanSubmit(valid)}
+/>
+```
+
+Read the props inside a renderer:
+
+```tsx
+fieldRegistry.register('text', ({ value, onValueChange, error, disabled }) => (
+  <label>
+    <input
+      disabled={disabled}
+      value={value ?? ''}
+      onChange={(e) => onValueChange?.(e.target.value)}
+    />
+    {error && <span className="error">{[].concat(error).join(', ')}</span>}
+  </label>
+));
+```
+
 ## Repeatable field groups
 
 A field with `fields` renders as a repeatable group: `data[name]` becomes an array of items, each shaped by the nested `fields`, with "Add"/"Remove" controls rendered automatically.
@@ -166,12 +198,32 @@ const fields: FieldDescription[] = [
       { name: 'phone', type: 'text', label: 'Phone' },
     ],
     defaultItem: { email: '', phone: '' },
+    keyField: 'id', // optional: stable list key instead of the array index
     minItems: 1,
     maxItems: 5,
   },
 ];
 
 <MultiFieldInput fieldDescriptions={fields} />;
+```
+
+## Scoped registries
+
+`fieldRegistry` is a process-wide singleton. To give a subtree its own renderers, create an isolated `FieldRegistry` and wrap the subtree in `FieldRegistryProvider`. Anything not wrapped keeps using the global singleton.
+
+```tsx
+import {
+  FieldRegistry,
+  FieldRegistryProvider,
+  MultiFieldInput,
+} from '@dynamic-field-kit/react';
+
+const registry = new FieldRegistry();
+registry.register('text', MyTextRenderer);
+
+<FieldRegistryProvider registry={registry}>
+  <MultiFieldInput fieldDescriptions={fields} />
+</FieldRegistryProvider>;
 ```
 
 ## Type augmentation
