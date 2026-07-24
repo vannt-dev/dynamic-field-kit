@@ -2,7 +2,7 @@
 const { spawnSync } = require('child_process');
 
 function runBuild() {
-  const res = spawnSync('npm', ['run', 'build', '--workspaces'], {
+  const res = spawnSync('npm', ['run', 'build', '--workspaces', '--if-present'], {
     stdio: 'inherit',
     shell: true,
     windowsHide: false,
