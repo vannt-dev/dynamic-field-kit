@@ -12,8 +12,9 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['test/setup.ts'],
     include: ['test/**/*.spec.ts'],
+    pool: 'forks',
     coverage: {
-      provider: 'v8',
+      provider: 'istanbul',
       reportsDirectory: 'coverage',
       reporter: ['lcov', 'text-summary'],
       include: ['src/**/*.ts'],
