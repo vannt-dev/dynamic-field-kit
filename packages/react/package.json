@@ -52,7 +52,7 @@
     "test:watch": "vitest",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test:coverage": "vitest run --coverage",
-    "prepublishOnly": "npm run clean && npm run build",
+    "prepublishOnly": "npm run build",
     "release:patch": "npm version patch && npm publish",
     "release:minor": "npm version minor && npm publish",
     "release:major": "npm version major && npm publish"
