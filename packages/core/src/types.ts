@@ -1,8 +1,16 @@
 /* eslint-disable @typescript-eslint/no-empty-interface */
 export type FieldTypeKey = keyof FieldTypeMap & string;
 
-// 👇 App sẽ augment interface này
-export interface FieldTypeMap {}
+// 👇 Core provides standard HTML5 input defaults; apps can extend via declaration merging
+export interface FieldTypeMap {
+  text: string;
+  number: number;
+  select: string;
+  checkbox: boolean;
+  textarea: string;
+  password: string;
+  email: string;
+}
 
 export type Properties = Record<string, unknown>;
 

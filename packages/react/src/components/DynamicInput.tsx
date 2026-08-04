@@ -4,6 +4,7 @@ import {
   Properties,
 } from '@dynamic-field-kit/core';
 import React, { ReactNode, useMemo } from 'react';
+import { getDefaultRenderer } from '../defaultRenderers';
 import { useFieldRegistry } from '../FieldRegistryContext';
 
 interface Props<T extends FieldTypeKey> {
@@ -54,7 +55,9 @@ const DynamicInputInner = <T extends FieldTypeKey>({
 
   // Memoize renderer lookup to avoid unnecessary work on re-renders
   const Renderer = useMemo(
-    () => registry.get(type) as React.ComponentType<FieldRendererProps>,
+    () =>
+      ((registry.get(type) as React.ComponentType<FieldRendererProps>) ||
+        getDefaultRenderer(type)) as React.ComponentType<FieldRendererProps>,
     [registry, type]
   );
 

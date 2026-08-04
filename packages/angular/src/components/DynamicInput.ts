@@ -131,6 +131,9 @@ export class DynamicInput
     this.host.clear();
 
     if (!Renderer) {
+      if (this.renderDefaultFallbackHTML5(this.type)) {
+        return;
+      }
       this.renderError(`Unknown field type: ${this.type}`);
       return;
     }
@@ -269,6 +272,133 @@ export class DynamicInput
   private emitValue(value: unknown): void {
     this.valueChange.emit(value);
     this.onChange.emit(value);
+  }
+
+  private renderDefaultFallbackHTML5(type: string): boolean {
+    const nativeEl = this.host.element.nativeElement as HTMLElement;
+
+    if (
+      type === 'text' ||
+      type === 'password' ||
+      type === 'email' ||
+      type === 'number'
+    ) {
+      const input = document.createElement('input');
+      input.type = type;
+      if (this.className) {
+        input.className = this.className;
+      }
+      if (this.placeholder) {
+        input.placeholder = this.placeholder;
+      }
+      if (this.disabled) {
+        input.disabled = true;
+      }
+      if (this.readOnly) {
+        input.readOnly = true;
+      }
+      if (this.required) {
+        input.required = true;
+      }
+      input.value = ((this.value as string | number) ?? '').toString();
+
+      input.addEventListener('input', (e) => {
+        const raw = (e.target as HTMLInputElement).value;
+        const val =
+          type === 'number' ? (raw === '' ? undefined : Number(raw)) : raw;
+        this.emitValue(val);
+      });
+      nativeEl.appendChild(input);
+      return true;
+    }
+
+    if (type === 'textarea') {
+      const textarea = document.createElement('textarea');
+      if (this.className) {
+        textarea.className = this.className;
+      }
+      if (this.placeholder) {
+        textarea.placeholder = this.placeholder;
+      }
+      if (this.disabled) {
+        textarea.disabled = true;
+      }
+      if (this.readOnly) {
+        textarea.readOnly = true;
+      }
+      if (this.required) {
+        textarea.required = true;
+      }
+      textarea.value = (this.value as string) ?? '';
+
+      textarea.addEventListener('input', (e) => {
+        this.emitValue((e.target as HTMLTextAreaElement).value);
+      });
+      nativeEl.appendChild(textarea);
+      return true;
+    }
+
+    if (type === 'checkbox') {
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      if (this.className) {
+        checkbox.className = this.className;
+      }
+      if (this.disabled || this.readOnly) {
+        checkbox.disabled = true;
+      }
+      if (this.required) {
+        checkbox.required = true;
+      }
+      checkbox.checked = Boolean(this.value);
+
+      checkbox.addEventListener('change', (e) => {
+        this.emitValue((e.target as HTMLInputElement).checked);
+      });
+      nativeEl.appendChild(checkbox);
+      return true;
+    }
+
+    if (type === 'select') {
+      const select = document.createElement('select');
+      if (this.className) {
+        select.className = this.className;
+      }
+      if (this.disabled || this.readOnly) {
+        select.disabled = true;
+      }
+      if (this.required) {
+        select.required = true;
+      }
+
+      const defaultOpt = document.createElement('option');
+      defaultOpt.value = '';
+      defaultOpt.disabled = true;
+      defaultOpt.textContent = '-- Select --';
+      select.appendChild(defaultOpt);
+
+      const options = this.options || [];
+      options.forEach((opt) => {
+        const optObj = opt as Record<string, any>;
+        const optVal = optObj['value'] ?? optObj['id'] ?? opt;
+        const optLabel = optObj['label'] ?? optObj['name'] ?? String(optVal);
+        const optionEl = document.createElement('option');
+        optionEl.value = String(optVal);
+        optionEl.textContent = String(optLabel);
+        if (String(optVal) === String(this.value)) {
+          optionEl.selected = true;
+        }
+        select.appendChild(optionEl);
+      });
+
+      select.addEventListener('change', (e) => {
+        this.emitValue((e.target as HTMLSelectElement).value);
+      });
+      nativeEl.appendChild(select);
+      return true;
+    }
+
+    return false;
   }
 
   private renderError(message: string): void {

@@ -263,15 +263,22 @@ const { valid, errors } = validateFields(fields, data);
 const asyncResult = await validateFieldsAsync(fields, data);
 ```
 
-**Field Registry (Render Layer)**
+**Default Built-in HTML5 Renderers (Zero Config)**
 
-The library does **not** ship UI components. Instead, applications register their own renderers using the `fieldRegistry` from the framework adapter (`@dynamic-field-kit/react`, `@dynamic-field-kit/angular`, etc.).
+All framework adapters (`react`, `vue`, `angular`) ship with **built-in HTML5 fallback renderers** for common input types:
+`'text'`, `'number'`, `'select'`, `'checkbox'`, `'textarea'`, `'password'`, `'email'`.
+
+If you do not register a custom component for a type, the library automatically renders a clean, accessible HTML5 input with support for labels, placeholders, disabled states, options, and error states!
+
+**Custom Field Registry (Custom UI & Design Systems)**
+
+To use custom UI components (e.g., Tailwind, Ant Design, Shadcn UI), register custom renderers using `fieldRegistry`:
 
 ```ts
-import { fieldRegistry } from '@dynamic-field-kit/react'; // or /angular
+import { fieldRegistry } from '@dynamic-field-kit/react'; // or /angular /vue
 
-fieldRegistry.register('text', myTextRenderer);
-fieldRegistry.register('checkbox', myCheckboxRenderer);
+fieldRegistry.register('text', CustomInputComponent);
+fieldRegistry.register('select', CustomSelectComponent);
 ```
 
 The registry also exposes `has(type)`, `unregister(type)`, and `list()` for
