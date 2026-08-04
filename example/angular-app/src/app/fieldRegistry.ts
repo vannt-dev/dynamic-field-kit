@@ -1,8 +1,9 @@
 import { fieldRegistry } from '@dynamic-field-kit/core';
-import { TextFieldComponent } from './components/text-field.component';
 import { NumberFieldComponent } from './components/number-field.component';
+import { SelectFieldComponent } from './components/select-field.component';
+import { TextFieldComponent } from './components/text-field.component';
 
 // Register Angular components as field types
-// Note: The Angular adapter handles Angular component classes differently than function renderers
 (fieldRegistry as any).register('text', TextFieldComponent);
 (fieldRegistry as any).register('number', NumberFieldComponent);
+(fieldRegistry as any).register('select', SelectFieldComponent);

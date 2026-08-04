@@ -5,7 +5,7 @@
     "types": ["vite/client"],
     "baseUrl": ".",
     "paths": {
-      "@dynamic-field-kit/core": ["src/dynamic-field-kit.d.ts"]
+      "@/*": ["./src/*"]
     },
 
     /* Linting */
