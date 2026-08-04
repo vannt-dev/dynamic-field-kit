@@ -5,6 +5,7 @@ import './layout/responsiveLayout';
 export { default as DynamicInput } from './components/DynamicInput';
 export { default as FieldInput } from './components/FieldInput';
 export { default as MultiFieldInput } from './components/MultiFieldInput';
+export { defaultRenderersMap, getDefaultRenderer } from './defaultRenderers';
 
 export {
   provideFieldRegistry,

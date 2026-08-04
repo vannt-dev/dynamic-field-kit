@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { DynamicInput } from '../src/components/DynamicInput';
 import { FIELD_REGISTRY } from '../src/fieldRegistryToken';
-import { beforeEach, describe, expect, it } from 'vitest';
 import {
   DefaultsRendererComponent,
   makeRegistry,
@@ -170,6 +170,119 @@ describe('DynamicInput', () => {
     expect(fixture.nativeElement.textContent).toContain(
       'Unknown field type: nope'
     );
+  });
+
+  it('renders default built-in HTML5 text input when unregistered type is "text"', () => {
+    const fixture = TestBed.createComponent(DynamicInput);
+    fixture.componentRef.setInput('type', 'text');
+    fixture.componentRef.setInput('value', 'angular default text');
+    fixture.componentRef.setInput('className', 'custom-input');
+    fixture.componentRef.setInput('placeholder', 'Enter text');
+    fixture.componentRef.setInput('disabled', true);
+    fixture.componentRef.setInput('readOnly', true);
+    fixture.componentRef.setInput('required', true);
+    fixture.detectChanges();
+
+    const input: HTMLInputElement =
+      fixture.nativeElement.querySelector('input[type="text"]');
+    expect(input).not.toBeNull();
+    expect(input.value).toBe('angular default text');
+    expect(input.className).toBe('custom-input');
+    expect(input.placeholder).toBe('Enter text');
+    expect(input.disabled).toBe(true);
+    expect(input.readOnly).toBe(true);
+    expect(input.required).toBe(true);
+  });
+
+  it('renders default built-in HTML5 select input when unregistered type is "select"', () => {
+    const fixture = TestBed.createComponent(DynamicInput);
+    fixture.componentRef.setInput('type', 'select');
+    fixture.componentRef.setInput('value', 'a');
+    fixture.componentRef.setInput('className', 'custom-select');
+    fixture.componentRef.setInput('disabled', true);
+    fixture.componentRef.setInput('required', true);
+    fixture.componentRef.setInput('options', [
+      { value: 'a', label: 'Option A' },
+    ]);
+    fixture.detectChanges();
+
+    const seen: unknown[] = [];
+    fixture.componentInstance.valueChange.subscribe((v) => seen.push(v));
+
+    const select: HTMLSelectElement =
+      fixture.nativeElement.querySelector('select');
+    expect(select).not.toBeNull();
+    expect(select.value).toBe('a');
+    expect(select.className).toBe('custom-select');
+    expect(select.disabled).toBe(true);
+
+    select.value = 'a';
+    select.dispatchEvent(new Event('change'));
+    expect(seen).toEqual(['a']);
+  });
+
+  it('renders default built-in HTML5 select with scalar options and readOnly state', () => {
+    const fixture = TestBed.createComponent(DynamicInput);
+    fixture.componentRef.setInput('type', 'select');
+    fixture.componentRef.setInput('value', 'b');
+    fixture.componentRef.setInput('readOnly', true);
+    fixture.componentRef.setInput('options', ['a', 'b']);
+    fixture.detectChanges();
+
+    const select: HTMLSelectElement =
+      fixture.nativeElement.querySelector('select');
+    expect(select).not.toBeNull();
+    expect(select.value).toBe('b');
+    expect(select.disabled).toBe(true);
+  });
+
+  it('renders default built-in HTML5 textarea when unregistered type is "textarea"', () => {
+    const fixture = TestBed.createComponent(DynamicInput);
+    fixture.componentRef.setInput('type', 'textarea');
+    fixture.componentRef.setInput('value', 'multiline');
+    fixture.componentRef.setInput('className', 'custom-area');
+    fixture.componentRef.setInput('placeholder', 'Hold');
+    fixture.componentRef.setInput('disabled', true);
+    fixture.componentRef.setInput('readOnly', true);
+    fixture.componentRef.setInput('required', true);
+    fixture.detectChanges();
+
+    const seen: unknown[] = [];
+    fixture.componentInstance.valueChange.subscribe((v) => seen.push(v));
+
+    const textarea: HTMLTextAreaElement =
+      fixture.nativeElement.querySelector('textarea');
+    expect(textarea).not.toBeNull();
+    expect(textarea.value).toBe('multiline');
+    expect(textarea.className).toBe('custom-area');
+
+    textarea.value = 'line1\nline2';
+    textarea.dispatchEvent(new Event('input'));
+    expect(seen).toEqual(['line1\nline2']);
+  });
+
+  it('renders default built-in HTML5 checkbox when unregistered type is "checkbox"', () => {
+    const fixture = TestBed.createComponent(DynamicInput);
+    fixture.componentRef.setInput('type', 'checkbox');
+    fixture.componentRef.setInput('value', true);
+    fixture.componentRef.setInput('className', 'custom-check');
+    fixture.componentRef.setInput('disabled', true);
+    fixture.componentRef.setInput('required', true);
+    fixture.detectChanges();
+
+    const seen: unknown[] = [];
+    fixture.componentInstance.valueChange.subscribe((v) => seen.push(v));
+
+    const checkbox: HTMLInputElement = fixture.nativeElement.querySelector(
+      'input[type="checkbox"]'
+    );
+    expect(checkbox).not.toBeNull();
+    expect(checkbox.checked).toBe(true);
+    expect(checkbox.className).toBe('custom-check');
+
+    checkbox.checked = false;
+    checkbox.dispatchEvent(new Event('change'));
+    expect(seen).toEqual([false]);
   });
 
   it('re-renders when type changes', () => {
