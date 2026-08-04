@@ -1,6 +1,7 @@
 /* eslint-disable import/order, import/no-unresolved */
 import { defineComponent, computed, h, PropType } from 'vue';
 import { FieldTypeKey, Properties } from '@dynamic-field-kit/core';
+import { getDefaultRenderer } from '../defaultRenderers';
 import { useFieldRegistry } from '../fieldRegistryContext';
 
 const DynamicInput = defineComponent({
@@ -56,7 +57,9 @@ const DynamicInput = defineComponent({
 
   setup(props) {
     const registry = useFieldRegistry();
-    const Renderer = computed(() => registry.get(props.type));
+    const Renderer = computed(
+      () => registry.get(props.type) || getDefaultRenderer(props.type)
+    );
 
     return () => {
       if (!Renderer.value) {
