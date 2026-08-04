@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { DynamicInput } from '../src/components/DynamicInput';
 import { FIELD_REGISTRY } from '../src/fieldRegistryToken';
-import { beforeEach, describe, expect, it } from 'vitest';
 import {
   DefaultsRendererComponent,
   makeRegistry,
@@ -170,6 +170,33 @@ describe('DynamicInput', () => {
     expect(fixture.nativeElement.textContent).toContain(
       'Unknown field type: nope'
     );
+  });
+
+  it('renders default built-in HTML5 text input when unregistered type is "text"', () => {
+    const fixture = TestBed.createComponent(DynamicInput);
+    fixture.componentRef.setInput('type', 'text');
+    fixture.componentRef.setInput('value', 'angular default text');
+    fixture.detectChanges();
+
+    const input: HTMLInputElement =
+      fixture.nativeElement.querySelector('input[type="text"]');
+    expect(input).not.toBeNull();
+    expect(input.value).toBe('angular default text');
+  });
+
+  it('renders default built-in HTML5 select input when unregistered type is "select"', () => {
+    const fixture = TestBed.createComponent(DynamicInput);
+    fixture.componentRef.setInput('type', 'select');
+    fixture.componentRef.setInput('value', 'a');
+    fixture.componentRef.setInput('options', [
+      { value: 'a', label: 'Option A' },
+    ]);
+    fixture.detectChanges();
+
+    const select: HTMLSelectElement =
+      fixture.nativeElement.querySelector('select');
+    expect(select).not.toBeNull();
+    expect(select.value).toBe('a');
   });
 
   it('re-renders when type changes', () => {
