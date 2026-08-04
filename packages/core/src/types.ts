@@ -5,7 +5,7 @@ export type FieldTypeKey = keyof FieldTypeMap & string;
 export interface FieldTypeMap {
   text: string;
   number: number;
-  select: string | number;
+  select: string;
   checkbox: boolean;
   textarea: string;
   password: string;
