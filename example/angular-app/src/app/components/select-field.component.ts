@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 
 @Component({
-  selector: 'app-text-field',
+  selector: 'app-select-field',
   standalone: true,
   imports: [CommonModule],
   template: `
@@ -17,17 +17,12 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
       >
         {{ label }}<span *ngIf="required" style="color: red;"> *</span>
       </label>
-      <input
+      <select
         [value]="value ?? ''"
-        [placeholder]="placeholder || ''"
-        [disabled]="disabled"
-        [readOnly]="readOnly"
-        (input)="onInput($event)"
+        [disabled]="disabled || readOnly"
+        (change)="onChange($event)"
         (blur)="onBlur.emit()"
-        [required]="required"
-        [style.background-color]="
-          disabled ? '#f0f0f0' : readOnly ? '#fafafa' : '#fff'
-        "
+        [style.background-color]="disabled ? '#f0f0f0' : '#fff'"
         [style.border-color]="error ? '#ef4444' : '#ccc'"
         style="
           padding: 8px;
@@ -38,31 +33,29 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
           width: 100%;
           box-sizing: border-box;
         "
-      />
+      >
+        <option value="">-- Chọn --</option>
+        <option *ngFor="let opt of options" [value]="getOptValue(opt)">
+          {{ getOptLabel(opt) }}
+        </option>
+      </select>
       <span
         *ngIf="error"
         style="color: #ef4444; font-size: 12px; display: block;"
       >
         {{ isArray(error) ? error.join(', ') : error }}
       </span>
-      <small
-        *ngIf="description"
-        style="color: #666; display: block; margin-top: 4px;"
-      >
-        {{ description }}
-      </small>
     </div>
   `,
 })
-export class TextFieldComponent {
+export class SelectFieldComponent {
   @Input() value?: any;
-  @Input() placeholder?: string;
+  @Input() options?: any[];
   @Input() required?: boolean;
   @Input() disabled?: boolean;
   @Input() readOnly?: boolean;
   @Input() error?: any;
   @Input() label?: string;
-  @Input() description?: string;
   @Input() className?: string;
   @Output() valueChange = new EventEmitter<any>();
   @Output() onValueChange = new EventEmitter<any>();
@@ -72,7 +65,15 @@ export class TextFieldComponent {
     return Array.isArray(val);
   }
 
-  onInput(e: any) {
+  getOptValue(opt: any): string {
+    return opt?.value ?? opt;
+  }
+
+  getOptLabel(opt: any): string {
+    return opt?.label ?? opt?.value ?? opt;
+  }
+
+  onChange(e: any) {
     const value = e.target.value;
     this.valueChange.emit(value);
     this.onValueChange.emit(value);

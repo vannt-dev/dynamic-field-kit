@@ -207,29 +207,60 @@ const fields: FieldDescription[] = [
 
 **Validation & conditions**
 
-Fields can declare an app-supplied `validate` hook plus dynamic
-`disabledCondition` / `readOnlyCondition`. The library ships no rule logic and
-holds no form state: it runs your functions and surfaces the result. _When_ to
-display an error is the renderer's/app's decision.
+Fields can declare an app-supplied `validate` hook, built-in helper `validators`, async validation, plus dynamic
+`disabledCondition` / `readOnlyCondition` and dynamic `options`.
 
-| Property          | Description                                                                       |
-| ----------------- | --------------------------------------------------------------------------------- |
-| validate          | `(value, data, rootData?) => string \| string[] \| undefined`. Falsy means valid. |
-| disabledCondition | `(data, rootData?) => boolean`. OR-ed with the static `disabled` flag.            |
-| readOnlyCondition | `(data, rootData?) => boolean`.                                                   |
+```ts
+import {
+  validators,
+  validateFields,
+  validateFieldsAsync,
+} from '@dynamic-field-kit/core';
+
+const fields: FieldDescription[] = [
+  {
+    name: 'email',
+    type: 'text',
+    // Built-in composed validator
+    validate: validators.compose(
+      validators.required('Email is required'),
+      validators.email('Invalid email')
+    ),
+  },
+  {
+    name: 'city',
+    type: 'select',
+    // Dynamic options callback evaluated on form data change
+    options: (data) =>
+      data.country === 'VN' ? ['Hà Nội', 'HCM'] : ['NY', 'LA'],
+    disabledCondition: (data) => !data.country,
+  },
+];
+```
+
+| Property          | Description                                                                                         |
+| ----------------- | --------------------------------------------------------------------------------------------------- |
+| validate          | `(value, data, rootData?) => string \| string[] \| undefined \| Promise<...>`. Falsy means valid.   |
+| validators        | Built-in helpers: `required`, `email`, `minLength`, `maxLength`, `min`, `max`, `pattern`, `compose` |
+| options           | Array of option objects or dynamic callback function `(data, rootData?) => Option[]`                |
+| disabledCondition | `(data, rootData?) => boolean`. OR-ed with the static `disabled` flag.                              |
+| readOnlyCondition | `(data, rootData?) => boolean`.                                                                     |
 
 `MultiFieldInput` passes each field's current `error` and effective
 `disabled`/`readOnly` to its renderer (via `FieldRendererProps`), and emits an
 `onValidityChange` (`validityChange` in Angular) event with `{ valid, errors }`
 on every change. Disabled and hidden (`appearCondition`) fields are skipped -
-they never produce errors. For submit-time validation of a whole form (including
-group items) call the exported pure function:
+they never produce errors. For submit-time or async validation of a whole form (including
+group items) call `validateFields` or `validateFieldsAsync`:
 
 ```ts
-import { validateFields } from '@dynamic-field-kit/core';
+import { validateFields, validateFieldsAsync } from '@dynamic-field-kit/core';
 
 const { valid, errors } = validateFields(fields, data);
-// errors: { "email": ["Invalid"], "contacts[1].email": ["Required"] }
+// errors: { "email": ["Required"], "contacts[1].email": ["Invalid"] }
+
+// Or for async validation:
+const asyncResult = await validateFieldsAsync(fields, data);
 ```
 
 **Field Registry (Render Layer)**

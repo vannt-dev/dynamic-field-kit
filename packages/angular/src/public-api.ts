@@ -25,9 +25,13 @@ export { fieldRegistry, FieldRegistry } from '@dynamic-field-kit/core';
 
 export {
   validateField,
+  validateFieldAsync,
   validateFields,
+  validateFieldsAsync,
   resolveDisabled,
   resolveReadOnly,
+  resolveOptions,
+  validators,
 } from '@dynamic-field-kit/core';
 export type { ValidationResult } from '@dynamic-field-kit/core';
 

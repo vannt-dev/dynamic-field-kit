@@ -154,26 +154,67 @@ Adapters call `applyComputedValues` for you whenever `MultiFieldInput`'s data ch
 ## Validation & conditions
 
 `validate`, `disabledCondition`, and `readOnlyCondition` are app-supplied hooks
-on `FieldDescription` (the library ships no rule logic and no form state).
+on `FieldDescription`. `@dynamic-field-kit/core` includes a set of built-in helper validators
+as well as async validation functions (`validateFieldsAsync`).
 
 ```ts
+import {
+  validators,
+  validateFields,
+  validateFieldsAsync,
+} from '@dynamic-field-kit/core';
+
 const fields: FieldDescription[] = [
   {
     name: 'email',
     type: 'text',
-    validate: (value) =>
-      String(value).includes('@') ? undefined : 'Invalid email',
+    // Built-in composed validator
+    validate: validators.compose(
+      validators.required('Email is required'),
+      validators.email('Must be a valid email address')
+    ),
     readOnlyCondition: (data, rootData) => (rootData ?? data).frozen === true,
+  },
+  {
+    name: 'username',
+    type: 'text',
+    // Async validation (e.g. checking availability via API)
+    validate: async (value) => {
+      if (!value) return 'Username required';
+      const available = await checkUsername(String(value));
+      return available ? undefined : 'Username already taken';
+    },
+  },
+  {
+    name: 'city',
+    type: 'select',
+    // Dynamic options callback dependent on current form data
+    options: (data) =>
+      data.country === 'VN' ? ['Hanoi', 'HCM'] : ['NY', 'LA'],
+    disabledCondition: (data) => !data.country,
   },
 ];
 ```
 
+### Built-in Validators Utility (`validators`)
+
+`validators` provides common validation helpers:
+
+- `validators.required(message?)` - Enforces non-empty value
+- `validators.email(message?)` - Enforces valid email pattern
+- `validators.minLength(min, message?)` - Enforces minimum string/array length
+- `validators.maxLength(max, message?)` - Enforces maximum string/array length
+- `validators.min(minVal, message?)` - Enforces minimum numeric value
+- `validators.max(maxVal, message?)` - Enforces maximum numeric value
+- `validators.pattern(regex, message?)` - Enforces regex pattern match
+- `validators.compose(...fns)` - Combines multiple validator functions into one
+
 `validateFields(fields, data, rootData?)` returns `{ valid, errors }`, recursing
 into repeatable groups (keys like `contacts[0].email`) and skipping fields that
-are hidden by `appearCondition` or disabled. Adapters call `validateField` /
+are hidden by `appearCondition` or disabled. Use `validateFieldsAsync(fields, data, rootData?)`
+when fields define async `validate` functions. Adapters call `validateField` /
 `resolveDisabled` / `resolveReadOnly` per field to surface `error`, `disabled`,
-and `readOnly` to renderers reactively; display timing is the renderer's/app's
-concern.
+and `readOnly` to renderers reactively.
 
 ## Repeatable field groups
 

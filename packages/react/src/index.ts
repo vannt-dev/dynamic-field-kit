@@ -27,8 +27,12 @@ export {
 } from '@dynamic-field-kit/core';
 export {
   validateField,
+  validateFieldAsync,
   validateFields,
+  validateFieldsAsync,
   resolveDisabled,
   resolveReadOnly,
+  resolveOptions,
+  validators,
   type ValidationResult,
 } from '@dynamic-field-kit/core';
