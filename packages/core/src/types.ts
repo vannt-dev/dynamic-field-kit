@@ -10,6 +10,12 @@ export interface FieldTypeMap {
   textarea: string;
   password: string;
   email: string;
+  radio: string | number;
+  range: number;
+  file: unknown;
+  date: string;
+  time: string;
+  'datetime-local': string;
 }
 
 export type Properties = Record<string, unknown>;
