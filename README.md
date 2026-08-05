@@ -1,6 +1,16 @@
 # Dynamic Field Kit
 
 [![CI](https://github.com/vannt-dev/dynamic-field-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/vannt-dev/dynamic-field-kit/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/@dynamic-field-kit/core?label=core)](https://www.npmjs.com/package/@dynamic-field-kit/core)
+[![npm](https://img.shields.io/npm/v/@dynamic-field-kit/react?label=react)](https://www.npmjs.com/package/@dynamic-field-kit/react)
+[![npm](https://img.shields.io/npm/v/@dynamic-field-kit/vue?label=vue)](https://www.npmjs.com/package/@dynamic-field-kit/vue)
+[![npm](https://img.shields.io/npm/v/@dynamic-field-kit/angular?label=angular)](https://www.npmjs.com/package/@dynamic-field-kit/angular)
+
+**[▶ Live demos](https://vannt-dev.github.io/dynamic-field-kit/)** — the same
+schema rendered by [React](https://vannt-dev.github.io/dynamic-field-kit/react/),
+[Vue](https://vannt-dev.github.io/dynamic-field-kit/vue/) and
+[Angular](https://vannt-dev.github.io/dynamic-field-kit/angular/), including a
+[multi-step wizard](https://vannt-dev.github.io/dynamic-field-kit/react/wizard/).
 
 A lightweight, extensible **dynamic form engine** for React, Angular, and Vue, built for scalable applications and design systems.
 

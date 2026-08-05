@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dynamic Field Kit — live demos</title>
+    <meta
+      name="description"
+      content="Live demos of dynamic-field-kit: one schema-driven form engine running in React, Vue and Angular."
+    />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #ffffff;
+        --fg: #10151c;
+        --muted: #5b6673;
+        --line: #e2e8f0;
+        --card: #f8fafc;
+        --accent: #0066cc;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0f172a;
+          --fg: #e8eef6;
+          --muted: #94a3b8;
+          --line: #23324a;
+          --card: #16213a;
+          --accent: #52a8ff;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 48px 20px 72px;
+        background: var(--bg);
+        color: var(--fg);
+        font: 16px/1.6 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      }
+      .wrap {
+        max-width: 780px;
+        margin: 0 auto;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 30px;
+        letter-spacing: -0.02em;
+      }
+      .sub {
+        margin: 0 0 28px;
+        color: var(--muted);
+      }
+      .grid {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      }
+      a.card {
+        display: block;
+        padding: 18px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--card);
+        text-decoration: none;
+        color: inherit;
+      }
+      a.card:hover {
+        border-color: var(--accent);
+      }
+      .card h2 {
+        margin: 0 0 6px;
+        font-size: 17px;
+        color: var(--accent);
+      }
+      .card p {
+        margin: 0;
+        font-size: 14px;
+        color: var(--muted);
+      }
+      h3 {
+        margin: 32px 0 10px;
+        font-size: 15px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+      }
+      ul.pages {
+        margin: 0;
+        padding-left: 20px;
+        font-size: 15px;
+      }
+      ul.pages li {
+        margin-bottom: 6px;
+      }
+      code {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        padding: 1px 5px;
+        font-size: 13px;
+      }
+      footer {
+        margin-top: 40px;
+        padding-top: 18px;
+        border-top: 1px solid var(--line);
+        font-size: 14px;
+        color: var(--muted);
+      }
+      footer a {
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Dynamic Field Kit</h1>
+      <p class="sub">
+        One schema-driven form engine, three frameworks. The same
+        <code>FieldDescription[]</code> renders below in React, Vue and Angular.
+      </p>
+
+      <div class="grid">
+        <a class="card" href="./react/">
+          <h2>React →</h2>
+          <p>
+            Full demo set: form state hook, extended renderers, DevTools and the
+            multi-step wizard.
+          </p>
+        </a>
+        <a class="card" href="./vue/">
+          <h2>Vue 3 →</h2>
+          <p>Composable, registry and layouts running on the same core.</p>
+        </a>
+        <a class="card" href="./angular/">
+          <h2>Angular →</h2>
+          <p>Standalone components and a signal-based form store.</p>
+        </a>
+      </div>
+
+      <h3>What each React page shows</h3>
+      <ul class="pages">
+        <li>
+          <a href="./react/">Basics</a> — registering renderers,
+          <code>MultiFieldInput</code>, layouts, conditional fields, repeatable
+          groups
+        </li>
+        <li>
+          <a href="./react/new-features/">Enterprise features</a> —
+          <code>useDynamicForm</code>, the extended HTML5 renderers, blur
+          wiring,
+          <code>DynamicFormDevTools</code>
+        </li>
+        <li>
+          <a href="./react/wizard/">Multi-step wizard</a> —
+          <code>createWizardState</code>, per-step <code>validateStep</code>,
+          <code>goNext</code>/<code>goPrev</code>, completed-step indicator
+        </li>
+      </ul>
+
+      <footer>
+        Built from the
+        <a href="https://github.com/vannt-dev/dynamic-field-kit">repository</a>
+        on every push — these demos compile against the packages in the same
+        commit. Packages on
+        <a href="https://www.npmjs.com/org/dynamic-field-kit">npm</a>.
+      </footer>
+    </div>
+  </body>
+</html>
