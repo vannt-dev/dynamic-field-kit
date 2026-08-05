@@ -16,7 +16,12 @@ jobs:
   changeset:
     name: Changeset present
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+    # Skipped on the release PR changesets itself opens: that PR consumes the
+    # changesets and bumps versions, so it changes packages while legitimately
+    # having none left, and would always fail this check.
+    if: >-
+      github.event_name == 'pull_request' &&
+      !startsWith(github.head_ref, 'changeset-release/')
     steps:
       - uses: actions/checkout@v4
         with:
