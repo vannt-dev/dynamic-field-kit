@@ -21,6 +21,15 @@ A lightweight, extensible **dynamic form engine** for React, Angular, and Vue, b
 - Framework-agnostic core (works with React, Angular, Vue, or vanilla JS)
 - Ideal for form builders & design systems
 
+### 🚀 Enterprise Features (v1.4+)
+
+- **Form State Hook / Composable / Signal Store**: `useDynamicForm` for React & Vue 3, `createDynamicFormStore` for Angular Signals.
+- **Extended HTML5 Renderers**: Built-in support for `radio`, `range`, `file`, `date`, `time`, `datetime-local`, and `switch`.
+- **Schema Validation Adapters**: Integrated `zodValidator`, `yupValidator`, `valibotValidator`, and Standard Schema adapters.
+- **Multi-Step Form Wizard Engine**: `createWizardState`, `validateStep`, `canGoNext`, `canGoPrev`.
+- **Interactive Form DevTools**: Floating overlay component (`<DynamicFormDevTools />`) for realtime debugging.
+- **Group Array Manipulation Helpers**: `moveGroupItem`, `swapGroupItems`, `insertGroupItem`, and `focusFirstInvalidField`.
+
 ---
 
 ## 📦 Packages

@@ -1,13 +1,12 @@
 'use client';
 
+import { FieldDescription, validators } from '@dynamic-field-kit/core';
 import {
-  FieldDescription,
-  validators,
-  validateFieldsAsync,
-} from '@dynamic-field-kit/core';
-import { MultiFieldInput } from '@dynamic-field-kit/react';
+  MultiFieldInput,
+  useDynamicForm,
+  DynamicFormDevTools,
+} from '@dynamic-field-kit/react';
 import Link from 'next/link';
-import { useState } from 'react';
 import '../../lib/fieldRegistry';
 
 const fields: FieldDescription[] = [
@@ -22,34 +21,27 @@ const fields: FieldDescription[] = [
     validate: validators.required('Vui lòng chọn quốc gia'),
   },
   {
-    name: 'city',
-    type: 'select',
-    label: '2. Thành phố (Phụ thuộc vào Quốc gia đã chọn)',
-    // Dynamic options function evaluated on data change
-    options: (data) => {
-      if (data.country === 'VN') {
-        return [
-          { label: 'Hà Nội', value: 'HN' },
-          { label: 'TP. Hồ Chí Minh', value: 'HCM' },
-          { label: 'Đà Nẵng', value: 'DN' },
-        ];
-      }
-      if (data.country === 'US') {
-        return [
-          { label: 'New York', value: 'NY' },
-          { label: 'Los Angeles', value: 'LA' },
-          { label: 'Chicago', value: 'CHI' },
-        ];
-      }
-      return [];
-    },
-    disabledCondition: (data) => !data.country,
-    validate: validators.required('Vui lòng chọn thành phố'),
+    name: 'gender',
+    type: 'radio',
+    label: '2. Giới tính (Extended HTML5 Radio)',
+    options: [
+      { label: 'Nam', value: 'male' },
+      { label: 'Nữ', value: 'female' },
+      { label: 'Khác', value: 'other' },
+    ],
+  },
+  {
+    name: 'satisfaction',
+    type: 'range',
+    label: '3. Mức độ hài lòng (Extended Range Slider)',
+    min: 1,
+    max: 10,
+    step: 1,
   },
   {
     name: 'email',
-    type: 'text',
-    label: '3. Email (Built-in Validators: required + email)',
+    type: 'email',
+    label: '4. Email (Built-in Validators)',
     placeholder: 'example@domain.com',
     validate: validators.compose(
       validators.required('Email bắt buộc'),
@@ -57,72 +49,33 @@ const fields: FieldDescription[] = [
     ),
   },
   {
-    name: 'username',
-    type: 'text',
-    label: '4. Username (Async validation simulation)',
-    placeholder: 'Nhập username (thử "admin")',
-    validate: async (value) => {
-      if (!value) {
-        return 'Username bắt buộc';
-      }
-      // Simulate API call check
-      if (String(value).toLowerCase() === 'admin') {
-        return 'Tên "admin" đã tồn tại, vui lòng chọn tên khác';
-      }
-      return undefined;
-    },
+    name: 'birthDate',
+    type: 'date',
+    label: '5. Ngày sinh (Native Date Picker)',
   },
   {
-    name: 'enableExtra',
-    type: 'select',
-    label: '5. Hiển thị trường bổ sung? (appearCondition)',
-    options: [
-      { label: 'Không', value: 'no' },
-      { label: 'Có', value: 'yes' },
-    ],
-  },
-  {
-    name: 'note',
-    type: 'text',
-    label: 'Ghi chú thêm (Xuất hiện khi chọn "Có")',
-    appearCondition: (data) => data.enableExtra === 'yes',
-  },
-  {
-    name: 'lockAll',
-    type: 'select',
-    label: '6. Khóa trường số điện thoại? (disabledCondition)',
-    options: [
-      { label: 'Mở khóa', value: 'unlocked' },
-      { label: 'Khóa (Disabled)', value: 'locked' },
-    ],
-  },
-  {
-    name: 'phone',
-    type: 'text',
-    label: 'Số điện thoại',
-    placeholder: '0901234567',
-    disabledCondition: (data) => data.lockAll === 'locked',
+    name: 'subscribeNewsletter',
+    type: 'switch',
+    label: '6. Nhận bản tin ưu đãi (Switch Toggle)',
   },
 ];
 
 export default function NewFeaturesPage() {
-  const [data, setData] = useState<Record<string, any>>({ country: 'VN' });
-  const [errors, setErrors] = useState<Record<string, string[]>>({});
-  const [validating, setValidating] = useState(false);
-
-  const handleValidate = async () => {
-    setValidating(true);
-    // Test async validation
-    const res = await validateFieldsAsync(fields, data);
-    setErrors(res.errors);
-    setValidating(false);
-  };
+  const form = useDynamicForm({
+    fields,
+    initialValues: {
+      country: 'VN',
+      satisfaction: 8,
+      subscribeNewsletter: true,
+    },
+    validateOnBlur: true,
+  });
 
   return (
     <main
       style={{
         padding: '24px',
-        maxWidth: '700px',
+        maxWidth: '720px',
         margin: '0 auto',
         fontFamily: 'sans-serif',
       }}
@@ -146,54 +99,78 @@ export default function NewFeaturesPage() {
         >
           ← Demo Cơ Bản (Legacy)
         </Link>
-        <strong style={{ color: '#111' }}>✨ Demo Tính Năng Mới (v1.3+)</strong>
+        <strong style={{ color: '#111' }}>
+          ✨ Demo Enterprise Features (v1.4+)
+        </strong>
       </nav>
 
       <h1 style={{ marginBottom: '12px', fontSize: '24px' }}>
-        Tính Năng Mới v1.3+ Engine
+        Tính Năng Nâng Cấp Enterprise-Grade (v1.4+)
       </h1>
       <p style={{ color: '#666', marginBottom: '24px', lineHeight: 1.5 }}>
-        Trang này minh họa các tính năng mới gồm: Built-in validators
-        (`required`, `email`, `compose`), Dynamic Options (Options thay đổi theo
-        Quốc gia), Conditional Disabled & Appear, và Async Validation.
+        Minh họa: <code>useDynamicForm</code> state management hook, Extended
+        Renderers (<code>radio</code>, <code>range</code>, <code>date</code>,{' '}
+        <code>switch</code>), và Realtime <code>DynamicFormDevTools</code> ở góc
+        màn hình.
       </p>
 
-      <MultiFieldInput
-        fieldDescriptions={fields}
-        properties={data}
-        onChange={setData}
-        onValidityChange={(res) => setErrors(res.errors)}
-        layout={{
-          type: 'responsive',
-          mobile: 'column',
-          desktop: { type: 'grid', columns: 2, gap: 16 },
-        }}
-      />
-
-      <div
-        style={{
-          marginTop: '20px',
-          display: 'flex',
-          gap: '12px',
-          alignItems: 'center',
-        }}
+      <form
+        onSubmit={form.handleSubmit((validData) =>
+          alert(`Submit thành công:\n${JSON.stringify(validData, null, 2)}`)
+        )}
       >
-        <button
-          onClick={handleValidate}
-          disabled={validating}
+        <MultiFieldInput
+          fieldDescriptions={fields}
+          properties={form.data}
+          onChange={form.handleChange}
+          onBlurField={form.handleBlur}
+          layout={{
+            type: 'responsive',
+            mobile: 'column',
+            desktop: { type: 'grid', columns: 2, gap: 16 },
+          }}
+        />
+
+        <div
           style={{
-            padding: '10px 16px',
-            backgroundColor: '#0066cc',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontWeight: 600,
+            marginTop: '20px',
+            display: 'flex',
+            gap: '12px',
+            alignItems: 'center',
           }}
         >
-          {validating ? 'Đang kiểm tra...' : 'Kiểm tra lỗi (Validate Fields)'}
-        </button>
-      </div>
+          <button
+            type="submit"
+            style={{
+              padding: '10px 20px',
+              backgroundColor: '#0066cc',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontWeight: 600,
+            }}
+          >
+            Submit Form
+          </button>
+
+          <button
+            type="button"
+            onClick={() => form.reset()}
+            style={{
+              padding: '10px 16px',
+              backgroundColor: '#e2e8f0',
+              color: '#1e293b',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontWeight: 600,
+            }}
+          >
+            Reset Form
+          </button>
+        </div>
+      </form>
 
       <div
         style={{
@@ -205,28 +182,30 @@ export default function NewFeaturesPage() {
         }}
       >
         <h3 style={{ margin: '0 0 8px 0', fontSize: '16px' }}>
-          Current State (Data):
+          Form State (useDynamicForm):
         </h3>
         <pre style={{ margin: 0, fontSize: '13px' }}>
-          {JSON.stringify(data, null, 2)}
+          {JSON.stringify(
+            {
+              data: form.data,
+              isDirty: form.isDirty,
+              isValid: form.isValid,
+              errors: form.errors,
+            },
+            null,
+            2
+          )}
         </pre>
-        {Object.keys(errors).length > 0 && (
-          <>
-            <h3
-              style={{
-                margin: '16px 0 8px 0',
-                fontSize: '16px',
-                color: '#ef4444',
-              }}
-            >
-              Validation Errors:
-            </h3>
-            <pre style={{ margin: 0, fontSize: '13px', color: '#ef4444' }}>
-              {JSON.stringify(errors, null, 2)}
-            </pre>
-          </>
-        )}
       </div>
+
+      {/* Floating DevTools */}
+      <DynamicFormDevTools
+        data={form.data}
+        errors={form.errors}
+        touched={form.touched}
+        isDirty={form.isDirty}
+        fields={fields}
+      />
     </main>
   );
 }
