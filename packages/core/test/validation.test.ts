@@ -206,7 +206,7 @@ describe('validateFieldsAsync', () => {
 });
 
 describe('zodValidator and yupValidator', () => {
-  test('zodValidator validates field target or data object', () => {
+  test('zodValidator parses the value alone for a scalar schema', () => {
     const mockZod = {
       safeParse: (val: unknown) => {
         if (typeof val === 'string' && val.includes('@')) {
@@ -220,12 +220,12 @@ describe('zodValidator and yupValidator', () => {
         };
       },
     };
-    const validator = zodValidator(mockZod);
+    const validator = zodValidator(mockZod, { target: 'field' });
     expect(validator('invalid', {})).toEqual(['Invalid email address']);
     expect(validator('user@test.com', {})).toBeUndefined();
   });
 
-  test('yupValidator validates field target or data object', () => {
+  test('yupValidator parses the value alone for a scalar schema', () => {
     const mockYup = {
       validateSync: (val: unknown) => {
         if (typeof val === 'string' && val.length >= 3) {
@@ -234,7 +234,7 @@ describe('zodValidator and yupValidator', () => {
         throw { message: 'Must be at least 3 chars' };
       },
     };
-    const validator = yupValidator(mockYup);
+    const validator = yupValidator(mockYup, { target: 'field' });
     expect(validator('hi', {})).toEqual(['Must be at least 3 chars']);
     expect(validator('hello', {})).toBeUndefined();
   });
