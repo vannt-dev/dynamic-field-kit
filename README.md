@@ -23,12 +23,39 @@ A lightweight, extensible **dynamic form engine** for React, Angular, and Vue, b
 
 ### 🚀 Enterprise Features (v1.4+)
 
-- **Form State Hook / Composable / Signal Store**: `useDynamicForm` for React & Vue 3, `createDynamicFormStore` for Angular Signals.
+- **Form State Hook / Composable / Signal Store**: `useDynamicForm` for React & Vue 3, `createDynamicFormStore` for Angular Signals. All three expose the same surface — including `isSubmitting` / `isSubmitted` — and `handleSubmit(onValid, onInvalid)` returns a submit handler in every framework.
 - **Extended HTML5 Renderers**: Built-in support for `radio`, `range`, `file`, `date`, `time`, `datetime-local`, and `switch`.
 - **Schema Validation Adapters**: Integrated `zodValidator`, `yupValidator`, `valibotValidator`, and Standard Schema adapters.
 - **Multi-Step Form Wizard Engine**: `createWizardState`, `validateStep`, `canGoNext`, `canGoPrev`.
 - **Interactive Form DevTools**: Floating overlay component (`<DynamicFormDevTools />`) for realtime debugging.
 - **Group Array Manipulation Helpers**: `moveGroupItem`, `swapGroupItems`, `insertGroupItem`, and `focusFirstInvalidField`.
+
+#### Schema adapters
+
+Attach an adapter to a field's `validate` hook. By default the schema is treated
+as an **object schema describing the whole form**, and a field name selects which
+issues to surface:
+
+```ts
+import { zodValidator } from '@dynamic-field-kit/core';
+
+const schema = z.object({ email: z.string().email() });
+
+const fields = [
+  { name: 'email', type: 'text', validate: zodValidator(schema, 'email') },
+];
+```
+
+For a **scalar schema** covering a single value, say so explicitly:
+
+```ts
+validate: zodValidator(z.string().email(), { target: 'field' });
+```
+
+Adapters parse **synchronously** so their result works with `validateFields` (and
+therefore with `useDynamicForm`). A schema containing async refinements or async
+`.test()` rules cannot be parsed synchronously — those return a Promise, so
+validate through `validateFieldsAsync` instead.
 
 ---
 
