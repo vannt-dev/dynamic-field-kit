@@ -31,3 +31,4 @@ yarn-error.log*
 
 # scratch/planning docs, not subject to version control
 .superpowers/
+docs/superpowers/
