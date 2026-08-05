@@ -8,7 +8,30 @@ import {
 import { ref } from 'vue';
 import './lib/fieldRegistry';
 
-const activeTab = ref<'legacy' | 'new'>('legacy');
+import EnterpriseDemo from './demos/EnterpriseDemo.vue';
+import WizardDemo from './demos/WizardDemo.vue';
+// Vite resolves `?raw` natively, so the panel shows the file that is running.
+import enterpriseSource from './demos/EnterpriseDemo.vue?raw';
+import wizardSource from './demos/WizardDemo.vue?raw';
+
+type Tab = 'legacy' | 'new' | 'enterprise' | 'wizard';
+
+const activeTab = ref<Tab>('legacy');
+const showCode = ref(false);
+
+// The landing page only exists on the deployed site, one level above this
+// app's base path, so link to it absolutely.
+const ALL_DEMOS_URL = 'https://vannt-dev.github.io/dynamic-field-kit/';
+
+const tabStyle = (tab: Tab) => ({
+  padding: '8px 16px',
+  border: 'none',
+  borderRadius: '6px',
+  cursor: 'pointer',
+  fontWeight: activeTab.value === tab ? 'bold' : 'normal',
+  backgroundColor: activeTab.value === tab ? '#fff' : 'transparent',
+  boxShadow: activeTab.value === tab ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+});
 
 // 1. Legacy fields
 const legacyFields: FieldDescription[] = [
@@ -199,7 +222,117 @@ const handleValidate = async () => {
       >
         ✨ Demo Tính Năng Mới (v1.3+)
       </button>
+      <button @click="activeTab = 'enterprise'" :style="tabStyle('enterprise')">
+        🚀 Enterprise (v1.4+)
+      </button>
+      <button @click="activeTab = 'wizard'" :style="tabStyle('wizard')">
+        🧭 Wizard
+      </button>
+      <a
+        :href="ALL_DEMOS_URL"
+        style="
+          margin-left: auto;
+          align-self: center;
+          padding: 8px 12px;
+          color: #0066cc;
+          text-decoration: none;
+          font-size: 14px;
+        "
+      >
+        ← Tất cả demo
+      </a>
     </nav>
+
+    <!-- Tab 3 & 4 render their own source beside them -->
+    <div v-if="activeTab === 'enterprise' || activeTab === 'wizard'">
+      <div
+        style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 16px;
+        "
+      >
+        <h1 style="margin: 0; font-size: 22px">
+          {{
+            activeTab === 'enterprise'
+              ? 'Tính năng Enterprise (v1.4+)'
+              : 'Multi-Step Wizard'
+          }}
+        </h1>
+        <button
+          @click="showCode = !showCode"
+          :style="{
+            padding: '8px 14px',
+            borderRadius: '8px',
+            border: '1px solid #d7dee6',
+            background: showCode ? '#0f172a' : '#fff',
+            color: showCode ? '#f8fafc' : '#0f172a',
+            cursor: 'pointer',
+            fontSize: '13px',
+            fontWeight: 600,
+          }"
+        >
+          {{ showCode ? '✕ Ẩn code' : '‹/› Xem code' }}
+        </button>
+      </div>
+
+      <div
+        :style="{
+          display: 'grid',
+          gap: '20px',
+          gridTemplateColumns: showCode
+            ? 'minmax(0, 1fr) minmax(0, 1fr)'
+            : '1fr',
+          alignItems: 'start',
+        }"
+      >
+        <div style="min-width: 0">
+          <EnterpriseDemo v-if="activeTab === 'enterprise'" />
+          <WizardDemo v-else />
+        </div>
+
+        <div
+          v-if="showCode"
+          style="
+            min-width: 0;
+            border: 1px solid #23324a;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #0f172a;
+          "
+        >
+          <div
+            style="
+              padding: 8px 12px;
+              background: #16213a;
+              border-bottom: 1px solid #23324a;
+              color: #94a3b8;
+              font-size: 12px;
+              font-family: monospace;
+            "
+          >
+            src/demos/{{
+              activeTab === 'enterprise' ? 'EnterpriseDemo' : 'WizardDemo'
+            }}.vue
+          </div>
+          <pre
+            style="
+              margin: 0;
+              padding: 14px;
+              max-height: 75vh;
+              overflow: auto;
+              color: #e2e8f0;
+              font-size: 12px;
+              line-height: 1.55;
+            "
+            >{{
+              activeTab === 'enterprise' ? enterpriseSource : wizardSource
+            }}</pre
+          >
+        </div>
+      </div>
+    </div>
 
     <!-- Tab 1: Legacy -->
     <div v-if="activeTab === 'legacy'">

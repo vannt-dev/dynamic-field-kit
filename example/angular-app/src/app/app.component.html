@@ -43,7 +43,135 @@
     >
       ✨ Demo Tính Năng Mới (v1.3+)
     </button>
+    <button
+      (click)="activeTab = 'enterprise'"
+      [style.font-weight]="activeTab === 'enterprise' ? 'bold' : 'normal'"
+      [style.background-color]="
+        activeTab === 'enterprise' ? '#fff' : 'transparent'
+      "
+      style="
+        padding: 8px 16px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+      "
+    >
+      🚀 Enterprise (v1.4+)
+    </button>
+    <button
+      (click)="activeTab = 'wizard'"
+      [style.font-weight]="activeTab === 'wizard' ? 'bold' : 'normal'"
+      [style.background-color]="activeTab === 'wizard' ? '#fff' : 'transparent'"
+      style="
+        padding: 8px 16px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+      "
+    >
+      🧭 Wizard
+    </button>
+    <a
+      [href]="ALL_DEMOS_URL"
+      style="
+        margin-left: auto;
+        align-self: center;
+        padding: 8px 12px;
+        color: #0066cc;
+        text-decoration: none;
+        font-size: 14px;
+      "
+    >
+      ← Tất cả demo
+    </a>
   </nav>
+
+  <!-- Tab 3 & 4: v1.4 features, with their own source beside them -->
+  <div *ngIf="activeTab === 'enterprise' || activeTab === 'wizard'">
+    <div
+      style="
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+      "
+    >
+      <h2 style="margin: 0; font-size: 20px">
+        {{
+          activeTab === 'enterprise'
+            ? 'Tính năng Enterprise (v1.4+)'
+            : 'Multi-Step Wizard'
+        }}
+      </h2>
+      <button
+        (click)="showCode = !showCode"
+        [style.background]="showCode ? '#0f172a' : '#fff'"
+        [style.color]="showCode ? '#f8fafc' : '#0f172a'"
+        style="
+          padding: 8px 14px;
+          border-radius: 8px;
+          border: 1px solid #d7dee6;
+          cursor: pointer;
+          font-size: 13px;
+          font-weight: 600;
+        "
+      >
+        {{ showCode ? '✕ Ẩn code' : '‹/› Xem code' }}
+      </button>
+    </div>
+
+    <div
+      [style.display]="'grid'"
+      [style.gap]="'20px'"
+      [style.grid-template-columns]="
+        showCode ? 'minmax(0, 1fr) minmax(0, 1fr)' : '1fr'
+      "
+      [style.align-items]="'start'"
+    >
+      <div style="min-width: 0">
+        <app-enterprise-demo
+          *ngIf="activeTab === 'enterprise'"
+        ></app-enterprise-demo>
+        <app-wizard-demo *ngIf="activeTab === 'wizard'"></app-wizard-demo>
+      </div>
+
+      <div
+        *ngIf="showCode"
+        style="
+          min-width: 0;
+          border: 1px solid #23324a;
+          border-radius: 10px;
+          overflow: hidden;
+          background: #0f172a;
+        "
+      >
+        <div
+          style="
+            padding: 8px 12px;
+            background: #16213a;
+            border-bottom: 1px solid #23324a;
+            color: #94a3b8;
+            font-size: 12px;
+            font-family: monospace;
+          "
+        >
+          src/app/demos/{{ activeTab }}.component.ts
+        </div>
+        <pre
+          style="
+            margin: 0;
+            padding: 14px;
+            max-height: 75vh;
+            overflow: auto;
+            color: #e2e8f0;
+            font-size: 12px;
+            line-height: 1.55;
+          "
+          >{{ currentSource() }}</pre
+        >
+      </div>
+    </div>
+  </div>
 
   <!-- Tab 1: Legacy -->
   <div *ngIf="activeTab === 'legacy'">

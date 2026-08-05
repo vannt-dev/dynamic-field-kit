@@ -1,97 +1,24 @@
-'use client';
+import BasicsDemo from './demo';
+import DemoShell from './DemoShell';
+import { readDemoSource } from './lib/readDemoSource';
 
-import { FieldDescription } from '@dynamic-field-kit/core';
-import { MultiFieldInput } from '@dynamic-field-kit/react';
-import Link from 'next/link';
-import { useState } from 'react';
-import '../lib/fieldRegistry';
-
-const fields: FieldDescription[] = [
-  { name: 'firstName', type: 'text', label: 'First Name' },
-  { name: 'lastName', type: 'text', label: 'Last Name' },
-  {
-    name: 'fullName',
-    type: 'text',
-    label: 'Full Name (computed)',
-    // Derived from the two fields above whenever either one changes.
-    computeValue: (data) =>
-      `${data.firstName ?? ''} ${data.lastName ?? ''}`.trim(),
-  },
-  { name: 'age', type: 'number', label: 'Age' },
-  {
-    name: 'contacts',
-    type: 'group',
-    label: 'Contacts',
-    // Repeatable field group: data.contacts becomes an array of items shaped
-    // by these sub-fields, with Add/Remove controls rendered automatically.
-    fields: [
-      { name: 'email', type: 'text', label: 'Email' },
-      { name: 'phone', type: 'text', label: 'Phone' },
-    ],
-    defaultItem: { email: '', phone: '' },
-    minItems: 0,
-    maxItems: 5,
-  },
-];
-
-export default function Page() {
-  const [data, setData] = useState({});
-
+export default function HomePage() {
   return (
-    <main
-      style={{
-        padding: '24px',
-        maxWidth: '600px',
-        margin: '0 auto',
-        fontFamily: 'sans-serif',
-      }}
+    <DemoShell
+      current="basics"
+      title="Dynamic Field Kit — React"
+      code={readDemoSource('demo.tsx')}
+      codePath="app/demo.tsx"
+      intro={
+        <>
+          Nền tảng: đăng ký renderer qua <code>fieldRegistry</code>,{' '}
+          <code>MultiFieldInput</code>, layout, trường điều kiện (
+          <code>appearCondition</code>), trường dẫn xuất (
+          <code>computeValue</code>) và nhóm lặp lại.
+        </>
+      }
     >
-      <nav
-        style={{
-          marginBottom: '20px',
-          padding: '12px',
-          background: '#f0f4f8',
-          borderRadius: '8px',
-        }}
-      >
-        <strong style={{ marginRight: '16px', color: '#111' }}>
-          📌 Demo Cơ Bản (Legacy)
-        </strong>
-        <Link
-          href="/new-features"
-          style={{
-            fontWeight: 'normal',
-            marginRight: '16px',
-            color: '#0066cc',
-            textDecoration: 'none',
-          }}
-        >
-          ✨ Demo Tính Năng Mới (v1.3+) →
-        </Link>
-        <Link
-          href="/wizard"
-          style={{
-            fontWeight: 'normal',
-            color: '#0066cc',
-            textDecoration: 'none',
-          }}
-        >
-          🧭 Wizard nhiều bước →
-        </Link>
-      </nav>
-
-      <h1 style={{ marginBottom: '24px' }}>Dynamic Field Kit React Demo</h1>
-      <MultiFieldInput
-        fieldDescriptions={fields}
-        properties={data}
-        onChange={setData}
-        layout={{
-          type: 'responsive',
-          mobile: 'column',
-          desktop: { type: 'grid', columns: 2, gap: 16 },
-        }}
-      />
-      <pre>{JSON.stringify(data, null, 2)}</pre>
-    </main>
+      <BasicsDemo />
+    </DemoShell>
   );
 }

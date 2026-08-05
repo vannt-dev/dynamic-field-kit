@@ -4,7 +4,7 @@ Angular adapter for `@dynamic-field-kit/core`.
 
 This package provides Angular components and a convenience module that render field schemas defined with `@dynamic-field-kit/core`.
 
-Demo app: https://github.com/vannt-dev/dynamic-field-kit-demo
+Live demo: https://vannt-dev.github.io/dynamic-field-kit/angular/
 
 ## Install
 
@@ -30,6 +30,8 @@ npm install @dynamic-field-kit/core@^1.0.12 @dynamic-field-kit/angular@^1.2.3
 - `FieldRegistry` (class, for scoped registries)
 - `FIELD_REGISTRY` (injection token)
 - `validateField` / `validateFields` / `resolveDisabled` / `resolveReadOnly` / `ValidationResult`
+- `createDynamicFormStore` (signal-based form state)
+- `DynamicFormDevToolsComponent`
 
 ## Basic setup (Angular 19+)
 
@@ -88,6 +90,89 @@ export class AppComponent {
   (onChange)="onChange($event)"
 ></dfk-multi-field-input>
 ```
+
+## Form state (`createDynamicFormStore`)
+
+A signal-based store — the Angular counterpart of React and Vue's
+`useDynamicForm`, with the same members. Read them as signals.
+
+```ts
+import {
+  createDynamicFormStore,
+  MultiFieldInput,
+} from '@dynamic-field-kit/angular';
+
+@Component({
+  standalone: true,
+  imports: [MultiFieldInput],
+  template: `
+    <form (ngSubmit)="onSubmit($event)">
+      <dfk-multi-field-input
+        [fieldDescriptions]="fields"
+        [properties]="store.data()"
+        (onChange)="store.handleChange($event)"
+        (onBlurField)="store.handleBlur($event)"
+      ></dfk-multi-field-input>
+      <button [disabled]="store.isSubmitting()">Save</button>
+    </form>
+  `,
+})
+export class MyForm {
+  fields = fields;
+  store = createDynamicFormStore({
+    fields,
+    initialValues: { country: 'VN' },
+    validateOnBlur: true, // default
+  });
+
+  // handleSubmit returns a handler, exactly like React and Vue.
+  onSubmit = this.store.handleSubmit((data) => this.save(data));
+}
+```
+
+| Member                              | Description                                                                       |
+| ----------------------------------- | --------------------------------------------------------------------------------- |
+| `data()`                            | Current form data, with `computeValue` fields applied                             |
+| `errors()`                          | `Record<string, string[]>`, keyed like `validateFields`                           |
+| `isValid()` / `isDirty()`           | No errors recorded / any value has changed                                        |
+| `isSubmitting()` / `isSubmitted()`  | In-flight submit / at least one submit attempted                                  |
+| `touched()`                         | Fields that have been blurred                                                     |
+| `handleChange(data)`                | Replace the whole form data — bind to `(onChange)`                                |
+| `setFieldValue(name, value)`        | Change one field                                                                  |
+| `handleBlur(name)`                  | Mark touched, and validate when `validateOnBlur`                                  |
+| `setFieldTouched(name, value?)`     | Set touched explicitly                                                            |
+| `validate()`                        | Validate now, returns a boolean                                                   |
+| `reset(values?)`                    | Back to `initialValues` (or the values given), clearing errors/touched/submission |
+| `handleSubmit(onValid, onInvalid?)` | Returns an async handler; calls `preventDefault`, validates, then dispatches      |
+
+`MultiFieldInput` emits `(onBlurField)` with the field's name, driven by a
+`focusout` listener — so it works with any renderer, without the renderer
+needing a blur output of its own.
+
+## Default renderers
+
+`text` · `number` · `password` · `email` · `textarea` · `checkbox` · `select` ·
+`radio` · `range` · `file` · `date` · `time` · `datetime-local` · `switch`
+
+Any type you have not registered falls back to one of these. `file` emits a
+`File` (or `File[]` when `multiple` is set), `range` and `number` emit numbers,
+`checkbox` / `switch` emit booleans; everything else emits strings.
+
+## DevTools
+
+```html
+<dfk-dev-tools
+  [data]="store.data()"
+  [errors]="store.errors()"
+  [touched]="store.touched()"
+  [isDirty]="store.isDirty()"
+  [fields]="fields"
+></dfk-dev-tools>
+```
+
+Import `DynamicFormDevToolsComponent`. A floating overlay with data / errors /
+meta / fields tabs; the collapsed button carries a red badge with the number of
+fields in error.
 
 ## Layouts
 
