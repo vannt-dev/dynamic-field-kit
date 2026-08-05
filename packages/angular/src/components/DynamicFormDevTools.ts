@@ -37,6 +37,18 @@ import { FieldDescription, Properties } from '@dynamic-field-kit/core';
       "
     >
       <span>🔍 DevTools</span>
+      <span
+        *ngIf="errorCount() > 0"
+        class="dfk-devtools-badge"
+        style="
+          background: #ef4444;
+          color: #fff;
+          border-radius: 10px;
+          padding: 2px 6px;
+          font-size: 10px;
+        "
+        >{{ errorCount() }}</span
+      >
     </button>
 
     <div
@@ -91,7 +103,12 @@ import { FieldDescription, Properties } from '@dynamic-field-kit/core';
           [style.color]="activeTab() === tab ? '#38bdf8' : '#94a3b8'"
           style="flex: 1; padding: 6px 0; border: none; cursor: pointer; text-transform: capitalize; font-size: 11px;"
         >
-          {{ tab }}
+          {{ tab
+          }}{{
+            tab === 'errors' && errorCount() > 0
+              ? ' (' + errorCount() + ')'
+              : ''
+          }}
         </button>
       </div>
 
@@ -137,6 +154,11 @@ export class DynamicFormDevToolsComponent {
   @Input() touched: Record<string, boolean> = {};
   @Input() isDirty = false;
   @Input() fields: FieldDescription[] = [];
+
+  /** Number of fields carrying errors, mirroring the react and vue overlays. */
+  errorCount(): number {
+    return Object.keys(this.errors || {}).length;
+  }
 
   isOpen = signal(false);
   activeTab = signal<'data' | 'errors' | 'meta' | 'fields'>('data');

@@ -50,6 +50,39 @@ describe('DynamicFormDevToolsComponent', () => {
     expect(text(fixture)).toContain('🛠️ Form DevTools');
   });
 
+  it('shows no error badge when the form is clean', () => {
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector(
+        '.dfk-devtools-badge'
+      )
+    ).toBeNull();
+  });
+
+  it('shows the error count on the collapsed badge', () => {
+    // setInput, not a plain assignment: the component is OnPush, so only a real
+    // input binding marks it for check - which is what an app does.
+    fixture.componentRef.setInput('errors', {
+      name: ['required'],
+      email: ['invalid'],
+    });
+    fixture.detectChanges();
+
+    const badge = (fixture.nativeElement as HTMLElement).querySelector(
+      '.dfk-devtools-badge'
+    );
+    expect(badge?.textContent?.trim()).toBe('2');
+  });
+
+  it('shows the error count in the errors tab label', () => {
+    fixture.componentInstance.errors = { name: ['required'] };
+    open(fixture);
+
+    const tab = buttons(fixture).find((b) =>
+      (b.textContent || '').trim().toLowerCase().startsWith('errors')
+    );
+    expect(tab?.textContent?.replace(/\s+/g, ' ').trim()).toBe('errors (1)');
+  });
+
   it('shows form data on the data tab', () => {
     fixture.componentInstance.data = { email: 'a@b.com' };
     open(fixture);
