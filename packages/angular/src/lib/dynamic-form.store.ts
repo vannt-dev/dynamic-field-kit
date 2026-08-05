@@ -72,23 +72,33 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
     isSubmitted.set(false);
   }
 
-  async function handleSubmit(
+  /**
+   * Returns a submit handler, mirroring the React and Vue `useDynamicForm`
+   * hooks. Bind it once and use it as the `(ngSubmit)` handler:
+   * `onSubmit = this.store.handleSubmit(data => ...)`.
+   */
+  function handleSubmit(
     onValid: (data: Properties) => void | Promise<void>,
     onInvalid?: (errors: Record<string, string[]>) => void
   ) {
-    isSubmitting.set(true);
-    try {
-      const res = validateFields(fields, data());
-      errors.set(res.errors);
-      isSubmitted.set(true);
-      if (res.valid) {
-        await onValid(data());
-      } else if (onInvalid) {
-        onInvalid(res.errors);
+    return async (e?: Event) => {
+      if (e && typeof e.preventDefault === 'function') {
+        e.preventDefault();
       }
-    } finally {
-      isSubmitting.set(false);
-    }
+      isSubmitting.set(true);
+      try {
+        const res = validateFields(fields, data());
+        errors.set(res.errors);
+        isSubmitted.set(true);
+        if (res.valid) {
+          await onValid(data());
+        } else if (onInvalid) {
+          onInvalid(res.errors);
+        }
+      } finally {
+        isSubmitting.set(false);
+      }
+    };
   }
 
   return {

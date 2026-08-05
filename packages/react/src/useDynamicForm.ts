@@ -18,6 +18,8 @@ export interface UseDynamicFormResult {
   errors: Record<string, string[]>;
   isValid: boolean;
   isDirty: boolean;
+  isSubmitting: boolean;
+  isSubmitted: boolean;
   touched: Record<string, boolean>;
   setData: React.Dispatch<React.SetStateAction<Properties>>;
   setFieldValue: (name: string, value: unknown) => void;
@@ -44,6 +46,8 @@ export function useDynamicForm({
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [isDirty, setIsDirty] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const validate = useCallback(() => {
     const res = validateFields(fields, data);
@@ -95,6 +99,8 @@ export function useDynamicForm({
       setErrors({});
       setIsDirty(false);
       setTouched({});
+      setIsSubmitting(false);
+      setIsSubmitted(false);
     },
     [fields, initialValues]
   );
@@ -108,12 +114,18 @@ export function useDynamicForm({
         if (e && typeof e.preventDefault === 'function') {
           e.preventDefault();
         }
-        const res = validateFields(fields, data);
-        setErrors(res.errors);
-        if (res.valid) {
-          await onValid(data);
-        } else if (onInvalid) {
-          onInvalid(res.errors);
+        setIsSubmitting(true);
+        try {
+          const res = validateFields(fields, data);
+          setErrors(res.errors);
+          setIsSubmitted(true);
+          if (res.valid) {
+            await onValid(data);
+          } else if (onInvalid) {
+            onInvalid(res.errors);
+          }
+        } finally {
+          setIsSubmitting(false);
         }
       },
     [fields, data]
@@ -126,6 +138,8 @@ export function useDynamicForm({
     errors,
     isValid,
     isDirty,
+    isSubmitting,
+    isSubmitted,
     touched,
     setData,
     setFieldValue,
