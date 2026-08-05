@@ -62,4 +62,38 @@ describe('Wizard Core Module', () => {
     expect(canGoNext(state1)).toBe(false);
     expect(canGoPrev(state1)).toBe(true);
   });
+
+  it('defaults to the first step', () => {
+    const state = createWizardState(steps);
+    expect(state.currentStepIndex).toBe(0);
+    expect(state.currentStep.id).toBe('step1');
+    expect(state.completedSteps).toEqual([]);
+  });
+
+  it('clamps an initial index past the last step', () => {
+    const state = createWizardState(steps, 99);
+    expect(state.currentStepIndex).toBe(1);
+    expect(state.isLastStep).toBe(true);
+    expect(state.isFirstStep).toBe(false);
+  });
+
+  it('clamps a negative initial index to the first step', () => {
+    const state = createWizardState(steps, -5);
+    expect(state.currentStepIndex).toBe(0);
+    expect(state.isFirstStep).toBe(true);
+  });
+
+  it('stays usable when there are no steps', () => {
+    const state = createWizardState([], 0);
+    expect(state.totalSteps).toBe(0);
+    expect(state.currentStep).toEqual({ id: '', title: '', fields: [] });
+    expect(canGoNext(state)).toBe(false);
+    expect(canGoPrev(state)).toBe(false);
+  });
+
+  it('reports a step with no fields as valid', () => {
+    expect(validateStep({ id: 's', title: 'S', fields: [] }, {}).valid).toBe(
+      true
+    );
+  });
 });
