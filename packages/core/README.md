@@ -4,7 +4,7 @@ Core types and shared registries for `dynamic-field-kit`.
 
 `@dynamic-field-kit/core` is intentionally framework-agnostic. It does not import React, Vue, or Angular types in its public API. Applications define field schemas in `core`, then register framework-specific renderers through an adapter package such as `@dynamic-field-kit/react`, `@dynamic-field-kit/vue`, or `@dynamic-field-kit/angular`.
 
-Demo app: https://github.com/vannt-dev/dynamic-field-kit-demo
+Live demo: https://vannt-dev.github.io/dynamic-field-kit/
 
 ## What this package provides
 
@@ -15,7 +15,9 @@ Demo app: https://github.com/vannt-dev/dynamic-field-kit-demo
 - Layout config types (`LayoutConfig`, `BaseLayout`, `ResponsiveLayout`, `ColumnLayoutConfig`, `RowLayoutConfig`, `GridLayoutConfig`) - the single source of truth re-exported by every adapter
 - `applyComputedValues` to resolve `computeValue` fields against form data
 - `validateField`, `validateFields`, `resolveDisabled`, `resolveReadOnly` and the `ValidationResult` type for opt-in, app-supplied validation and dynamic disabled/readOnly conditions
-- `isFieldGroup`, `createGroupItem`, `canAddGroupItem`, `canRemoveGroupItem` to work with repeatable field groups (`FieldDescription.fields`)
+- `isFieldGroup`, `createGroupItem`, `canAddGroupItem`, `canRemoveGroupItem` to work with repeatable field groups (`FieldDescription.fields`), plus `moveGroupItem`, `swapGroupItems`, `insertGroupItem` and `focusFirstInvalidField` for driving a group's array yourself
+- `zodValidator`, `yupValidator`, `valibotValidator` / `standardSchemaValidator` to validate with an existing schema library
+- A multi-step wizard state machine: `createWizardState`, `validateStep`, `canGoNext` / `canGoPrev`, `goNext` / `goPrev` / `goToStep`, `markStepCompleted` / `isStepCompleted`
 
 ## Install
 
@@ -215,6 +217,110 @@ are hidden by `appearCondition` or disabled. Use `validateFieldsAsync(fields, da
 when fields define async `validate` functions. Adapters call `validateField` /
 `resolveDisabled` / `resolveReadOnly` per field to surface `error`, `disabled`,
 and `readOnly` to renderers reactively.
+
+### Schema adapters (Zod, Yup, Valibot / Standard Schema)
+
+Attach a schema to a field's `validate` hook. By default the schema is treated
+as an **object schema describing the whole form**, and a field name selects
+which issues to surface:
+
+```ts
+import {
+  zodValidator,
+  yupValidator,
+  valibotValidator,
+} from '@dynamic-field-kit/core';
+
+const schema = z.object({ email: z.string().email() });
+
+const fields: FieldDescription[] = [
+  { name: 'email', type: 'text', validate: zodValidator(schema, 'email') },
+];
+```
+
+For a **scalar schema** covering a single value, say so explicitly:
+
+```ts
+validate: zodValidator(z.string().email(), { target: 'field' });
+```
+
+Both accept `SchemaValidatorOptions` — `{ field?: string; target?: 'form' | 'field' }`.
+`valibotValidator` is an alias of `standardSchemaValidator`, which handles any
+Standard Schema object (including Zod's `~standard`).
+
+Adapters parse **synchronously**, so the result works with the synchronous
+`validateFields` (and therefore with the framework form hooks). A schema with
+async refinements or async `.test()` rules cannot be parsed synchronously —
+those return a Promise, so validate through `validateFieldsAsync`.
+
+## Multi-step wizard
+
+A framework-agnostic state machine over grouped fields. State is immutable:
+every navigation returns a new object.
+
+```ts
+import {
+  createWizardState,
+  validateStep,
+  goNext,
+  goPrev,
+  isStepCompleted,
+} from '@dynamic-field-kit/core';
+
+let wizard = createWizardState([
+  { id: 'account', title: 'Account', fields: accountFields },
+  { id: 'profile', title: 'Profile', fields: profileFields },
+]);
+
+const { valid, errors } = validateStep(wizard.currentStep, data);
+if (valid) {
+  wizard = goNext(wizard); // records the step it leaves in completedSteps
+}
+```
+
+| Export                             | Description                                                                         |
+| ---------------------------------- | ----------------------------------------------------------------------------------- |
+| `createWizardState(steps, index?)` | Initial state; `index` is clamped into range                                        |
+| `validateStep(step, data)`         | `{ valid, errors }` for one step's fields                                           |
+| `canGoNext` / `canGoPrev`          | Whether a move is possible                                                          |
+| `goNext` / `goPrev`                | Move one step; returns the **same object** when it cannot, so `===` detects a no-op |
+| `goToStep(state, index)`           | Jump anywhere (clamped); does not mark anything completed                           |
+| `markStepCompleted(state, index?)` | Record a step as done, defaulting to the current one                                |
+| `isStepCompleted(state, index)`    | For rendering a step indicator                                                      |
+
+`WizardState` carries `currentStep`, `currentStepIndex`, `totalSteps`,
+`isFirstStep`, `isLastStep`, `steps` and `completedSteps`. `goNext` does not
+validate — call `validateStep` yourself so a "save draft and come back" flow
+stays possible.
+
+## Group array helpers
+
+Every adapter's `MultiFieldInput` renders add/remove controls itself. These
+helpers are for driving a group's array yourself — a drag handle, a "duplicate
+row" button, a custom group renderer. All are pure and never mutate the input:
+
+```ts
+import {
+  moveGroupItem,
+  swapGroupItems,
+  insertGroupItem,
+  isFieldGroup,
+  createGroupItem,
+  canAddGroupItem,
+  canRemoveGroupItem,
+  focusFirstInvalidField,
+} from '@dynamic-field-kit/core';
+
+const reordered = moveGroupItem(items, 3, 0); // same array back if out of range
+const withRow = insertGroupItem(items, 1, createGroupItem(field));
+
+if (canAddGroupItem(field, items)) {
+  /* respects maxItems */
+}
+
+// After a failed submit: focus + scroll to the first [aria-invalid="true"] field
+focusFirstInvalidField(formElement);
+```
 
 ## Repeatable field groups
 

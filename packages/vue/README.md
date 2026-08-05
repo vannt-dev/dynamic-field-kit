@@ -4,7 +4,7 @@ Vue 3 adapter for `@dynamic-field-kit/core`.
 
 This package provides Vue components that render `FieldDescription[]` and resolve field renderers through the shared registry used by `dynamic-field-kit`.
 
-Demo app: https://github.com/vannt-dev/dynamic-field-kit-demo
+Live demo: https://vannt-dev.github.io/dynamic-field-kit/vue/
 
 ## Install
 
@@ -29,6 +29,9 @@ Note: `@dynamic-field-kit/core` and `vue` are **peer dependencies** — this ada
 - `Properties`
 - `LayoutConfig`
 - `validateField` / `validateFields` / `resolveDisabled` / `resolveReadOnly` / `ValidationResult`
+- `useDynamicForm`
+- `DynamicFormDevTools`
+- `defaultRenderersMap` / `getDefaultRenderer`
 
 Default layouts are registered automatically when you import the package root.
 
@@ -100,6 +103,91 @@ function handleChange(data: Record<string, unknown>) {
   />
 </template>
 ```
+
+## Form state (`useDynamicForm`)
+
+Holds data, errors, touched and submission state for a set of fields. Everything
+is a `ref` (or `computed`), so read through `.value` in `<script setup>`.
+
+```vue
+<script setup lang="ts">
+import { useDynamicForm, MultiFieldInput } from '@dynamic-field-kit/vue';
+
+const form = useDynamicForm({
+  fields,
+  initialValues: { country: 'VN' },
+  validateOnBlur: true, // default
+  validateOnChange: false, // default
+});
+
+const onSubmit = form.handleSubmit((data) => save(data));
+</script>
+
+<template>
+  <form @submit="onSubmit">
+    <MultiFieldInput
+      :field-descriptions="fields"
+      :properties="form.data.value"
+      :on-change="form.handleChange"
+      :on-blur-field="form.handleBlur"
+    />
+    <button :disabled="form.isSubmitting.value">Save</button>
+  </form>
+</template>
+```
+
+| Member                              | Description                                                                       |
+| ----------------------------------- | --------------------------------------------------------------------------------- |
+| `data`                              | `Ref` of the form data, with `computeValue` fields applied                        |
+| `errors`                            | `Ref<Record<string, string[]>>`, keyed like `validateFields`                      |
+| `isValid` / `isDirty`               | `computed` / `Ref`                                                                |
+| `isSubmitting` / `isSubmitted`      | In-flight submit / at least one submit attempted                                  |
+| `touched`                           | Fields that have been blurred                                                     |
+| `handleChange(data)`                | Replace the whole form data — pass to `MultiFieldInput`'s `onChange`              |
+| `setFieldValue(name, value)`        | Change one field                                                                  |
+| `handleBlur(name)`                  | Mark touched, and validate when `validateOnBlur`                                  |
+| `setFieldTouched(name, value?)`     | Set touched explicitly                                                            |
+| `validate()`                        | Validate now, returns a boolean                                                   |
+| `reset(values?)`                    | Back to `initialValues` (or the values given), clearing errors/touched/submission |
+| `handleSubmit(onValid, onInvalid?)` | Returns a submit handler; calls `preventDefault`, validates, then dispatches      |
+
+`onBlurField` is what connects `handleBlur` — and therefore `touched` and
+`validateOnBlur` — to the rendered form.
+
+## Default renderers
+
+`text` · `number` · `password` · `email` · `textarea` · `checkbox` · `select` ·
+`radio` · `range` · `file` · `date` · `time` · `datetime-local` · `switch`
+
+Any type you have not registered falls back to one of these.
+
+```ts
+import {
+  defaultRenderersMap,
+  getDefaultRenderer,
+} from '@dynamic-field-kit/vue';
+
+const Base = getDefaultRenderer('date'); // undefined for an unknown type
+```
+
+`file` emits a `File` (or `File[]` when `multiple` is set), `range` and `number`
+emit numbers, `checkbox` / `switch` emit booleans; everything else emits strings.
+
+## DevTools
+
+```vue
+<DynamicFormDevTools
+  :data="form.data.value"
+  :errors="form.errors.value"
+  :touched="form.touched.value"
+  :is-dirty="form.isDirty.value"
+  :fields="fields"
+  position="bottom-right"
+/>
+```
+
+A floating overlay with data / errors / meta / fields tabs. The collapsed
+button carries a red badge with the number of fields in error.
 
 ## Layouts
 

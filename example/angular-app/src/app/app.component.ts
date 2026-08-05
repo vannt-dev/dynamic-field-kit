@@ -7,16 +7,33 @@ import {
   validateFields,
   validateFieldsAsync,
 } from '@dynamic-field-kit/core';
+import { DEMO_SOURCES } from './demo-sources';
+import { EnterpriseDemoComponent } from './demos/enterprise.component';
+import { WizardDemoComponent } from './demos/wizard.component';
 import './fieldRegistry';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, MultiFieldInput],
+  imports: [
+    CommonModule,
+    MultiFieldInput,
+    EnterpriseDemoComponent,
+    WizardDemoComponent,
+  ],
   templateUrl: './app.component.html',
 })
 export class AppComponent {
-  activeTab: 'legacy' | 'new' = 'legacy';
+  activeTab: 'legacy' | 'new' | 'enterprise' | 'wizard' = 'legacy';
+  showCode = false;
+
+  // The landing page only exists on the deployed site, one level above this
+  // app's base path, so link to it absolutely.
+  readonly ALL_DEMOS_URL = 'https://vannt-dev.github.io/dynamic-field-kit/';
+
+  currentSource(): string {
+    return DEMO_SOURCES[this.activeTab] ?? '';
+  }
 
   // 1. Legacy fields
   legacyFields: FieldDescription[] = [

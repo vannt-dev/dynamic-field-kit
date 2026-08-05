@@ -4,7 +4,7 @@ React adapter for `@dynamic-field-kit/core`.
 
 This package provides React components for rendering `FieldDescription[]` and exports a React-typed `fieldRegistry`, so registered renderers can be used directly as JSX components.
 
-Demo app: https://github.com/vannt-dev/dynamic-field-kit-demo
+Live demo: https://vannt-dev.github.io/dynamic-field-kit/react/
 
 ## Install
 
@@ -32,6 +32,7 @@ Note: `@dynamic-field-kit/core`, `react`, and `react-dom` are **peer dependencie
 - `FieldRendererProps`
 - `LayoutConfig`
 - `validateField` / `validateFields` / `resolveDisabled` / `resolveReadOnly` / `ValidationResult`
+- `defaultRenderersMap` / `getDefaultRenderer`
 
 `FieldGroupInput` (repeatable field groups) is used internally by `FieldInput` and doesn't need to be imported directly - see "Repeatable field groups" below.
 
@@ -97,6 +98,91 @@ export function Example() {
   );
 }
 ```
+
+## Form state (`useDynamicForm`)
+
+Holds data, errors, touched and submission state for a set of fields. Vue's
+composable and Angular's `createDynamicFormStore` expose the same surface.
+
+```tsx
+import { useDynamicForm, MultiFieldInput } from '@dynamic-field-kit/react';
+
+const form = useDynamicForm({
+  fields,
+  initialValues: { country: 'VN' },
+  validateOnBlur: true, // default
+  validateOnChange: false, // default
+});
+
+<form onSubmit={form.handleSubmit((data) => save(data))}>
+  <MultiFieldInput
+    fieldDescriptions={fields}
+    properties={form.data}
+    onChange={form.handleChange}
+    onBlurField={form.handleBlur} // wires touched + validateOnBlur
+  />
+  <button disabled={form.isSubmitting}>
+    {form.isSubmitting ? 'Saving…' : 'Save'}
+  </button>
+</form>;
+```
+
+| Member                              | Description                                                                       |
+| ----------------------------------- | --------------------------------------------------------------------------------- |
+| `data`                              | Current form data, with `computeValue` fields applied                             |
+| `errors`                            | `Record<string, string[]>`, keyed like `validateFields`                           |
+| `isValid` / `isDirty`               | No errors recorded / any value has changed                                        |
+| `isSubmitting` / `isSubmitted`      | In-flight submit / at least one submit attempted                                  |
+| `touched`                           | Fields that have been blurred                                                     |
+| `handleChange(data)`                | Replace the whole form data — pass to `MultiFieldInput`'s `onChange`              |
+| `setFieldValue(name, value)`        | Change one field                                                                  |
+| `handleBlur(name)`                  | Mark touched, and validate when `validateOnBlur`                                  |
+| `setFieldTouched(name, value?)`     | Set touched explicitly                                                            |
+| `setData`                           | Raw state setter, for escape hatches                                              |
+| `validate()`                        | Validate now, returns a boolean                                                   |
+| `reset(values?)`                    | Back to `initialValues` (or the values given), clearing errors/touched/submission |
+| `handleSubmit(onValid, onInvalid?)` | Returns a submit handler; calls `preventDefault`, validates, then dispatches      |
+
+`MultiFieldInput` tracks touched internally regardless; `onBlurField` is the
+hook for driving an external store like this one.
+
+## Default renderers
+
+`text` · `number` · `password` · `email` · `textarea` · `checkbox` · `select` ·
+`radio` · `range` · `file` · `date` · `time` · `datetime-local` · `switch`
+
+Any type you have not registered falls back to one of these. Reach the map
+directly if you need to wrap or inspect a default:
+
+```ts
+import {
+  defaultRenderersMap,
+  getDefaultRenderer,
+} from '@dynamic-field-kit/react';
+
+const Base = getDefaultRenderer('date'); // undefined for an unknown type
+```
+
+`file` emits a `File` (or `File[]` when `multiple` is set), `range` and `number`
+emit numbers, `checkbox` / `switch` emit booleans; everything else emits strings.
+
+## DevTools
+
+```tsx
+import { DynamicFormDevTools } from '@dynamic-field-kit/react';
+
+<DynamicFormDevTools
+  data={form.data}
+  errors={form.errors}
+  touched={form.touched}
+  isDirty={form.isDirty}
+  fields={fields}
+  position="bottom-right" // or "bottom-left"
+/>;
+```
+
+A floating overlay with data / errors / meta / fields tabs. The collapsed
+button carries a red badge with the number of fields in error.
 
 ## Layouts
 
