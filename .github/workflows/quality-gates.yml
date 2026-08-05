@@ -128,7 +128,6 @@ jobs:
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
-          cache-dependency-path: example/${{ matrix.app }}/package-lock.json
 
       # The example apps depend on the packages via `file:` paths, so the dist
       # has to exist before their install resolves them.
@@ -138,9 +137,18 @@ jobs:
           name: package-dist
           path: packages
 
+      # Those `file:` paths resolve to the real packages/ directories, so module
+      # resolution from packages/react/dist walks up to the workspace root - and
+      # without a root install it never finds @dynamic-field-kit/core.
+      - name: Install workspace dependencies
+        run: npm ci
+
+      # `npm install`, not `npm ci`: example/angular-app gitignores its
+      # package-lock.json, so there is no lockfile to clean-install from. The
+      # other two still honour their committed lockfiles.
       - name: Install example dependencies
         working-directory: example/${{ matrix.app }}
-        run: npm ci --no-audit --no-fund
+        run: npm install --no-audit --no-fund
 
       # Each example's build typechecks its sources against the built packages,
       # which is what catches a README/demo drifting from the real API.
