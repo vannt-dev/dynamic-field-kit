@@ -28,6 +28,14 @@ const FieldInput = defineComponent({
       type: Function as PropType<(value: unknown, key: string) => void>,
       required: true,
     },
+    onBlurField: {
+      type: Function as PropType<(key: string) => void>,
+      default: undefined,
+    },
+    touched: {
+      type: Boolean,
+      default: undefined,
+    },
   },
   setup(props) {
     return () => {
@@ -82,7 +90,9 @@ const FieldInput = defineComponent({
         ariaInvalid: Boolean(errorList),
         ariaRequired: Boolean(required),
         extraProps,
+        touched: props.touched,
         onChange: (v: unknown) => props.onValueChangeField(v, name),
+        onBlur: () => props.onBlurField?.(name),
       });
     };
   },

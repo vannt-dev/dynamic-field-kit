@@ -64,6 +64,7 @@ const DEFAULT_BREAKPOINT = 768;
           [readOnly]="getReadOnly(field)"
           [error]="getError(field)"
           (onValueChangeField)="onFieldChange($event)"
+          (onBlurField)="handleBlurField($event)"
         ></dfk-field-input>
 
         <div *ngIf="field.fields" [class]="field.className">
@@ -119,6 +120,25 @@ export class MultiFieldInput implements OnInit, OnChanges {
   @Input() properties?: Properties;
   @Output() onChange = new EventEmitter<Properties>();
   @Output() validityChange = new EventEmitter<ValidationResult>();
+  /**
+   * Emits a field's name when it loses focus. Touched state is tracked
+   * internally either way; this is the hook for driving an external form store
+   * - pass `createDynamicFormStore`'s `handleBlur` to get its `touched` map and
+   * `validateOnBlur` behaviour.
+   */
+  @Output() onBlurField = new EventEmitter<string>();
+
+  private touchedFields: Record<string, boolean> = {};
+
+  handleBlurField(fieldName: string): void {
+    this.touchedFields = { ...this.touchedFields, [fieldName]: true };
+    this.onBlurField.emit(fieldName);
+  }
+
+  /** Whether this field has been blurred at least once. */
+  isTouched(fieldName: string): boolean {
+    return Boolean(this.touchedFields[fieldName]);
+  }
   @Input() layout: LayoutConfig = 'column';
   // Top-level form data, threaded down through repeatable groups so a nested
   // field's appearCondition/computeValue can read the root form. Omitted at
