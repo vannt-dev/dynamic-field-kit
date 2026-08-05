@@ -2,8 +2,8 @@
 
 import { FieldDescription } from '@dynamic-field-kit/core';
 import { MultiFieldInput } from '@dynamic-field-kit/react';
-import Link from 'next/link';
 import { useState } from 'react';
+import DemoNav from './DemoNav';
 import '../lib/fieldRegistry';
 
 const fields: FieldDescription[] = [
@@ -46,39 +46,7 @@ export default function Page() {
         fontFamily: 'sans-serif',
       }}
     >
-      <nav
-        style={{
-          marginBottom: '20px',
-          padding: '12px',
-          background: '#f0f4f8',
-          borderRadius: '8px',
-        }}
-      >
-        <strong style={{ marginRight: '16px', color: '#111' }}>
-          📌 Demo Cơ Bản (Legacy)
-        </strong>
-        <Link
-          href="/new-features"
-          style={{
-            fontWeight: 'normal',
-            marginRight: '16px',
-            color: '#0066cc',
-            textDecoration: 'none',
-          }}
-        >
-          ✨ Demo Tính Năng Mới (v1.3+) →
-        </Link>
-        <Link
-          href="/wizard"
-          style={{
-            fontWeight: 'normal',
-            color: '#0066cc',
-            textDecoration: 'none',
-          }}
-        >
-          🧭 Wizard nhiều bước →
-        </Link>
-      </nav>
+      <DemoNav current="basics" />
 
       <h1 style={{ marginBottom: '24px' }}>Dynamic Field Kit React Demo</h1>
       <MultiFieldInput

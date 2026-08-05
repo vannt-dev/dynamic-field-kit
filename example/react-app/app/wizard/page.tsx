@@ -12,8 +12,8 @@ import {
   validateStep,
 } from '@dynamic-field-kit/core';
 import { MultiFieldInput } from '@dynamic-field-kit/react';
-import Link from 'next/link';
 import { useState } from 'react';
+import DemoNav from '../DemoNav';
 import '../../lib/fieldRegistry';
 
 const accountFields: FieldDescription[] = [
@@ -109,36 +109,7 @@ export default function WizardPage() {
         fontFamily: 'sans-serif',
       }}
     >
-      <nav
-        style={{
-          marginBottom: '20px',
-          padding: '12px',
-          background: '#f0f4f8',
-          borderRadius: '8px',
-        }}
-      >
-        <Link
-          href="/"
-          style={{
-            marginRight: '16px',
-            color: '#0066cc',
-            textDecoration: 'none',
-          }}
-        >
-          ← Demo Cơ Bản
-        </Link>
-        <Link
-          href="/new-features"
-          style={{
-            marginRight: '16px',
-            color: '#0066cc',
-            textDecoration: 'none',
-          }}
-        >
-          ✨ Enterprise Features
-        </Link>
-        <strong style={{ color: '#111' }}>🧭 Wizard nhiều bước</strong>
-      </nav>
+      <DemoNav current="wizard" />
 
       <h1 style={{ marginBottom: '12px', fontSize: '24px' }}>
         Multi-Step Form Wizard

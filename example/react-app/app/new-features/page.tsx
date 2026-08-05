@@ -6,7 +6,7 @@ import {
   useDynamicForm,
   DynamicFormDevTools,
 } from '@dynamic-field-kit/react';
-import Link from 'next/link';
+import DemoNav from '../DemoNav';
 import '../../lib/fieldRegistry';
 
 const fields: FieldDescription[] = [
@@ -80,39 +80,7 @@ export default function NewFeaturesPage() {
         fontFamily: 'sans-serif',
       }}
     >
-      <nav
-        style={{
-          marginBottom: '20px',
-          padding: '12px',
-          background: '#f0f4f8',
-          borderRadius: '8px',
-        }}
-      >
-        <Link
-          href="/"
-          style={{
-            marginRight: '16px',
-            fontWeight: 'normal',
-            color: '#0066cc',
-            textDecoration: 'none',
-          }}
-        >
-          ← Demo Cơ Bản (Legacy)
-        </Link>
-        <strong style={{ marginRight: '16px', color: '#111' }}>
-          ✨ Demo Enterprise Features (v1.4+)
-        </strong>
-        <Link
-          href="/wizard"
-          style={{
-            fontWeight: 'normal',
-            color: '#0066cc',
-            textDecoration: 'none',
-          }}
-        >
-          🧭 Wizard nhiều bước →
-        </Link>
-      </nav>
+      <DemoNav current="new-features" />
 
       <h1 style={{ marginBottom: '12px', fontSize: '24px' }}>
         Tính Năng Nâng Cấp Enterprise-Grade (v1.4+)
