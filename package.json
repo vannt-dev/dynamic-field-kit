@@ -17,12 +17,16 @@
     "format-check": "prettier --check .",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "format": "prettier --write .",
-    "prepare": "husky",
+    "prepare": "husky && git config commit.template .git-commit-template.txt || true",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "changeset publish"
   },
   "//": "root vitest is the hoisted peer target for @vitest/coverage-v8 - do not remove, it looks unused but breaks --coverage repo-wide",
+  "//overrides": "postcss reaches production deps through vue -> @vue/compiler-sfc. GHSA-r28c-9q8g-f849 / GHSA-fxqj-rqcc-2cmp affect <=8.5.22; this is a patch bump inside the range compiler-sfc already asks for. Drop once vue ships a compiler-sfc that requires a fixed postcss.",
+  "overrides": {
+    "postcss": "^8.5.25"
+  },
   "devDependencies": {
     "@changesets/cli": "^2.31.1",
     "@commitlint/cli": "^21.2.1",
@@ -51,12 +55,13 @@
     "react-dom": "^19.2.4",
     "vue": "^3.5.32"
   },
+  "//lint-staged": "globs must stay a superset of what `prettier --check .` sees, or a file can pass pre-commit and fail CI format-check. eslint only runs on the extensions the lint script targets.",
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [
       "prettier --write",
       "eslint --fix"
     ],
-    "*.{json,md,yml,css}": [
+    "*.{cjs,mjs,json,md,yml,yaml,css,scss,html}": [
       "prettier --write"
     ]
   }

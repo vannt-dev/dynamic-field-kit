@@ -5,6 +5,8 @@ on:
     branches:
       - master
 
+# Deliberately no cancel-in-progress: cancelling mid-publish could leave some
+# packages on npm and others not.
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 permissions:
@@ -12,8 +14,15 @@ permissions:
   pull-requests: write
 
 jobs:
+  # Publishing used to run its own thinner set of checks (no lint, no format,
+  # no coverage floors, no verify scripts) independently of CI, so a red CI did
+  # not stop a release. The exact same gates a PR faces must pass first.
+  gates:
+    uses: ./.github/workflows/quality-gates.yml
+
   release:
     name: Release & Publish
+    needs: [gates]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,7 +30,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version-file: '.nvmrc'
           cache: 'npm'
           registry-url: 'https://registry.npmjs.org'
 
@@ -30,9 +39,6 @@ jobs:
 
       - name: Build packages
         run: npm run build
-
-      - name: Typecheck & Verify Tests
-        run: npm run typecheck && npm test
 
       - name: Create Release Pull Request or Publish to npm
         id: changesets

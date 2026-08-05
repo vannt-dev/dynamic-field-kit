@@ -10,136 +10,30 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint-and-build:
+  gates:
+    uses: ./.github/workflows/quality-gates.yml
+
+  changeset:
+    name: Changeset present
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
+        with:
+          # changeset status diffs against the base branch, so it needs history.
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version-file: '.nvmrc'
           cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint & Format
-        run: npm run lint && npm run format-check
-
-      - name: Build packages
-        run: |
-          npm run build --workspace=@dynamic-field-kit/core
-          npm run build --workspace=@dynamic-field-kit/react
-          npm run build --workspace=@dynamic-field-kit/vue
-          npm run build --workspace=@dynamic-field-kit/angular
-
-      # Share the built dist with the verify job so it doesn't rebuild all four
-      # packages (ng-packagr's Angular build especially). Common ancestor of the
-      # four paths is `packages`, so the artifact stores `<pkg>/dist/...`.
-      - name: Upload built dist
-        uses: actions/upload-artifact@v4
-        with:
-          name: package-dist
-          path: |
-            packages/core/dist
-            packages/react/dist
-            packages/vue/dist
-            packages/angular/dist
-          retention-days: 1
-          if-no-files-found: error
-
-      - name: Typecheck
-        run: npm run typecheck
-
-      - name: Type tests
-        run: npm run test:types --workspace=@dynamic-field-kit/core
-
-      - name: Show bundle sizes
-        run: node scripts/show-sizes.js
-
-  test:
-    name: Test ${{ matrix.package }}
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - package: core
-            test-cmd: npm run test --workspace=@dynamic-field-kit/core -- --coverage
-            coverage-file: packages/core/coverage/lcov.info
-            coverage-name: core
-          - package: react
-            build-cmd: npm run build --workspace=@dynamic-field-kit/core
-            test-cmd: npm run test --workspace=@dynamic-field-kit/react -- --coverage
-            coverage-file: packages/react/coverage/lcov.info
-            coverage-name: react
-          - package: vue
-            build-cmd: npm run build --workspace=@dynamic-field-kit/core
-            test-cmd: npm run test --workspace=@dynamic-field-kit/vue -- --coverage
-            coverage-file: packages/vue/coverage/lcov.info
-            coverage-name: vue
-          - package: angular
-            build-cmd: npm run build --workspace=@dynamic-field-kit/core
-            test-cmd: npm run test --workspace=@dynamic-field-kit/angular -- --coverage
-            coverage-file: packages/angular/coverage/lcov.info
-            coverage-name: angular
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build core
-        if: matrix.build-cmd != ''
-        run: ${{ matrix.build-cmd }}
-
-      - name: Run tests
-        run: ${{ matrix.test-cmd }}
-
-      - name: Upload coverage
-        if: matrix.coverage-file != '' && success()
-        uses: codecov/codecov-action@v4
-        with:
-          files: ${{ matrix.coverage-file }}
-          flags: unittests
-          name: ${{ matrix.coverage-name }}
-          fail_ci_if_error: false
-
-  verify:
-    runs-on: ubuntu-latest
-    needs: [lint-and-build, test]
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      # Reuse the dist built by lint-and-build instead of rebuilding all four
-      # packages. Extract into `packages/` so paths become packages/<pkg>/dist.
-      - name: Download built dist
-        uses: actions/download-artifact@v4
-        with:
-          name: package-dist
-          path: packages
-
-      - name: Smoke test built packages
-        run: npm run test --workspace=@dynamic-field-kit/smoke
-
-      - name: Run verification scripts
-        run: |
-          node scripts/verify-framework-deps.js
-          node scripts/check-cross-framework-imports.js
-          node scripts/integration-cross-registry.js
+      # Fails when a PR changes a publishable package without adding a
+      # changeset, which would otherwise merge and silently never be released.
+      # Add one with `npx changeset`.
+      - name: Check for a changeset
+        run: npx changeset status --since=origin/${{ github.base_ref }}
