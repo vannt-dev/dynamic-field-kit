@@ -33,6 +33,13 @@ interface Props {
    * included).
    */
   onValidityChange?: (result: ValidationResult) => void;
+  /**
+   * Called with a field's name when it loses focus. Touched state is still
+   * tracked internally either way; this is the hook for driving an external
+   * form store - pass `useDynamicForm`'s `handleBlur` to get its `touched`
+   * map and `validateOnBlur` behaviour.
+   */
+  onBlurField?: (fieldName: string) => void;
 }
 
 function resolveLayout(layout?: LayoutConfig) {
@@ -52,6 +59,7 @@ const MultiFieldInput = ({
   layout,
   rootData,
   onValidityChange,
+  onBlurField,
 }: Props) => {
   const [data, setData] = useState<Properties>({});
   const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>(
@@ -92,6 +100,8 @@ const MultiFieldInput = ({
   rootDataRef.current = rootData;
   const onValidityChangeRef = useRef(onValidityChange);
   onValidityChangeRef.current = onValidityChange;
+  const onBlurFieldRef = useRef(onBlurField);
+  onBlurFieldRef.current = onBlurField;
 
   useEffect(() => {
     onValidityChangeRef.current?.(
@@ -113,6 +123,7 @@ const MultiFieldInput = ({
 
   const handleBlurField = useCallback((key: string) => {
     setTouchedFields((prev) => (prev[key] ? prev : { ...prev, [key]: true }));
+    onBlurFieldRef.current?.(key);
   }, []);
 
   const { type, config } = resolveLayout(layout);

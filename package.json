@@ -17,8 +17,9 @@
     "format-check": "prettier --check .",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "format": "prettier --write .",
-    "prepare": "husky",
+    "prepare": "husky && git config commit.template .git-commit-template.txt || true",
     "changeset": "changeset",
+    "changeset:auto": "node scripts/create-changeset.js",
     "version-packages": "changeset version",
     "release": "changeset publish"
   },
@@ -51,12 +52,13 @@
     "react-dom": "^19.2.4",
     "vue": "^3.5.32"
   },
+  "//lint-staged": "globs must stay a superset of what `prettier --check .` sees, or a file can pass pre-commit and fail CI format-check. eslint only runs on the extensions the lint script targets.",
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [
       "prettier --write",
       "eslint --fix"
     ],
-    "*.{json,md,yml,css}": [
+    "*.{cjs,mjs,json,md,yml,yaml,css,scss,html}": [
       "prettier --write"
     ]
   }

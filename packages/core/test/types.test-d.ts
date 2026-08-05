@@ -112,6 +112,26 @@ test('condition hooks return booleans', () => {
   >().returns.toEqualTypeOf<boolean>();
 });
 
+test('every built-in default renderer key is a usable field type', () => {
+  // These are the keys the react/vue `defaultRenderersMap` registers. A type
+  // that has a shipped renderer but no FieldTypeMap entry cannot be used from
+  // TypeScript at all.
+  assertType<FieldDescription>({ name: 'a', type: 'text' });
+  assertType<FieldDescription>({ name: 'b', type: 'number' });
+  assertType<FieldDescription>({ name: 'c', type: 'password' });
+  assertType<FieldDescription>({ name: 'd', type: 'email' });
+  assertType<FieldDescription>({ name: 'e', type: 'textarea' });
+  assertType<FieldDescription>({ name: 'f', type: 'checkbox' });
+  assertType<FieldDescription>({ name: 'g', type: 'select' });
+  assertType<FieldDescription>({ name: 'h', type: 'radio' });
+  assertType<FieldDescription>({ name: 'i', type: 'range' });
+  assertType<FieldDescription>({ name: 'j', type: 'file' });
+  assertType<FieldDescription>({ name: 'k', type: 'date' });
+  assertType<FieldDescription>({ name: 'l', type: 'time' });
+  assertType<FieldDescription>({ name: 'm', type: 'datetime-local' });
+  assertType<FieldDescription>({ name: 'n', type: 'switch' });
+});
+
 test('FieldTypeMap augmentation resolves', () => {
   expectTypeOf<FieldTypeMap['customType']>().toEqualTypeOf<{ id: string }>();
   assertType<FieldDescription>({ name: 'c', type: 'customType' });

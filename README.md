@@ -1,6 +1,16 @@
 # Dynamic Field Kit
 
 [![CI](https://github.com/vannt-dev/dynamic-field-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/vannt-dev/dynamic-field-kit/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/@dynamic-field-kit/core?label=core)](https://www.npmjs.com/package/@dynamic-field-kit/core)
+[![npm](https://img.shields.io/npm/v/@dynamic-field-kit/react?label=react)](https://www.npmjs.com/package/@dynamic-field-kit/react)
+[![npm](https://img.shields.io/npm/v/@dynamic-field-kit/vue?label=vue)](https://www.npmjs.com/package/@dynamic-field-kit/vue)
+[![npm](https://img.shields.io/npm/v/@dynamic-field-kit/angular?label=angular)](https://www.npmjs.com/package/@dynamic-field-kit/angular)
+
+**[▶ Live demos](https://vannt-dev.github.io/dynamic-field-kit/)** — the same
+schema rendered by [React](https://vannt-dev.github.io/dynamic-field-kit/react/),
+[Vue](https://vannt-dev.github.io/dynamic-field-kit/vue/) and
+[Angular](https://vannt-dev.github.io/dynamic-field-kit/angular/), including a
+[multi-step wizard](https://vannt-dev.github.io/dynamic-field-kit/react/wizard/).
 
 A lightweight, extensible **dynamic form engine** for React, Angular, and Vue, built for scalable applications and design systems.
 
@@ -20,6 +30,43 @@ A lightweight, extensible **dynamic form engine** for React, Angular, and Vue, b
 - Clean TypeScript declarations (DTS-safe)
 - Framework-agnostic core (works with React, Angular, Vue, or vanilla JS)
 - Ideal for form builders & design systems
+
+### 🚀 Enterprise Features (v1.4+)
+
+- **Form State Hook / Composable / Signal Store**: `useDynamicForm` for React & Vue 3, `createDynamicFormStore` for Angular Signals. All three expose the same surface — including `isSubmitting` / `isSubmitted` — and `handleSubmit(onValid, onInvalid)` returns a submit handler in every framework.
+- **Extended HTML5 Renderers**: Built-in support for `radio`, `range`, `file`, `date`, `time`, `datetime-local`, and `switch`.
+- **Schema Validation Adapters**: Integrated `zodValidator`, `yupValidator`, `valibotValidator`, and Standard Schema adapters.
+- **Multi-Step Form Wizard Engine**: `createWizardState`, `validateStep`, `canGoNext`, `canGoPrev`, `goNext`, `goPrev`, `goToStep`, `markStepCompleted`, `isStepCompleted`. State is immutable — every navigation returns a new state, and `goNext` records the step it leaves in `completedSteps`.
+- **Interactive Form DevTools**: Floating overlay component (`<DynamicFormDevTools />`) for realtime debugging.
+- **Blur wiring**: `MultiFieldInput` reports blur via `onBlurField` (an `@Output` in Angular), so a form store's `handleBlur` / `touched` / `validateOnBlur` can be connected to it.
+- **Group Array Manipulation Helpers**: `moveGroupItem`, `swapGroupItems`, `insertGroupItem`, and `focusFirstInvalidField`.
+
+#### Schema adapters
+
+Attach an adapter to a field's `validate` hook. By default the schema is treated
+as an **object schema describing the whole form**, and a field name selects which
+issues to surface:
+
+```ts
+import { zodValidator } from '@dynamic-field-kit/core';
+
+const schema = z.object({ email: z.string().email() });
+
+const fields = [
+  { name: 'email', type: 'text', validate: zodValidator(schema, 'email') },
+];
+```
+
+For a **scalar schema** covering a single value, say so explicitly:
+
+```ts
+validate: zodValidator(z.string().email(), { target: 'field' });
+```
+
+Adapters parse **synchronously** so their result works with `validateFields` (and
+therefore with `useDynamicForm`). A schema containing async refinements or async
+`.test()` rules cannot be parsed synchronously — those return a Promise, so
+validate through `validateFieldsAsync` instead.
 
 ---
 
@@ -265,10 +312,29 @@ const asyncResult = await validateFieldsAsync(fields, data);
 
 **Default Built-in HTML5 Renderers (Zero Config)**
 
-All framework adapters (`react`, `vue`, `angular`) ship with **built-in HTML5 fallback renderers** for common input types:
-`'text'`, `'number'`, `'select'`, `'checkbox'`, `'textarea'`, `'password'`, `'email'`.
+All framework adapters (`react`, `vue`, `angular`) ship with **built-in HTML5 fallback renderers**:
 
-If you do not register a custom component for a type, the library automatically renders a clean, accessible HTML5 input with support for labels, placeholders, disabled states, options, and error states!
+`text` · `number` · `password` · `email` · `textarea` · `checkbox` · `select` ·
+`radio` · `range` · `file` · `date` · `time` · `datetime-local` · `switch`
+
+If you do not register a custom component for a type, the library automatically renders a clean, accessible HTML5 input with support for labels, placeholders, disabled states, options, and error states.
+
+Every key above is also a `FieldTypeMap` entry, so `type: 'switch'` typechecks
+out of the box. The map itself is reachable if you need to wrap or inspect a
+default:
+
+```ts
+import {
+  defaultRenderersMap,
+  getDefaultRenderer,
+} from '@dynamic-field-kit/react'; // or /vue
+
+const Base = getDefaultRenderer('date'); // undefined for an unknown type
+Object.keys(defaultRenderersMap); // every built-in type key
+```
+
+`file` emits a `File` (or `File[]` when `multiple` is set), `range` and `number`
+emit numbers, `checkbox` / `switch` emit booleans; everything else emits strings.
 
 **Custom Field Registry (Custom UI & Design Systems)**
 
@@ -307,6 +373,189 @@ registry.register('text', myTextRenderer);
 // Vue: provideFieldRegistry(registry) in a parent's setup()
 // Angular: { provide: FIELD_REGISTRY, useValue: registry } in a component/route
 ```
+
+---
+
+## 🧾 Form State (`useDynamicForm`)
+
+Holds the data, errors, touched and submission state for a set of fields. React
+and Vue export `useDynamicForm`; Angular exports `createDynamicFormStore`, built
+on signals. All three expose the same surface.
+
+```tsx
+// React
+import { useDynamicForm, MultiFieldInput } from '@dynamic-field-kit/react';
+
+const form = useDynamicForm({
+  fields,
+  initialValues: { country: 'VN' },
+  validateOnBlur: true, // default
+  validateOnChange: false, // default
+});
+
+<form onSubmit={form.handleSubmit((data) => save(data))}>
+  <MultiFieldInput
+    fieldDescriptions={fields}
+    properties={form.data}
+    onChange={form.handleChange}
+    onBlurField={form.handleBlur} // wires touched + validateOnBlur
+  />
+  <button disabled={form.isSubmitting}>
+    {form.isSubmitting ? 'Saving…' : 'Save'}
+  </button>
+</form>;
+```
+
+```ts
+// Vue — same names, refs instead of plain values
+const form = useDynamicForm({ fields });
+form.data.value;
+form.isSubmitting.value;
+
+// Angular — same names, signals
+const store = createDynamicFormStore({ fields });
+store.data();
+store.isSubmitting();
+```
+
+| Member                              | Description                                                                       |
+| ----------------------------------- | --------------------------------------------------------------------------------- |
+| `data`                              | Current form data, with `computeValue` fields applied                             |
+| `errors`                            | `Record<string, string[]>`, keyed like `validateFields`                           |
+| `isValid` / `isDirty`               | No errors recorded / any value has changed                                        |
+| `isSubmitting` / `isSubmitted`      | In-flight submit / at least one submit attempted                                  |
+| `touched`                           | Fields that have been blurred                                                     |
+| `handleChange(data)`                | Replace the whole form data — pass to `MultiFieldInput`'s `onChange`              |
+| `setFieldValue(name, value)`        | Change one field                                                                  |
+| `handleBlur(name)`                  | Mark touched, and validate when `validateOnBlur`                                  |
+| `setFieldTouched(name, value?)`     | Set touched explicitly                                                            |
+| `validate()`                        | Validate now, returns a boolean                                                   |
+| `reset(values?)`                    | Back to `initialValues` (or the values given), clearing errors/touched/submission |
+| `handleSubmit(onValid, onInvalid?)` | Returns a submit handler; calls `preventDefault`, validates, then dispatches      |
+
+`handleSubmit` returns a **handler** in every framework, so Angular binds it the
+same way: `onSubmit = this.store.handleSubmit((data) => …)` then
+`(ngSubmit)="onSubmit($event)"`.
+
+## 🧭 Multi-Step Wizard
+
+A framework-agnostic state machine over grouped `FieldDescription`s. State is
+immutable — every navigation returns a new state object.
+
+```ts
+import {
+  createWizardState,
+  validateStep,
+  goNext,
+  goPrev,
+  canGoNext,
+  isStepCompleted,
+} from '@dynamic-field-kit/core';
+
+const steps = [
+  { id: 'account', title: 'Account', fields: accountFields },
+  { id: 'profile', title: 'Profile', fields: profileFields },
+];
+
+let wizard = createWizardState(steps);
+
+function next(data) {
+  // goNext does not validate — decide for yourself whether the step may be left
+  const { valid, errors } = validateStep(wizard.currentStep, data);
+  if (!valid) return errors;
+  wizard = goNext(wizard); // records the step it leaves in completedSteps
+}
+```
+
+| Export                             | Description                                                                         |
+| ---------------------------------- | ----------------------------------------------------------------------------------- |
+| `createWizardState(steps, index?)` | Initial state; `index` is clamped into range                                        |
+| `validateStep(step, data)`         | `{ valid, errors }` for one step's fields                                           |
+| `canGoNext` / `canGoPrev`          | Whether a move is possible                                                          |
+| `goNext` / `goPrev`                | Move one step. Returns the **same object** when it cannot, so `===` detects a no-op |
+| `goToStep(state, index)`           | Jump anywhere (clamped). Does not mark anything completed                           |
+| `markStepCompleted(state, index?)` | Record a step as done; defaults to the current one                                  |
+| `isStepCompleted(state, index)`    | For rendering a step indicator                                                      |
+
+`WizardState` carries `currentStep`, `currentStepIndex`, `totalSteps`,
+`isFirstStep`, `isLastStep`, `steps` and `completedSteps`.
+
+## 🛠️ DevTools
+
+A floating overlay showing live form data, errors, metadata and field
+descriptions. Render it next to your form during development.
+
+```tsx
+import { DynamicFormDevTools } from '@dynamic-field-kit/react'; // or /vue
+
+<DynamicFormDevTools
+  data={form.data}
+  errors={form.errors}
+  touched={form.touched}
+  isDirty={form.isDirty}
+  fields={fields}
+  position="bottom-right" // or "bottom-left"
+/>;
+```
+
+```html
+<!-- Angular: DynamicFormDevToolsComponent -->
+<dfk-dev-tools [data]="store.data()" [errors]="store.errors()"></dfk-dev-tools>
+```
+
+The collapsed button carries a red badge with the number of fields in error.
+
+## 🧮 Group Array Helpers
+
+`MultiFieldInput` renders add/remove controls for repeatable groups on its own.
+These helpers are for driving a group's array yourself — a drag handle, a
+"duplicate row" button, a custom group renderer:
+
+```ts
+import {
+  moveGroupItem,
+  swapGroupItems,
+  insertGroupItem,
+  isFieldGroup,
+  createGroupItem,
+  canAddGroupItem,
+  canRemoveGroupItem,
+  focusFirstInvalidField,
+} from '@dynamic-field-kit/core';
+
+const reordered = moveGroupItem(items, 3, 0); // returns the SAME array if out of range
+const withRow = insertGroupItem(items, 1, createGroupItem(field));
+
+if (canAddGroupItem(field, items)) {
+  /* respects maxItems */
+}
+
+// After a failed submit: focus + scroll to the first [aria-invalid="true"] field
+focusFirstInvalidField(formElement);
+```
+
+All of them are pure — they return a new array and never mutate the input.
+
+---
+
+## ▶️ Runnable Examples
+
+`example/` holds a working app per framework. They consume the packages through
+`file:` paths, so build the packages first:
+
+```bash
+npm run build                     # from the repo root
+cd example/react-app && npm install && npm run dev
+```
+
+| Page                      | Shows                                                                                                            |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `/` (react, vue, angular) | Registering renderers, `MultiFieldInput`, layouts, conditions, repeatable groups                                 |
+| `/new-features` (react)   | `useDynamicForm`, the extended HTML5 renderers, blur wiring via `onBlurField`, `DynamicFormDevTools`             |
+| `/wizard` (react)         | The wizard engine end to end: step indicator from `completedSteps`, per-step `validateStep`, `goNext` / `goPrev` |
+
+CI builds all three example apps on every PR, so the code above is guaranteed
+to compile against the current packages.
 
 ---
 
@@ -394,6 +643,31 @@ This library intentionally does not include:
 - Validation logic
 
 It is a **form engine**, not a full form framework.
+
+## 🚀 Releasing
+
+Versions are never edited by hand. Go to **Actions → Release → Run workflow**,
+run it on `develop`, and fill in:
+
+| Input      | Meaning                                                                |
+| ---------- | ---------------------------------------------------------------------- |
+| `bump`     | `patch`, `minor` or `major`                                            |
+| `packages` | `core,react,vue,angular` — leave empty to bump all of them             |
+| `message`  | The CHANGELOG entry for this release                                   |
+| `dry_run`  | Version and print the result without committing, tagging or publishing |
+
+The workflow runs the full quality gates first, then applies the bump, writes
+the CHANGELOGs, commits `chore(release): version packages`, and publishes to
+npm.
+
+Packages are versioned independently, so bumping only what changed is fine.
+Any changesets already committed (`npx changeset`, or
+`npm run changeset:auto -- --bump minor --packages core --message "..."`) are
+consumed in the same run, and the largest bump per package wins.
+
+Run it on `develop`, not `master`: master requires status checks, and those
+apply to direct pushes too, so the Actions bot cannot push the release commit
+there. The new versions reach master through the usual `develop → master` PR.
 
 ## 📄 License
 

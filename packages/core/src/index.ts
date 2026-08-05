@@ -11,4 +11,11 @@ export {
   createGroupItem,
   canAddGroupItem,
   canRemoveGroupItem,
+  moveGroupItem,
+  swapGroupItems,
+  insertGroupItem,
+  focusFirstInvalidField,
 } from './fieldGroup';
+
+export * from './adapters';
+export * from './wizard';

@@ -9,6 +9,9 @@
   "main": "dist/fesm2022/dynamic-field-kit-angular.mjs",
   "module": "dist/fesm2022/dynamic-field-kit-angular.mjs",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "peerDependencies": {
     "@angular/common": ">=13 <22",
     "@angular/core": ">=13 <22",

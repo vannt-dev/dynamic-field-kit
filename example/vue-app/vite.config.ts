@@ -4,6 +4,9 @@ import vue from '@vitejs/plugin-vue';
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Set by the Pages workflow to '/dynamic-field-kit/vue/'. Defaults to '/' so
+  // `vite dev` and a plain `vite build` are unaffected.
+  base: process.env.PAGES_BASE_PATH || '/',
   plugins: [vue()],
   resolve: {
     alias: {

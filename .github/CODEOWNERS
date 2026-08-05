@@ -1,0 +1,10 @@
+# Branch protection on master enables require_code_owner_reviews, which does
+# nothing without this file. Every path needs an owner for that rule to bite.
+* @vannt-dev
+
+# Anything that decides what ships, or what a release does.
+/.github/ @vannt-dev
+/.changeset/ @vannt-dev
+/scripts/ @vannt-dev
+package.json @vannt-dev
+package-lock.json @vannt-dev

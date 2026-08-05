@@ -10,6 +10,13 @@ export interface FieldTypeMap {
   textarea: string;
   password: string;
   email: string;
+  radio: string | number;
+  range: number;
+  file: unknown;
+  date: string;
+  time: string;
+  'datetime-local': string;
+  switch: boolean;
 }
 
 export type Properties = Record<string, unknown>;
@@ -33,6 +40,11 @@ export interface FieldRendererProps<T = unknown> {
   ariaInvalid?: boolean;
   ariaDescribedBy?: string;
   ariaRequired?: boolean;
+  min?: number | string;
+  max?: number | string;
+  step?: number | string;
+  accept?: string;
+  multiple?: boolean;
 }
 
 export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {
@@ -76,6 +88,12 @@ export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {
   options?:
     | Properties[]
     | ((data: Properties, rootData?: Properties) => Properties[]);
+  min?: number | string;
+  max?: number | string;
+  step?: number | string;
+  accept?: string;
+  multiple?: boolean;
+  debounceMs?: number;
   className?: string;
   description?: unknown;
   /**

@@ -6,7 +6,10 @@ export { layoutRegistry } from './layout';
 export { default as DynamicInput } from './components/DynamicInput';
 export { default as FieldInput } from './components/FieldInput';
 export { default as MultiFieldInput } from './components/MultiFieldInput';
+export { DynamicFormDevTools } from './components/DynamicFormDevTools';
+export { useDynamicForm } from './useDynamicForm';
 export { defaultRenderersMap, getDefaultRenderer } from './defaultRenderers';
+
 export {
   fieldRegistry,
   type ReactFieldRenderer,
