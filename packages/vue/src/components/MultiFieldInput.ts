@@ -70,6 +70,14 @@ const MultiFieldInput = defineComponent({
       type: Function as PropType<(result: ValidationResult) => void>,
       default: undefined,
     },
+    // Called with a field's name when it loses focus. Touched state is tracked
+    // internally either way; this is the hook for driving an external form
+    // store - pass `useDynamicForm`'s `handleBlur` to get its `touched` map and
+    // `validateOnBlur` behaviour.
+    onBlurField: {
+      type: Function as PropType<(fieldName: string) => void>,
+      default: undefined,
+    },
   },
 
   setup(props) {
@@ -77,6 +85,12 @@ const MultiFieldInput = defineComponent({
     // per-property dependency tracking lets each FieldInput re-render only
     // when the specific key it reads actually changes.
     const data = reactive<Properties>({});
+    const touchedFields = reactive<Record<string, boolean>>({});
+
+    function handleBlurField(key: string) {
+      touchedFields[key] = true;
+      props.onBlurField?.(key);
+    }
 
     watch(
       () => props.properties,
@@ -240,7 +254,9 @@ const MultiFieldInput = defineComponent({
               fieldDescription: f,
               renderInfos: data,
               rootData: props.rootData ?? data,
+              touched: Boolean(touchedFields[f.name]),
               onValueChangeField: handleValueChange,
+              onBlurField: handleBlurField,
             })
       );
 

@@ -19,6 +19,8 @@ Note: `@dynamic-field-kit/core`, `react`, and `react-dom` are **peer dependencie
 - `DynamicInput`
 - `FieldInput`
 - `MultiFieldInput`
+- `useDynamicForm`
+- `DynamicFormDevTools`
 - `layoutRegistry`
 - `fieldRegistry`
 - `FieldRegistry` (class, for scoped registries)

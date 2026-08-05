@@ -5,6 +5,8 @@ export * from './components/BaseInput';
 export * from './components/DynamicInput';
 export * from './components/FieldInput';
 export * from './components/MultiFieldInput';
+export * from './components/DynamicFormDevTools';
+export * from './lib/dynamic-form.store';
 
 // Layout
 export * from './layout';

@@ -31,6 +31,7 @@ import { DynamicInput } from './DynamicInput';
       (valueChange)="
         onValueChangeField.emit({ value: $event, key: fieldDescription!.name })
       "
+      (focusout)="onBlurField.emit(fieldDescription!.name)"
       [disabled]="disabled"
       [readOnly]="readOnly"
       [error]="$any(error)"
@@ -49,6 +50,12 @@ export class FieldInput implements OnChanges {
     value: unknown;
     key: string;
   }>();
+  /**
+   * Emits this field's name when focus leaves it. Driven by `focusout`, which
+   * bubbles, so it works for any renderer without the renderer having to
+   * declare a blur output of its own.
+   */
+  @Output() onBlurField = new EventEmitter<string>();
 
   shouldRender = false;
 

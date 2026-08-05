@@ -1,4 +1,6 @@
 import { describe, expect, test } from 'vitest';
+import type { FieldDescription } from '../src';
+import { zodValidator, yupValidator } from '../src/adapters';
 import {
   resolveDisabled,
   resolveOptions,
@@ -7,7 +9,6 @@ import {
   validateFields,
   validateFieldsAsync,
 } from '../src/validation';
-import type { FieldDescription } from '../src';
 
 declare module '../src' {
   interface FieldTypeMap {
@@ -201,5 +202,40 @@ describe('validateFieldsAsync', () => {
 
     const resOk = await validateFieldsAsync(fields, { username: 'john' });
     expect(resOk.valid).toBe(true);
+  });
+});
+
+describe('zodValidator and yupValidator', () => {
+  test('zodValidator parses the value alone for a scalar schema', () => {
+    const mockZod = {
+      safeParse: (val: unknown) => {
+        if (typeof val === 'string' && val.includes('@')) {
+          return { success: true };
+        }
+        return {
+          success: false,
+          error: {
+            errors: [{ message: 'Invalid email address', path: [] }],
+          },
+        };
+      },
+    };
+    const validator = zodValidator(mockZod, { target: 'field' });
+    expect(validator('invalid', {})).toEqual(['Invalid email address']);
+    expect(validator('user@test.com', {})).toBeUndefined();
+  });
+
+  test('yupValidator parses the value alone for a scalar schema', () => {
+    const mockYup = {
+      validateSync: (val: unknown) => {
+        if (typeof val === 'string' && val.length >= 3) {
+          return val;
+        }
+        throw { message: 'Must be at least 3 chars' };
+      },
+    };
+    const validator = yupValidator(mockYup, { target: 'field' });
+    expect(validator('hi', {})).toEqual(['Must be at least 3 chars']);
+    expect(validator('hello', {})).toBeUndefined();
   });
 });

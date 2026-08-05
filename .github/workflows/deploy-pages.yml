@@ -1,0 +1,97 @@
+name: Deploy demos to Pages
+
+# Publishes the three example apps to GitHub Pages so there is a link to hand
+# people. They consume the packages through `file:` paths, so whatever is on
+# this branch is exactly what the demos are built against.
+on:
+  push:
+    branches: [develop]
+    # Only rebuild when something the demos actually render could have changed.
+    paths:
+      - 'packages/**'
+      - 'example/**'
+      - '.github/workflows/deploy-pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time, and never cancel one midway.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      # Project pages live under /<repo>/, so every app needs its assets
+      # prefixed or they 404.
+      SITE_BASE: /${{ github.event.repository.name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install workspace dependencies
+        run: npm ci
+
+      - name: Build packages
+        run: npm run build
+
+      - name: Build react demo
+        working-directory: example/react-app
+        env:
+          PAGES_BASE_PATH: ${{ env.SITE_BASE }}/react
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
+
+      - name: Build vue demo
+        working-directory: example/vue-app
+        env:
+          PAGES_BASE_PATH: ${{ env.SITE_BASE }}/vue/
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
+
+      - name: Build angular demo
+        working-directory: example/angular-app
+        run: |
+          npm install --no-audit --no-fund
+          npx ng build --base-href ${{ env.SITE_BASE }}/angular/
+
+      - name: Assemble the site
+        run: |
+          mkdir -p _site
+          cp example/pages-index.html _site/index.html
+          cp -r example/react-app/out          _site/react
+          cp -r example/vue-app/dist           _site/vue
+          cp -r example/angular-app/dist/example-angular-app _site/angular
+          # Pages runs the output through Jekyll otherwise, which drops
+          # directories starting with an underscore - _next among them.
+          touch _site/.nojekyll
+          echo "--- deployed tree ---"
+          find _site -maxdepth 2 -name index.html
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

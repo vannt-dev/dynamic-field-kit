@@ -20,6 +20,14 @@ const DynamicInput = defineComponent({
       type: Function as PropType<(value: unknown) => void>,
       default: undefined,
     },
+    onBlur: {
+      type: Function as PropType<() => void>,
+      default: undefined,
+    },
+    touched: {
+      type: Boolean,
+      default: undefined,
+    },
     label: {
       type: String,
       default: undefined,
@@ -70,6 +78,8 @@ const DynamicInput = defineComponent({
         ...props.extraProps,
         value: props.value,
         'onUpdate:value': props.onChange,
+        onBlur: props.onBlur,
+        touched: props.touched,
         label: props.label,
         options: props.options,
         class: props.className,
