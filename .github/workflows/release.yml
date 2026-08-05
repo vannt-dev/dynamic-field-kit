@@ -1,9 +1,39 @@
 name: Release
 
+# Manual only. Pick a bump, pick the packages, press Run - the workflow does
+# the version bump, the CHANGELOG, the commit and the npm publish. Nothing is
+# versioned by hand.
+#
+# Run it on `develop`. master requires status checks, and those apply to direct
+# pushes too, so the release commit cannot be pushed there by the Actions bot.
+# The version bump reaches master through the normal develop -> master PR.
 on:
-  push:
-    branches:
-      - master
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version bump to apply'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+        default: patch
+        required: true
+      packages:
+        description: 'Packages to bump, comma separated (core,react,vue,angular). Leave empty for all.'
+        type: string
+        default: ''
+        required: false
+      message:
+        description: 'CHANGELOG entry for this release'
+        type: string
+        default: ''
+        required: false
+      dry_run:
+        description: 'Version and print what would be published, but do not publish'
+        type: boolean
+        default: false
+        required: false
 
 # Deliberately no cancel-in-progress: cancelling mid-publish could leave some
 # packages on npm and others not.
@@ -11,12 +41,10 @@ concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 permissions:
   contents: write
-  pull-requests: write
 
 jobs:
-  # Publishing used to run its own thinner set of checks (no lint, no format,
-  # no coverage floors, no verify scripts) independently of CI, so a red CI did
-  # not stop a release. The exact same gates a PR faces must pass first.
+  # The exact gates a PR faces, so a release can never ship something CI would
+  # have rejected.
   gates:
     uses: ./.github/workflows/quality-gates.yml
 
@@ -26,6 +54,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -37,18 +68,56 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Turns the dispatch inputs into a real changeset. Any changesets already
+      # committed are consumed in the same pass, and the largest bump per
+      # package wins.
+      - name: Create changeset from inputs
+        run: |
+          node scripts/create-changeset.js \
+            --bump "${{ inputs.bump }}" \
+            --packages "${{ inputs.packages }}" \
+            --message "${{ inputs.message }}"
+
+      - name: Apply versions and changelogs
+        run: npx changeset version
+
+      # changeset version rewrites the workspace package.json versions, which
+      # the lockfile records too - without this the next `npm ci` fails.
+      - name: Sync lockfile
+        run: npm install --package-lock-only --no-audit --no-fund
+
+      - name: Show resulting versions
+        run: |
+          for pkg in core react vue angular; do
+            echo "$pkg -> $(node -p "require('./packages/$pkg/package.json').version")"
+          done
+
       - name: Build packages
         run: npm run build
 
-      - name: Create Release Pull Request or Publish to npm
-        id: changesets
-        uses: changesets/action@v1
-        with:
-          version: npm run version-packages
-          publish: npm run release
-          commit: 'chore: release packages'
-          title: 'chore(release): version packages'
+      - name: Commit the release
+        if: ${{ !inputs.dry_run }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'chore(release): version packages'
+          git push origin HEAD:${{ github.ref_name }}
+
+      # changeset publish pushes each package that is not already on npm at its
+      # current version, and tags the commit per package.
+      - name: Publish to npm
+        if: ${{ !inputs.dry_run }}
+        run: |
+          npx changeset publish
+          git push origin --follow-tags
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Dry run summary
+        if: ${{ inputs.dry_run }}
+        run: |
+          echo 'Dry run - nothing was committed, tagged or published.'
+          echo 'Versions that would have shipped are listed above.'
+          git --no-pager diff --stat

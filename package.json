@@ -19,6 +19,7 @@
     "format": "prettier --write .",
     "prepare": "husky && git config commit.template .git-commit-template.txt || true",
     "changeset": "changeset",
+    "changeset:auto": "node scripts/create-changeset.js",
     "version-packages": "changeset version",
     "release": "changeset publish"
   },

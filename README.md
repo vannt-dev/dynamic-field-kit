@@ -431,6 +431,31 @@ This library intentionally does not include:
 
 It is a **form engine**, not a full form framework.
 
+## 🚀 Releasing
+
+Versions are never edited by hand. Go to **Actions → Release → Run workflow**,
+run it on `develop`, and fill in:
+
+| Input      | Meaning                                                                |
+| ---------- | ---------------------------------------------------------------------- |
+| `bump`     | `patch`, `minor` or `major`                                            |
+| `packages` | `core,react,vue,angular` — leave empty to bump all of them             |
+| `message`  | The CHANGELOG entry for this release                                   |
+| `dry_run`  | Version and print the result without committing, tagging or publishing |
+
+The workflow runs the full quality gates first, then applies the bump, writes
+the CHANGELOGs, commits `chore(release): version packages`, and publishes to
+npm.
+
+Packages are versioned independently, so bumping only what changed is fine.
+Any changesets already committed (`npx changeset`, or
+`npm run changeset:auto -- --bump minor --packages core --message "..."`) are
+consumed in the same run, and the largest bump per package wins.
+
+Run it on `develop`, not `master`: master requires status checks, and those
+apply to direct pushes too, so the Actions bot cannot push the release commit
+there. The new versions reach master through the usual `develop → master` PR.
+
 ## 📄 License
 
 MIT © [vannt-dev](https://github.com/vannt-dev)
