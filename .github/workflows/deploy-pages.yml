@@ -61,11 +61,16 @@ jobs:
           npm install --no-audit --no-fund
           npm run build
 
+      # `npm run build --`, not `npx ng build`: the app's `prebuild` hook
+      # generates src/app/demo-sources.ts, which is gitignored and so absent
+      # from a fresh checkout. Calling the binary directly skips the hook and
+      # the build fails on a missing module. npm forwards the extra args to
+      # `ng build`.
       - name: Build angular demo
         working-directory: example/angular-app
         run: |
           npm install --no-audit --no-fund
-          npx ng build --base-href ${{ env.SITE_BASE }}/angular/
+          npm run build -- --base-href ${{ env.SITE_BASE }}/angular/
 
       - name: Assemble the site
         run: |
