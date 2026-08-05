@@ -123,7 +123,6 @@ export default function NewFeaturesPage() {
           fieldDescriptions={fields}
           properties={form.data}
           onChange={form.handleChange}
-          onBlurField={form.handleBlur}
           layout={{
             type: 'responsive',
             mobile: 'column',
