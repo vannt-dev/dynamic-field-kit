@@ -23,10 +23,6 @@
     "release": "changeset publish"
   },
   "//": "root vitest is the hoisted peer target for @vitest/coverage-v8 - do not remove, it looks unused but breaks --coverage repo-wide",
-  "//overrides": "postcss reaches production deps through vue -> @vue/compiler-sfc. GHSA-r28c-9q8g-f849 / GHSA-fxqj-rqcc-2cmp affect <=8.5.22; this is a patch bump inside the range compiler-sfc already asks for. Drop once vue ships a compiler-sfc that requires a fixed postcss.",
-  "overrides": {
-    "postcss": "^8.5.25"
-  },
   "devDependencies": {
     "@changesets/cli": "^2.31.1",
     "@commitlint/cli": "^21.2.1",
