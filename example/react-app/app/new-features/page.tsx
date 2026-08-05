@@ -99,9 +99,19 @@ export default function NewFeaturesPage() {
         >
           ← Demo Cơ Bản (Legacy)
         </Link>
-        <strong style={{ color: '#111' }}>
+        <strong style={{ marginRight: '16px', color: '#111' }}>
           ✨ Demo Enterprise Features (v1.4+)
         </strong>
+        <Link
+          href="/wizard"
+          style={{
+            fontWeight: 'normal',
+            color: '#0066cc',
+            textDecoration: 'none',
+          }}
+        >
+          🧭 Wizard nhiều bước →
+        </Link>
       </nav>
 
       <h1 style={{ marginBottom: '12px', fontSize: '24px' }}>

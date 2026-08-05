@@ -61,11 +61,22 @@ export default function Page() {
           href="/new-features"
           style={{
             fontWeight: 'normal',
+            marginRight: '16px',
             color: '#0066cc',
             textDecoration: 'none',
           }}
         >
           ✨ Demo Tính Năng Mới (v1.3+) →
+        </Link>
+        <Link
+          href="/wizard"
+          style={{
+            fontWeight: 'normal',
+            color: '#0066cc',
+            textDecoration: 'none',
+          }}
+        >
+          🧭 Wizard nhiều bước →
         </Link>
       </nav>
 
