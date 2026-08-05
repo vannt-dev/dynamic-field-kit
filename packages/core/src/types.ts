@@ -16,6 +16,7 @@ export interface FieldTypeMap {
   date: string;
   time: string;
   'datetime-local': string;
+  switch: boolean;
 }
 
 export type Properties = Record<string, unknown>;
