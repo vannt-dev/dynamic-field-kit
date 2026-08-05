@@ -74,7 +74,7 @@ export default function DemoShell({
             fontWeight: 600,
           }}
         >
-          {showCode ? '✕ Ẩn code' : '</> Xem code'}
+          {showCode ? '✕ Ẩn code' : '‹/› Xem code'}
         </button>
       </div>
 

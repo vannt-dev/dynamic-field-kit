@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "scripts": {
     "start": "ng serve --open",
-    "build": "ng build"
+    "build": "ng build",
+    "prestart": "node scripts/embed-demo-sources.js",
+    "prebuild": "node scripts/embed-demo-sources.js"
   },
   "dependencies": {
     "@angular/common": "^19.0.0",
