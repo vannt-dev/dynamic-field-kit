@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import type { FieldDescription } from '../src';
+import { zodValidator, yupValidator } from '../src/adapters';
 import {
   resolveDisabled,
   resolveOptions,
@@ -7,8 +8,6 @@ import {
   validateField,
   validateFields,
   validateFieldsAsync,
-  zodValidator,
-  yupValidator,
 } from '../src/validation';
 
 declare module '../src' {

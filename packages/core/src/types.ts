@@ -39,6 +39,11 @@ export interface FieldRendererProps<T = unknown> {
   ariaInvalid?: boolean;
   ariaDescribedBy?: string;
   ariaRequired?: boolean;
+  min?: number | string;
+  max?: number | string;
+  step?: number | string;
+  accept?: string;
+  multiple?: boolean;
 }
 
 export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {
@@ -82,6 +87,12 @@ export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {
   options?:
     | Properties[]
     | ((data: Properties, rootData?: Properties) => Properties[]);
+  min?: number | string;
+  max?: number | string;
+  step?: number | string;
+  accept?: string;
+  multiple?: boolean;
+  debounceMs?: number;
   className?: string;
   description?: unknown;
   /**

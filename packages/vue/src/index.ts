@@ -12,6 +12,8 @@ export {
   useFieldRegistry,
   FieldRegistryKey,
 } from './fieldRegistryContext';
+export { useDynamicForm } from './useDynamicForm';
+export { DynamicFormDevTools } from './components/DynamicFormDevTools';
 
 // Re-export selected core APIs
 export {
