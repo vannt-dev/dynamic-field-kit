@@ -7,6 +7,9 @@ node_modules/
 packages/*/dist
 dist/
 
+# vite's transient config bundle, left behind when a vitest run is interrupted
+*.timestamp-*.mjs
+
 # test coverage
 packages/*/coverage
 coverage/

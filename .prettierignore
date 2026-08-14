@@ -7,6 +7,12 @@ build/
 out/
 coverage/
 
+# vite's transient config bundle, left behind when a vitest run is interrupted.
+# Must stay ignored here as well as in .gitignore: `prettier --check .` walks
+# untracked files too, so an orphaned one fails format-check after a local
+# `npm run test --workspace=@dynamic-field-kit/angular`.
+*.timestamp-*.mjs
+
 # Framework caches
 .angular/
 .next/
