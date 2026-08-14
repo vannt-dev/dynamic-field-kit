@@ -1,4 +1,4 @@
-/* eslint-disable import/order, import/no-unresolved */
+/* eslint-disable import/order */
 import { defineComponent, computed, h, PropType } from 'vue';
 import { FieldTypeKey, Properties } from '@dynamic-field-kit/core';
 import { getDefaultRenderer } from '../defaultRenderers';
