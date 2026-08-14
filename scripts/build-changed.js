@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Build only changed packages based on git diff
+const { execSync, spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
-const { execSync, spawnSync } = require('child_process');
 
 function readJSON(p) {
   try {
