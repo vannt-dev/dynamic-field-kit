@@ -4,10 +4,15 @@
     "composite": false,
     "declaration": true,
     "outDir": "dist",
-    "target": "ES2019",
+    // Matches what ng-packagr actually emits: the published fesm2022 bundle
+    // uses ES2022 class fields (`value;` declarations, define semantics). This
+    // said ES2019 for a while, which ng-packagr ignored, so the build shipped
+    // ES2022 while the config claimed otherwise - that mismatch is why
+    // tsconfig.spec.json had to override the target to test what really ships.
+    "target": "ES2022",
+    "useDefineForClassFields": true,
     "module": "ES2020",
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    "experimentalDecorators": true
   },
   "include": ["src/**/*"]
 }
