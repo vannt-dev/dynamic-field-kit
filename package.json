@@ -29,7 +29,6 @@
     "@changesets/cli": "^2.31.1",
     "@commitlint/cli": "^21.2.1",
     "@commitlint/config-conventional": "^21.2.0",
-    "@types/react": "^19.2.8",
     "@typescript-eslint/eslint-plugin": "^5.60.0",
     "@typescript-eslint/parser": "^5.60.0",
     "eslint": "^8.44.0",
@@ -42,13 +41,10 @@
     "lint-staged": "^17.2.0",
     "prettier": "^2.8.8",
     "tsup": "^8.0.1",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
     "typescript": "~5.5.0",
-    "vitest": "^1.6.0",
-    "vue": "^3.5.32"
+    "vitest": "^1.6.0"
   },
-  "//dependencies": "the root is private and ships nothing, so react/react-dom/vue belong in devDependencies - they exist only to resolve the packages' peers while building and testing. Keeping them here is what made `npm audit --omit=dev` (the CI gate) fail on advisories in vue's build-time tree, e.g. @vue/compiler-sfc -> postcss -> nanoid.",
+  "//dependencies": "the root is private and ships nothing, so it declares no runtime dependencies. react/react-dom/vue/@types/react used to sit here for the packages to borrow; each package now declares its own (enforced by scripts/verify-framework-deps.js), which is also what keeps `npm audit --omit=dev` from failing on advisories in a build-time tree, e.g. vue -> @vue/compiler-sfc -> postcss -> nanoid.",
   "dependencies": {
     "@dynamic-field-kit/core": "workspace:*",
     "@dynamic-field-kit/react": "workspace:*",
