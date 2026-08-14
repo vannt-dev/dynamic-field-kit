@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Properties } from '@dynamic-field-kit/core';
 import { defineComponent, h, PropType } from 'vue';
 
