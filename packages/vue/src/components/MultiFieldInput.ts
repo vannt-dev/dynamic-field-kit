@@ -24,15 +24,26 @@ function resolveLayout(layout?: LayoutConfig) {
   return { type: layout.type, config: layout };
 }
 
-// Forward-declared with an explicit type so the recursive h() call inside
-// renderGroupField doesn't force TypeScript to infer MultiFieldInput's type
-// from within its own initializer (which fails to build: "implicitly has
-// type 'any' because it does not have a type annotation and is referenced
-// ... in its own initializer"). Assigned once MultiFieldInput exists below.
-// Must be declared before, and assigned after, MultiFieldInput is defined,
-// so it can't be a `const` despite only ever being assigned once.
-// eslint-disable-next-line prefer-const
-let multiFieldInputSelfRef: Component;
+// The recursive h() call inside renderGroupField cannot name MultiFieldInput
+// directly: that forces TypeScript to infer its type from within its own
+// initializer, which fails to build with "implicitly has type 'any' because it
+// does not have a type annotation and is referenced ... in its own
+// initializer". A function declaration solves it twice over -- the explicit
+// return type breaks the inference cycle, and the declaration is hoisted, so
+// the initializer below can call it.
+//
+// It must stay a function rather than a module-scope
+// `selfRef = MultiFieldInput` assignment. A bare top-level assignment is a side
+// effect no bundler can drop, and it anchored MultiFieldInput -> FieldInput ->
+// DynamicInput -> every default renderer into consumer bundles that imported
+// none of them (~11.5 KB minified). A function body is not evaluated until it
+// is called, so nothing is retained until something actually renders a group.
+function selfRef(): Component {
+  // Safe despite the forward reference: this body only runs during a render,
+  // long after the module has finished evaluating.
+  // eslint-disable-next-line @typescript-eslint/no-use-before-define
+  return MultiFieldInput;
+}
 
 // Repeatable field groups render a nested MultiFieldInput per item, so this
 // component renders itself recursively (see renderGroupField below) rather
@@ -207,7 +218,7 @@ const MultiFieldInput = /* @__PURE__ */ defineComponent({
             },
             [
               h('div', { style: { flex: 1 } }, [
-                h(multiFieldInputSelfRef, {
+                h(selfRef(), {
                   fieldDescriptions: fields,
                   properties: item,
                   rootData: props.rootData ?? data,
@@ -267,7 +278,5 @@ const MultiFieldInput = /* @__PURE__ */ defineComponent({
     };
   },
 });
-
-multiFieldInputSelfRef = MultiFieldInput;
 
 export default MultiFieldInput;
