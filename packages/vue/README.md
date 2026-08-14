@@ -4,7 +4,9 @@ Vue 3 adapter for `@dynamic-field-kit/core`.
 
 This package provides Vue components that render `FieldDescription[]` and resolve field renderers through the shared registry used by `dynamic-field-kit`.
 
-Live demo: https://vannt-dev.github.io/dynamic-field-kit/vue/
+Live demo: https://vannt-dev.github.io/dynamic-field-kit/vue/ — tabs for the
+basic schema, the enterprise features (`useDynamicForm`, HTML5 renderers, blur
+wiring, DevTools) and the multi-step wizard.
 
 ## Install
 
@@ -28,10 +30,24 @@ Note: `@dynamic-field-kit/core` and `vue` are **peer dependencies** — this ada
 - `FieldRendererProps`
 - `Properties`
 - `LayoutConfig`
-- `validateField` / `validateFields` / `resolveDisabled` / `resolveReadOnly` / `ValidationResult`
 - `useDynamicForm`
 - `DynamicFormDevTools`
 - `defaultRenderersMap` / `getDefaultRenderer`
+
+Re-exported from `@dynamic-field-kit/core` so a consumer app rarely has to import
+both packages:
+
+- `validateField` / `validateFieldAsync` — one field, returns `string[]`
+- `validateFields` / `validateFieldsAsync` — a whole schema, returns `ValidationResult`
+- `resolveDisabled` / `resolveReadOnly` / `resolveOptions` — resolve a field's dynamic conditions and options
+- `validators` — the built-in validator helpers (`required`, `email`, `minLength`, `compose`, …)
+- `ValidationResult`
+
+`useDynamicForm` validates **synchronously** via `validateFields`, including on
+submit. Fields whose `validate` hook returns a Promise are treated as valid on
+that path, so run async rules through `validateFieldsAsync` yourself. See the
+[core README](https://github.com/vannt-dev/dynamic-field-kit/tree/develop/packages/core#sync-vs-async-validation)
+for the full rules.
 
 Default layouts are registered automatically when you import the package root.
 

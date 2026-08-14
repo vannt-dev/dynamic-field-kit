@@ -103,7 +103,7 @@ const FieldInputInner = ({
 // `renderInfos` covers every field, so the default shallow-prop compare would
 // re-render all fields whenever any one of them changes. Compare only the
 // slice this field actually reads instead.
-const FieldInput = React.memo(FieldInputInner, (prev, next) => {
+const FieldInput = /* @__PURE__ */ React.memo(FieldInputInner, (prev, next) => {
   const name = prev.fieldDescription.name;
   return (
     prev.fieldDescription === next.fieldDescription &&

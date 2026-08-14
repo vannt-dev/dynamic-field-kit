@@ -4,7 +4,9 @@ Angular adapter for `@dynamic-field-kit/core`.
 
 This package provides Angular components and a convenience module that render field schemas defined with `@dynamic-field-kit/core`.
 
-Live demo: https://vannt-dev.github.io/dynamic-field-kit/angular/
+Live demo: https://vannt-dev.github.io/dynamic-field-kit/angular/ — tabs for the
+basic schema, the enterprise features (`createDynamicFormStore`, HTML5 renderers,
+blur wiring, DevTools) and the multi-step wizard.
 
 ## Install
 
@@ -20,7 +22,7 @@ If you need to pin versions explicitly:
 npm install @dynamic-field-kit/core@^1.0.12 @dynamic-field-kit/angular@^1.2.3
 ```
 
-## What it exports
+## Exports
 
 - `DynamicInput`
 - `FieldInput`
@@ -29,9 +31,27 @@ npm install @dynamic-field-kit/core@^1.0.12 @dynamic-field-kit/angular@^1.2.3
 - `fieldRegistry`
 - `FieldRegistry` (class, for scoped registries)
 - `FIELD_REGISTRY` (injection token)
-- `validateField` / `validateFields` / `resolveDisabled` / `resolveReadOnly` / `ValidationResult`
 - `createDynamicFormStore` (signal-based form state)
 - `DynamicFormDevToolsComponent`
+- `layoutRegistry` / `LayoutRegistry` (class, for a scoped layout registry)
+- `ColumnLayout` / `RowLayout` / `GridLayout` (the standalone layout components, registered for you)
+- `BaseInputComponent` — the abstract base your custom renderers extend
+
+Re-exported from `@dynamic-field-kit/core` so a consumer app rarely has to import
+both packages:
+
+- `validateField` / `validateFieldAsync` — one field, returns `string[]`
+- `validateFields` / `validateFieldsAsync` — a whole schema, returns `ValidationResult`
+- `resolveDisabled` / `resolveReadOnly` / `resolveOptions` — resolve a field's dynamic conditions and options
+- `validators` — the built-in validator helpers (`required`, `email`, `minLength`, `compose`, …)
+- `ValidationResult`
+
+`createDynamicFormStore` validates **synchronously** via `validateFields`,
+including on submit. Fields whose `validate` hook returns a Promise are treated
+as valid on that path, so run async rules through `validateFieldsAsync`
+yourself. See the
+[core README](https://github.com/vannt-dev/dynamic-field-kit/tree/develop/packages/core#sync-vs-async-validation)
+for the full rules.
 
 ## Basic setup (Angular 19+)
 
@@ -193,6 +213,29 @@ fields in error.
   }"
 ></dfk-multi-field-input>
 ```
+
+Those four names resolve through `layoutRegistry`, which holds standalone
+components rather than render functions — the Angular equivalent of the React
+and Vue layout registries. `ColumnLayout`, `RowLayout` and `GridLayout` are
+registered for you when you import the package root; register your own the same
+way:
+
+```ts
+import { Component } from '@angular/core';
+import { layoutRegistry } from '@dynamic-field-kit/angular';
+
+@Component({
+  standalone: true,
+  selector: 'app-stack-tight',
+  template: `<div style="display: grid; gap: 8px"><ng-content /></div>`,
+})
+export class StackTightLayout {}
+
+layoutRegistry.register('stack-tight', StackTightLayout);
+```
+
+`LayoutRegistry` is the class behind that singleton, for when you want an
+isolated set of layouts instead of the shared one.
 
 ## Derived fields with `computeValue`
 

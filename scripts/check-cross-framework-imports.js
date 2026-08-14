@@ -5,9 +5,18 @@
 const fs = require('fs');
 const path = require('path');
 
+const FRAMEWORK_PACKAGES = ['react', 'vue', 'angular'];
+
+const IMPORT_PATTERN = /from\s+['"]@dynamic-field-kit\/(vue|angular|react)['"]/;
+const REQUIRE_PATTERN =
+  /require\(['"]@dynamic-field-kit\/(vue|angular|react)['"]\)/;
+
 function walk(dir, cb) {
-  const entries = fs.readdirSync(dir, { withFileTypes: true });
-  for (const e of entries) {
+  if (!fs.existsSync(dir)) {
+    return;
+  }
+
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, e.name);
     if (e.isDirectory()) {
       walk(full, cb);
@@ -18,52 +27,48 @@ function walk(dir, cb) {
 }
 
 function isSourceFile(p) {
-  return /\\.(ts|tsx|js|jsx)$/.test(p);
+  return /\.(ts|tsx|js|jsx)$/.test(p);
 }
 
-const repoRoot = path.resolve(__dirname, '..');
-const roots = [
-  path.resolve(repoRoot, 'packages', 'react', 'src'),
-  path.resolve(repoRoot, 'packages', 'vue', 'src'),
-  path.resolve(repoRoot, 'packages', 'angular', 'src'),
-];
+function findCrossFrameworkImports(root = path.resolve(__dirname, '..')) {
+  const violations = [];
 
-let violations = [];
+  for (const pkg of FRAMEWORK_PACKAGES) {
+    walk(path.join(root, 'packages', pkg, 'src'), (file) => {
+      if (!isSourceFile(file)) {
+        return;
+      }
 
-for (const root of roots) {
-  walk(root, (file) => {
-    if (!isSourceFile(file)) return;
-    const content = fs.readFileSync(file, 'utf8');
-    const lines = content.split(/\r?\n/);
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      const m = line.match(
-        /from\s+['"]@dynamic-field-kit\/(vue|angular|react)['"]/
-      );
-      if (m) {
-        violations.push({ file, line: i + 1, framework: m[1] });
-      }
-      const m2 = line.match(
-        /require\(['"]@dynamic-field-kit\/(vue|angular|react)['"]\)/
-      );
-      if (m2) {
-        violations.push({ file, line: i + 1, framework: m2[1] });
-      }
-    }
-  });
+      const lines = fs.readFileSync(file, 'utf8').split(/\r?\n/);
+
+      lines.forEach((line, i) => {
+        const m = line.match(IMPORT_PATTERN) || line.match(REQUIRE_PATTERN);
+        if (m) {
+          violations.push({ file, line: i + 1, framework: m[1] });
+        }
+      });
+    });
+  }
+
+  return violations;
 }
 
-if (violations.length) {
-  console.error('Cross-framework imports detected:');
-  violations.forEach((v) => {
-    console.error(
-      ` - ${v.file}:${v.line} (importing @dynamic-field-kit/${v.framework})`
-    );
-  });
-  process.exit(1);
-} else {
+if (require.main === module) {
+  const violations = findCrossFrameworkImports();
+
+  if (violations.length) {
+    console.error('Cross-framework imports detected:');
+    violations.forEach((v) => {
+      console.error(
+        ` - ${v.file}:${v.line} (importing @dynamic-field-kit/${v.framework})`
+      );
+    });
+    process.exit(1);
+  }
+
   console.log(
     'OK: No cross-framework imports found in src of react/vue/angular packages.'
   );
-  process.exit(0);
 }
+
+module.exports = { findCrossFrameworkImports, FRAMEWORK_PACKAGES };

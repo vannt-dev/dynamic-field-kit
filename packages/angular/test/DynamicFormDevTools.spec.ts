@@ -73,6 +73,22 @@ describe('DynamicFormDevToolsComponent', () => {
     expect(badge?.textContent?.trim()).toBe('2');
   });
 
+  it('survives a null errors input instead of throwing', () => {
+    // `errors` defaults to {}, but a form store that has not validated yet can
+    // hand down null. errorCount() guards with `this.errors || {}`; without it
+    // the overlay would throw on Object.keys(null) and take the host app's
+    // render down with it.
+    fixture.componentRef.setInput('errors', null);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.errorCount()).toBe(0);
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector(
+        '.dfk-devtools-badge'
+      )
+    ).toBeNull();
+  });
+
   it('shows the error count in the errors tab label', () => {
     fixture.componentInstance.errors = { name: ['required'] };
     open(fixture);

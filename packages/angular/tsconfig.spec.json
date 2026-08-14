@@ -1,9 +1,10 @@
 {
   "extends": "./tsconfig.json",
+  // target/useDefineForClassFields are inherited from tsconfig.json, which now
+  // states the ES2022 emit ng-packagr actually produces. Specs must keep
+  // matching it or they exercise class-field semantics that never ship.
   "compilerOptions": {
-    "outDir": "./out-tsc/spec",
-    "target": "ES2022",
-    "useDefineForClassFields": true
+    "outDir": "./out-tsc/spec"
   },
   "include": ["src/**/*.ts", "test/**/*.ts"]
 }

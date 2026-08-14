@@ -6,6 +6,8 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "//sideEffects": "core has no top-level execution - the only module-scope work is `new FieldRegistry()` assigned to an export, which is pure. The adapters cannot say this: their entry side-effect-imports the default layouts to register them.",
+  "sideEffects": false,
   "publishConfig": {
     "access": "public"
   },

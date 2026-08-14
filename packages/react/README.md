@@ -4,7 +4,10 @@ React adapter for `@dynamic-field-kit/core`.
 
 This package provides React components for rendering `FieldDescription[]` and exports a React-typed `fieldRegistry`, so registered renderers can be used directly as JSX components.
 
-Live demo: https://vannt-dev.github.io/dynamic-field-kit/react/
+Live demo: https://vannt-dev.github.io/dynamic-field-kit/react/ — plus
+[enterprise features](https://vannt-dev.github.io/dynamic-field-kit/react/new-features/)
+(`useDynamicForm`, HTML5 renderers, blur wiring, DevTools) and a
+[multi-step wizard](https://vannt-dev.github.io/dynamic-field-kit/react/wizard/).
 
 ## Install
 
@@ -31,8 +34,22 @@ Note: `@dynamic-field-kit/core`, `react`, and `react-dom` are **peer dependencie
 - `FieldTypeKey`
 - `FieldRendererProps`
 - `LayoutConfig`
-- `validateField` / `validateFields` / `resolveDisabled` / `resolveReadOnly` / `ValidationResult`
 - `defaultRenderersMap` / `getDefaultRenderer`
+
+Re-exported from `@dynamic-field-kit/core` so a consumer app rarely has to import
+both packages:
+
+- `validateField` / `validateFieldAsync` — one field, returns `string[]`
+- `validateFields` / `validateFieldsAsync` — a whole schema, returns `ValidationResult`
+- `resolveDisabled` / `resolveReadOnly` / `resolveOptions` — resolve a field's dynamic conditions and options
+- `validators` — the built-in validator helpers (`required`, `email`, `minLength`, `compose`, …)
+- `ValidationResult`
+
+`useDynamicForm` validates **synchronously** via `validateFields`, including on
+submit. Fields whose `validate` hook returns a Promise are treated as valid on
+that path, so run async rules through `validateFieldsAsync` yourself. See the
+[core README](https://github.com/vannt-dev/dynamic-field-kit/tree/develop/packages/core#sync-vs-async-validation)
+for the full rules.
 
 `FieldGroupInput` (repeatable field groups) is used internally by `FieldInput` and doesn't need to be imported directly - see "Repeatable field groups" below.
 

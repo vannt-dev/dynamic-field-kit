@@ -1,7 +1,7 @@
 import { FieldDescription, Properties } from '@dynamic-field-kit/core';
 import { defineComponent, h, PropType, ref } from 'vue';
 
-export const DynamicFormDevTools = defineComponent({
+export const DynamicFormDevTools = /* @__PURE__ */ defineComponent({
   name: 'DynamicFormDevTools',
   props: {
     data: {
