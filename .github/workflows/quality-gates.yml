@@ -55,6 +55,11 @@ jobs:
       - name: Type tests
         run: npm run test:types --workspace=@dynamic-field-kit/core
 
+      # Runs after the build so the suite's "every package reports a size"
+      # assertion has a dist to look at.
+      - name: Test build scripts
+        run: npm run test:scripts
+
       - name: Show bundle sizes
         run: node scripts/show-sizes.js
 
