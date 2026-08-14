@@ -39,7 +39,7 @@ let multiFieldInputSelfRef: Component;
 // than delegating to a separate group component. A separate file importing
 // both MultiFieldInput and FieldInput (which would need to import it back)
 // breaks Vue's declaration-file generation with a circular type alias.
-const MultiFieldInput = defineComponent({
+const MultiFieldInput = /* @__PURE__ */ defineComponent({
   name: 'MultiFieldInput',
 
   props: {
