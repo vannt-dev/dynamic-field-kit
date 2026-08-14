@@ -9,7 +9,7 @@ import {
 import { defineComponent, h, PropType } from 'vue';
 import DynamicInput from './DynamicInput';
 
-const FieldInput = defineComponent({
+const FieldInput = /* @__PURE__ */ defineComponent({
   name: 'FieldInput',
   props: {
     fieldDescription: {

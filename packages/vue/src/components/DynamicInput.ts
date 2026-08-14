@@ -4,7 +4,7 @@ import { FieldTypeKey, Properties } from '@dynamic-field-kit/core';
 import { getDefaultRenderer } from '../defaultRenderers';
 import { useFieldRegistry } from '../fieldRegistryContext';
 
-const DynamicInput = defineComponent({
+const DynamicInput = /* @__PURE__ */ defineComponent({
   name: 'DynamicInput',
 
   props: {

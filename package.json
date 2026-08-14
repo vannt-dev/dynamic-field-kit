@@ -10,7 +10,8 @@
     "build:changed": "node scripts/build-changed.js",
     "dev": "npm run dev --workspaces",
     "test": "npm run test --workspaces --if-present",
-    "lint": "eslint packages/core/src packages/react/src packages/vue/src packages/angular/src --ext .ts,.tsx,.js --ignore-path .eslintignore",
+    "test:scripts": "vitest run",
+    "lint": "eslint packages/core/src packages/react/src packages/vue/src packages/angular/src scripts --ext .ts,.tsx,.js --ignore-path .eslintignore",
     "lint:cross-framework": "node scripts/check-cross-framework-imports.js",
     "verify-framework-deps": "node scripts/verify-framework-deps.js",
     "lint:fix": "eslint . --ext .ts,.tsx,.js --fix",
@@ -28,7 +29,6 @@
     "@changesets/cli": "^2.31.1",
     "@commitlint/cli": "^21.2.1",
     "@commitlint/config-conventional": "^21.2.0",
-    "@types/react": "^19.2.8",
     "@typescript-eslint/eslint-plugin": "^5.60.0",
     "@typescript-eslint/parser": "^5.60.0",
     "eslint": "^8.44.0",
@@ -44,13 +44,15 @@
     "typescript": "~5.5.0",
     "vitest": "^1.6.0"
   },
+  "//dependencies": "the root is private and ships nothing, so it declares no runtime dependencies. react/react-dom/vue/@types/react used to sit here for the packages to borrow; each package now declares its own (enforced by scripts/verify-framework-deps.js), which is also what keeps `npm audit --omit=dev` from failing on advisories in a build-time tree, e.g. vue -> @vue/compiler-sfc -> postcss -> nanoid.",
   "dependencies": {
     "@dynamic-field-kit/core": "workspace:*",
     "@dynamic-field-kit/react": "workspace:*",
-    "@dynamic-field-kit/vue": "workspace:*",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "vue": "^3.5.32"
+    "@dynamic-field-kit/vue": "workspace:*"
+  },
+  "//overrides": "nanoid <3.3.18 is GHSA-2v37-7h3g-55p8. It reaches us only through vue -> @vue/compiler-sfc -> postcss (build-time), but pin it forward so the toolchain we actually run is patched, not merely excluded from the audit.",
+  "overrides": {
+    "nanoid": "^3.3.18"
   },
   "//lint-staged": "globs must stay a superset of what `prettier --check .` sees, or a file can pass pre-commit and fail CI format-check. eslint only runs on the extensions the lint script targets.",
   "lint-staged": {

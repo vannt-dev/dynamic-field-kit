@@ -2,7 +2,7 @@
 import { Properties } from '@dynamic-field-kit/core';
 import { defineComponent, h, PropType } from 'vue';
 
-export const DefaultTextRenderer = defineComponent({
+export const DefaultTextRenderer = /* @__PURE__ */ defineComponent({
   name: 'DefaultTextRenderer',
   props: {
     value: null,
@@ -46,7 +46,7 @@ export const DefaultTextRenderer = defineComponent({
   },
 });
 
-export const DefaultNumberRenderer = defineComponent({
+export const DefaultNumberRenderer = /* @__PURE__ */ defineComponent({
   name: 'DefaultNumberRenderer',
   props: {
     value: null,
@@ -88,7 +88,7 @@ export const DefaultNumberRenderer = defineComponent({
   },
 });
 
-export const DefaultPasswordRenderer = defineComponent({
+export const DefaultPasswordRenderer = /* @__PURE__ */ defineComponent({
   name: 'DefaultPasswordRenderer',
   setup(props, { attrs }) {
     return () =>
@@ -100,7 +100,7 @@ export const DefaultPasswordRenderer = defineComponent({
   },
 });
 
-export const DefaultEmailRenderer = defineComponent({
+export const DefaultEmailRenderer = /* @__PURE__ */ defineComponent({
   name: 'DefaultEmailRenderer',
   setup(props, { attrs }) {
     return () =>
@@ -112,7 +112,7 @@ export const DefaultEmailRenderer = defineComponent({
   },
 });
 
-export const DefaultTextareaRenderer = defineComponent({
+export const DefaultTextareaRenderer = /* @__PURE__ */ defineComponent({
   name: 'DefaultTextareaRenderer',
   props: {
     value: null,
@@ -151,7 +151,7 @@ export const DefaultTextareaRenderer = defineComponent({
   },
 });
 
-export const DefaultCheckboxRenderer = defineComponent({
+export const DefaultCheckboxRenderer = /* @__PURE__ */ defineComponent({
   name: 'DefaultCheckboxRenderer',
   props: {
     value: null,
@@ -188,7 +188,7 @@ export const DefaultCheckboxRenderer = defineComponent({
   },
 });
 
-export const DefaultSelectRenderer = defineComponent({
+export const DefaultSelectRenderer = /* @__PURE__ */ defineComponent({
   name: 'DefaultSelectRenderer',
   props: {
     value: null,
@@ -245,7 +245,7 @@ export const DefaultSelectRenderer = defineComponent({
   },
 });
 
-export const DefaultRadioRenderer = defineComponent({
+export const DefaultRadioRenderer = /* @__PURE__ */ defineComponent({
   name: 'DefaultRadioRenderer',
   props: {
     value: null,
@@ -313,7 +313,7 @@ export const DefaultRadioRenderer = defineComponent({
   },
 });
 
-export const DefaultRangeRenderer = defineComponent({
+export const DefaultRangeRenderer = /* @__PURE__ */ defineComponent({
   name: 'DefaultRangeRenderer',
   props: {
     value: null,
@@ -354,7 +354,7 @@ export const DefaultRangeRenderer = defineComponent({
   },
 });
 
-export const DefaultFileRenderer = defineComponent({
+export const DefaultFileRenderer = /* @__PURE__ */ defineComponent({
   name: 'DefaultFileRenderer',
   props: {
     value: null,
@@ -397,7 +397,7 @@ export const DefaultFileRenderer = defineComponent({
   },
 });
 
-export const DefaultDateRenderer = defineComponent({
+export const DefaultDateRenderer = /* @__PURE__ */ defineComponent({
   name: 'DefaultDateRenderer',
   setup(props, { attrs }) {
     return () =>
@@ -409,7 +409,7 @@ export const DefaultDateRenderer = defineComponent({
   },
 });
 
-export const DefaultTimeRenderer = defineComponent({
+export const DefaultTimeRenderer = /* @__PURE__ */ defineComponent({
   name: 'DefaultTimeRenderer',
   setup(props, { attrs }) {
     return () =>
@@ -421,7 +421,7 @@ export const DefaultTimeRenderer = defineComponent({
   },
 });
 
-export const DefaultDateTimeLocalRenderer = defineComponent({
+export const DefaultDateTimeLocalRenderer = /* @__PURE__ */ defineComponent({
   name: 'DefaultDateTimeLocalRenderer',
   setup(props, { attrs }) {
     return () =>
@@ -433,7 +433,7 @@ export const DefaultDateTimeLocalRenderer = defineComponent({
   },
 });
 
-export const DefaultSwitchRenderer = defineComponent({
+export const DefaultSwitchRenderer = /* @__PURE__ */ defineComponent({
   name: 'DefaultSwitchRenderer',
   setup(props, { attrs }) {
     return () =>

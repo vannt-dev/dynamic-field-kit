@@ -91,7 +91,7 @@ const DynamicInputInner = <T extends FieldTypeKey>({
 // unaffected fields don't re-render every time a sibling field's value changes.
 // React.memo erases the generic signature, so restore it via an `unknown`
 // round-trip (plain `as typeof DynamicInputInner` fails dts generation).
-const DynamicInput = React.memo(
+const DynamicInput = /* @__PURE__ */ React.memo(
   DynamicInputInner
 ) as unknown as typeof DynamicInputInner;
 

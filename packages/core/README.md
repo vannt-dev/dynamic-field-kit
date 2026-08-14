@@ -4,7 +4,12 @@ Core types and shared registries for `dynamic-field-kit`.
 
 `@dynamic-field-kit/core` is intentionally framework-agnostic. It does not import React, Vue, or Angular types in its public API. Applications define field schemas in `core`, then register framework-specific renderers through an adapter package such as `@dynamic-field-kit/react`, `@dynamic-field-kit/vue`, or `@dynamic-field-kit/angular`.
 
-Live demo: https://vannt-dev.github.io/dynamic-field-kit/
+Live demo: https://vannt-dev.github.io/dynamic-field-kit/ — the same schema
+rendered by [React](https://vannt-dev.github.io/dynamic-field-kit/react/),
+[Vue](https://vannt-dev.github.io/dynamic-field-kit/vue/) and
+[Angular](https://vannt-dev.github.io/dynamic-field-kit/angular/), including the
+[wizard engine](https://vannt-dev.github.io/dynamic-field-kit/react/wizard/)
+documented below.
 
 ## What this package provides
 
@@ -14,7 +19,7 @@ Live demo: https://vannt-dev.github.io/dynamic-field-kit/
 - `fieldRegistry` as the shared runtime registry instance, plus the `FieldRegistry` class for isolated (scoped) registries
 - Layout config types (`LayoutConfig`, `BaseLayout`, `ResponsiveLayout`, `ColumnLayoutConfig`, `RowLayoutConfig`, `GridLayoutConfig`) - the single source of truth re-exported by every adapter
 - `applyComputedValues` to resolve `computeValue` fields against form data
-- `validateField`, `validateFields`, `resolveDisabled`, `resolveReadOnly` and the `ValidationResult` type for opt-in, app-supplied validation and dynamic disabled/readOnly conditions
+- `validateField` / `validateFieldAsync`, `validateFields` / `validateFieldsAsync`, `resolveDisabled`, `resolveReadOnly`, `resolveOptions` and the `ValidationResult` type for opt-in, app-supplied validation and dynamic disabled/readOnly/options conditions
 - `isFieldGroup`, `createGroupItem`, `canAddGroupItem`, `canRemoveGroupItem` to work with repeatable field groups (`FieldDescription.fields`), plus `moveGroupItem`, `swapGroupItems`, `insertGroupItem` and `focusFirstInvalidField` for driving a group's array yourself
 - `zodValidator`, `yupValidator`, `valibotValidator` / `standardSchemaValidator` to validate with an existing schema library
 - A multi-step wizard state machine: `createWizardState`, `validateStep`, `canGoNext` / `canGoPrev`, `goNext` / `goPrev` / `goToStep`, `markStepCompleted` / `isStepCompleted`
@@ -129,6 +134,39 @@ export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {
 }
 ```
 
+The value types that show up throughout that shape, and in every signature in
+this README:
+
+```ts
+// Any form-data object. `data` and `rootData` are always this.
+export type Properties = Record<string, unknown>;
+
+// What `validators.*` helpers return: one message, or undefined when valid.
+export type ValidatorFn = (
+  value: unknown,
+  data?: Properties,
+  rootData?: Properties
+) => string | undefined;
+
+// What a `FieldDescription.validate` hook may return. The Promise arm is what
+// makes a field async-only -- see "Sync vs async validation" below.
+export type FieldValidatorResult =
+  | string
+  | string[]
+  | undefined
+  | Promise<string | string[] | undefined>;
+
+export type FieldValidatorFunction = (
+  value: unknown,
+  data: Properties,
+  rootData?: Properties
+) => FieldValidatorResult;
+```
+
+The schema adapters (`zodValidator` and friends) each return a
+`FieldValidatorFunction`, which is why their result drops straight into
+`validate`.
+
 ## Derived fields with `computeValue`
 
 `computeValue` derives a field's value from the rest of the form data (e.g. a `fullName` computed from `firstName` + `lastName`). It is called as `(data, rootData)` - `rootData` is the top-level form even for fields nested in a group. Every adapter's `MultiFieldInput` re-evaluates it once per change, against the post-change data - it is not re-run to a fixed point, so avoid chaining `computeValue` fields into a cycle, and return a primitive or a stable reference (returning a fresh object/array each call defeats the render-skipping optimisation). In development, `applyComputedValues` warns when a `computeValue` chain does not converge in one pass.
@@ -213,10 +251,43 @@ const fields: FieldDescription[] = [
 
 `validateFields(fields, data, rootData?)` returns `{ valid, errors }`, recursing
 into repeatable groups (keys like `contacts[0].email`) and skipping fields that
-are hidden by `appearCondition` or disabled. Use `validateFieldsAsync(fields, data, rootData?)`
-when fields define async `validate` functions. Adapters call `validateField` /
-`resolveDisabled` / `resolveReadOnly` per field to surface `error`, `disabled`,
-and `readOnly` to renderers reactively.
+are hidden by `appearCondition` or disabled. Adapters call `validateField` /
+`resolveDisabled` / `resolveReadOnly` / `resolveOptions` per field to surface
+`error`, `disabled`, `readOnly` and the resolved `options` to renderers
+reactively.
+
+### Sync vs async validation
+
+`validateField` and `validateFields` are synchronous, and that has a consequence
+worth knowing: **when a `validate` hook returns a Promise, the sync path treats
+the field as valid.** It cannot await, so it discards the pending result rather
+than blocking. Any field whose `validate` is `async` — or whose schema has async
+refinements — must go through the async pair:
+
+```ts
+import {
+  validateField,
+  validateFieldAsync,
+  validateFields,
+  validateFieldsAsync,
+} from '@dynamic-field-kit/core';
+
+// One field. Both always return string[] (empty when valid).
+const errors = validateField(field, value, data, rootData); // string[]
+const errorsAsync = await validateFieldAsync(field, value, data, rootData);
+
+// A whole schema. Both return ValidationResult -> { valid, errors }.
+const result = validateFields(fields, data); // sync hooks only
+const resultAsync = await validateFieldsAsync(fields, data); // awaits each hook
+```
+
+The framework form hooks (`useDynamicForm`, `createDynamicFormStore`) validate
+synchronously, so wire async rules up through `validateFieldsAsync` yourself —
+for example on submit — rather than expecting them to surface on change.
+
+`resolveOptions(field, data, rootData?)` returns `Properties[] | undefined`,
+calling `field.options` when it is a callback and passing it through when it is a
+static array.
 
 ### Schema adapters (Zod, Yup, Valibot / Standard Schema)
 
@@ -288,10 +359,30 @@ if (valid) {
 | `markStepCompleted(state, index?)` | Record a step as done, defaulting to the current one                                |
 | `isStepCompleted(state, index)`    | For rendering a step indicator                                                      |
 
-`WizardState` carries `currentStep`, `currentStepIndex`, `totalSteps`,
-`isFirstStep`, `isLastStep`, `steps` and `completedSteps`. `goNext` does not
-validate — call `validateStep` yourself so a "save draft and come back" flow
-stays possible.
+Each step is a `FormStep`, and `WizardState` is what every helper above takes
+and returns:
+
+```ts
+export interface FormStep {
+  id: string;
+  title: string;
+  description?: string;
+  fields: FieldDescription[];
+}
+
+export interface WizardState {
+  currentStepIndex: number;
+  totalSteps: number;
+  isFirstStep: boolean;
+  isLastStep: boolean;
+  currentStep: FormStep;
+  steps: FormStep[];
+  completedSteps: number[];
+}
+```
+
+`goNext` does not validate — call `validateStep` yourself so a "save draft and
+come back" flow stays possible.
 
 ## Group array helpers
 
