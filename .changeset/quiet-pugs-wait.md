@@ -1,8 +1,14 @@
 ---
 ---
 
-No release needed. `packages/core` changed only its devDependencies and
-`vitest.config.js` when it moved from vitest 0.34 to 1.6 — neither ships, since
-`files` publishes `dist` alone, and the built output is unaffected. Recorded so
-the changeset check has an answer for core rather than being satisfied by a
-version bump that would publish an identical tarball.
+No release needed for core, react or vue. Everything this branch changed in
+them is tooling that never ships: `packages/core` swapped devDependencies and
+`vitest.config.js` moving from vitest 0.34 to 1.6, and core and vue each lost a
+stale `eslint-disable` comment during the eslint 9 migration. `files` publishes
+`dist` alone, and the built `dist` for all three is byte-identical to develop —
+checked by building both revisions and diffing.
+
+Recorded so the changeset check has an answer for them, rather than being
+satisfied by version bumps that would publish identical tarballs. Only
+`@dynamic-field-kit/angular` genuinely changed what it ships, and it has its own
+changeset.
