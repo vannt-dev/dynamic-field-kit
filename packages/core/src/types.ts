@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-interface */
 export type FieldTypeKey = keyof FieldTypeMap & string;
 
 // 👇 Core provides standard HTML5 input defaults; apps can extend via declaration merging

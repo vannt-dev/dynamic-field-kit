@@ -7,7 +7,7 @@ const path = require('path');
 function readJSON(p) {
   try {
     return JSON.parse(fs.readFileSync(p, 'utf8'));
-  } catch (e) {
+  } catch {
     return null;
   }
 }
@@ -43,7 +43,7 @@ try {
     }).trim();
     changedPaths = out ? out.split(/\r?\n/).filter(Boolean) : [];
   }
-} catch (e) {
+} catch {
   // ignore and try fallback
 }
 if (!changedPaths.length) {
@@ -52,7 +52,7 @@ if (!changedPaths.length) {
       encoding: 'utf8',
     }).trim();
     changedPaths = out2 ? out2.split(/\r?\n/).filter(Boolean) : [];
-  } catch (e) {
+  } catch {
     // ignore
   }
 }
