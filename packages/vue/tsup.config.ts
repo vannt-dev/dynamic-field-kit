@@ -5,6 +5,10 @@ export default defineConfig({
   format: ['esm', 'cjs'],
   dts: true,
   clean: true,
-  sourcemap: true,
+  // Sourcemaps are not published: tsup inlines the full TS source via
+  // sourcesContent, which made the maps ~48% of the tarball (core: 75.7 KB of
+  // 157 KB unpacked) on every consumer install. Flip back to `sourcemap: true`
+  // if stepping into the library source is worth that.
+  sourcemap: false,
   external: ['vue', '@vue/runtime-core', '@dynamic-field-kit/core'],
 });
