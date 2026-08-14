@@ -41,16 +41,21 @@
     "lint-staged": "^17.2.0",
     "prettier": "^2.8.8",
     "tsup": "^8.0.1",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
     "typescript": "~5.5.0",
-    "vitest": "^1.6.0"
+    "vitest": "^1.6.0",
+    "vue": "^3.5.32"
   },
+  "//dependencies": "the root is private and ships nothing, so react/react-dom/vue belong in devDependencies - they exist only to resolve the packages' peers while building and testing. Keeping them here is what made `npm audit --omit=dev` (the CI gate) fail on advisories in vue's build-time tree, e.g. @vue/compiler-sfc -> postcss -> nanoid.",
   "dependencies": {
     "@dynamic-field-kit/core": "workspace:*",
     "@dynamic-field-kit/react": "workspace:*",
-    "@dynamic-field-kit/vue": "workspace:*",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "vue": "^3.5.32"
+    "@dynamic-field-kit/vue": "workspace:*"
+  },
+  "//overrides": "nanoid <3.3.18 is GHSA-2v37-7h3g-55p8. It reaches us only through vue -> @vue/compiler-sfc -> postcss (build-time), but pin it forward so the toolchain we actually run is patched, not merely excluded from the audit.",
+  "overrides": {
+    "nanoid": "^3.3.18"
   },
   "//lint-staged": "globs must stay a superset of what `prettier --check .` sees, or a file can pass pre-commit and fail CI format-check. eslint only runs on the extensions the lint script targets.",
   "lint-staged": {
