@@ -41,6 +41,11 @@ concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 permissions:
   contents: write
+  # npm provenance: the publish signs each tarball with a short-lived OIDC
+  # token, which links the package on npm back to this exact run. Every
+  # package sets `publishConfig.provenance`, and npm fails the publish
+  # outright if it cannot mint the token.
+  id-token: write
 
 jobs:
   # The exact gates a PR faces, so a release can never ship something CI would
