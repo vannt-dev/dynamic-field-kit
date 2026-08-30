@@ -24,7 +24,7 @@
   },
   "scripts": {
     "build": "ng-packagr -p ng-package.json",
-    "postbuild": "node ../../scripts/strip-sourcemaps.js dist",
+    "postbuild": "node ../../scripts/strip-sourcemaps.js dist && node ../../scripts/add-dts-extensions.js dist",
     "clean": "rimraf dist coverage",
     "prepublishOnly": "npm run build",
     "test": "vitest run",
@@ -60,5 +60,14 @@
     "dynamic-field",
     "dynamic-field-kit",
     "dynamic-field-kit/angular"
-  ]
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/fesm2022/dynamic-field-kit-angular.mjs"
+    },
+    "./package.json": {
+      "default": "./package.json"
+    }
+  }
 }
