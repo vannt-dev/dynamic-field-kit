@@ -1,6 +1,6 @@
 {
   "name": "@dynamic-field-kit/vue",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "Vue 3 renderer for dynamic-field-kit",
   "license": "MIT",
   "type": "module",
@@ -27,7 +27,7 @@
     "vue": "^3.0.0"
   },
   "devDependencies": {
-    "@dynamic-field-kit/core": "^1.5.0",
+    "@dynamic-field-kit/core": "^1.5.1",
     "@vitest/coverage-v8": "^4.1.11",
     "@vue/test-utils": "^2.5.0",
     "jsdom": "^29.1.1",
