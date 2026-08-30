@@ -3,6 +3,12 @@
 # that the default for this clone. GitHub reads this file automatically.
 #
 # Add a commit here only when it changes formatting and nothing else.
-
-# chore(deps): move to prettier 3 and take its trailing-comma default
-91778d310f5fd9213d81262128976f994dc956da
+#
+# Currently empty, deliberately. The prettier 2 -> 3 reformat (105 files, pure
+# formatting) was written as its own commit precisely so it could be listed
+# here, but #44 was squash-merged, so that commit does not exist on develop -
+# its changes are inside e4f8dbd alongside the vitest 4 and eslint 10
+# migrations. Listing e4f8dbd would hide the authorship of real changes, which
+# is the opposite of what this file is for, so the reformat stays visible in
+# blame. A future formatting-only commit should be merged without squashing and
+# added here.
