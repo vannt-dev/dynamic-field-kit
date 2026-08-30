@@ -70,11 +70,26 @@
     "directory": "packages/react"
   },
   "keywords": [
-    "dynamic-field",
-    "dynamic-field-kit",
-    "dynamic-field-kit/react"
+    "react",
+    "react-forms",
+    "react-form",
+    "form-state",
+    "dynamic-forms",
+    "dynamic-form",
+    "form-builder",
+    "form-engine",
+    "form-validation",
+    "schema-driven",
+    "headless",
+    "forms",
+    "typescript",
+    "zod",
+    "yup",
+    "valibot",
+    "standard-schema",
+    "dynamic-field-kit"
   ],
-  "homepage": "https://github.com/vannt-dev/dynamic-field-kit/tree/develop/packages/react#readme",
+  "homepage": "https://vannt-dev.github.io/dynamic-field-kit/",
   "bugs": {
     "url": "https://github.com/vannt-dev/dynamic-field-kit/issues"
   },
