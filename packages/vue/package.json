@@ -64,11 +64,27 @@
     "directory": "packages/vue"
   },
   "keywords": [
-    "dynamic-field",
-    "dynamic-field-kit",
-    "dynamic-field-kit/vue"
+    "vue",
+    "vue3",
+    "vue-forms",
+    "vue-form",
+    "form-state",
+    "dynamic-forms",
+    "dynamic-form",
+    "form-builder",
+    "form-engine",
+    "form-validation",
+    "schema-driven",
+    "headless",
+    "forms",
+    "typescript",
+    "zod",
+    "yup",
+    "valibot",
+    "standard-schema",
+    "dynamic-field-kit"
   ],
-  "homepage": "https://github.com/vannt-dev/dynamic-field-kit/tree/develop/packages/vue#readme",
+  "homepage": "https://vannt-dev.github.io/dynamic-field-kit/",
   "bugs": {
     "url": "https://github.com/vannt-dev/dynamic-field-kit/issues"
   }

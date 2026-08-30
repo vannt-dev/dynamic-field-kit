@@ -62,11 +62,26 @@
     "directory": "packages/angular"
   },
   "keywords": [
-    "dynamic-field",
-    "dynamic-field-kit",
-    "dynamic-field-kit/angular"
+    "angular",
+    "angular-forms",
+    "angular-form",
+    "signals",
+    "dynamic-forms",
+    "dynamic-form",
+    "form-builder",
+    "form-engine",
+    "form-validation",
+    "schema-driven",
+    "headless",
+    "forms",
+    "typescript",
+    "zod",
+    "yup",
+    "valibot",
+    "standard-schema",
+    "dynamic-field-kit"
   ],
-  "homepage": "https://github.com/vannt-dev/dynamic-field-kit/tree/develop/packages/angular#readme",
+  "homepage": "https://vannt-dev.github.io/dynamic-field-kit/",
   "bugs": {
     "url": "https://github.com/vannt-dev/dynamic-field-kit/issues"
   },

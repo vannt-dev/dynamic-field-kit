@@ -45,9 +45,23 @@
     "directory": "packages/core"
   },
   "keywords": [
-    "dynamic-field",
-    "dynamic-field-kit",
-    "dynamic-field-kit/core"
+    "form-state",
+    "field-registry",
+    "validation",
+    "dynamic-forms",
+    "dynamic-form",
+    "form-builder",
+    "form-engine",
+    "form-validation",
+    "schema-driven",
+    "headless",
+    "forms",
+    "typescript",
+    "zod",
+    "yup",
+    "valibot",
+    "standard-schema",
+    "dynamic-field-kit"
   ],
   "devDependencies": {
     "@types/node": "^22.0.0",
@@ -58,7 +72,7 @@
     "yup": "^1.7.1",
     "zod": "^4.4.3"
   },
-  "homepage": "https://github.com/vannt-dev/dynamic-field-kit/tree/develop/packages/core#readme",
+  "homepage": "https://vannt-dev.github.io/dynamic-field-kit/",
   "bugs": {
     "url": "https://github.com/vannt-dev/dynamic-field-kit/issues"
   }
