@@ -17,7 +17,7 @@ function crossFrameworkProblems(pkgName, pjson) {
     {},
     pjson.dependencies || {},
     pjson.peerDependencies || {},
-    pjson.devDependencies || {}
+    pjson.devDependencies || {},
   );
 
   return FRAMEWORK_PACKAGES.filter((other) => other !== pkgName)
@@ -25,7 +25,7 @@ function crossFrameworkProblems(pkgName, pjson) {
     .filter((alias) => Object.prototype.hasOwnProperty.call(deps, alias))
     .map(
       (alias) =>
-        `${pkgName}: depends on ${alias} (should depend only on core) (in dependencies/peer/dev)`
+        `${pkgName}: depends on ${alias} (should depend only on core) (in dependencies/peer/dev)`,
     );
 }
 
@@ -41,7 +41,7 @@ function undeclaredPeerProblems(pkgName, pjson) {
     .map(
       (peer) =>
         `${pkgName}: peer-depends on ${peer} but does not declare it in devDependencies, ` +
-        `so it builds and tests against whatever the workspace root happens to hoist`
+        `so it builds and tests against whatever the workspace root happens to hoist`,
     );
 }
 
@@ -50,7 +50,7 @@ function findFrameworkDepProblems(root = path.resolve(__dirname, '..')) {
 
   for (const pkgName of FRAMEWORK_PACKAGES) {
     const pjson = readJson(
-      path.join(root, 'packages', pkgName, 'package.json')
+      path.join(root, 'packages', pkgName, 'package.json'),
     );
 
     problems.push(...crossFrameworkProblems(pkgName, pjson));
@@ -70,7 +70,7 @@ if (require.main === module) {
   }
 
   console.log(
-    'OK: react/vue/angular depend only on core and dev-install their own peers.'
+    'OK: react/vue/angular depend only on core and dev-install their own peers.',
   );
 }
 

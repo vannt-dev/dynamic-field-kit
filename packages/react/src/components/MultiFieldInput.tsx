@@ -63,7 +63,7 @@ const MultiFieldInput = ({
 }: Props) => {
   const [data, setData] = useState<Properties>({});
   const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>(
-    {}
+    {},
   );
   const initialPropertiesRef = useRef<Properties>(properties ?? {});
 
@@ -82,9 +82,9 @@ const MultiFieldInput = ({
   const visibleFields = useMemo(
     () =>
       fieldDescriptions.filter(
-        (f) => !f.appearCondition || f.appearCondition(data, effectiveRoot)
+        (f) => !f.appearCondition || f.appearCondition(data, effectiveRoot),
       ),
-    [fieldDescriptions, data, effectiveRoot]
+    [fieldDescriptions, data, effectiveRoot],
   );
 
   // Keep the latest data/onChange in refs so handleValueChangeField can stay
@@ -105,7 +105,7 @@ const MultiFieldInput = ({
 
   useEffect(() => {
     onValidityChangeRef.current?.(
-      validateFields(fieldDescriptions, data, rootData)
+      validateFields(fieldDescriptions, data, rootData),
     );
   }, [data, fieldDescriptions, rootData]);
 
@@ -114,7 +114,7 @@ const MultiFieldInput = ({
     const next = applyComputedValues(
       fieldDescriptionsRef.current,
       merged,
-      rootDataRef.current
+      rootDataRef.current,
     );
     dataRef.current = next;
     setData(next);

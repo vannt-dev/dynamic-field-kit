@@ -31,7 +31,7 @@ describe('FieldRegistryProvider (scoped registry)', () => {
     render(
       <FieldRegistryProvider registry={scoped as any}>
         <DynamicInput type="text" value="hi" />
-      </FieldRegistryProvider>
+      </FieldRegistryProvider>,
     );
 
     expect(screen.getByTestId('scoped')).toHaveTextContent('scoped:hi');
@@ -75,7 +75,7 @@ describe('keyField', () => {
             { id: 'b', label: 'second' },
           ],
         }}
-      />
+      />,
     );
 
     expect(screen.getAllByTestId('input')[0]).toHaveValue('first');

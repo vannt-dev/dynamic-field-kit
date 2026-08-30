@@ -32,7 +32,7 @@ describe('MultiFieldInput blur reporting', () => {
   it('reports which field was blurred', () => {
     const onBlurField = vi.fn();
     render(
-      <MultiFieldInput fieldDescriptions={fields} onBlurField={onBlurField} />
+      <MultiFieldInput fieldDescriptions={fields} onBlurField={onBlurField} />,
     );
 
     fireEvent.blur(screen.getByTestId('dfk-field-second'));
@@ -43,7 +43,7 @@ describe('MultiFieldInput blur reporting', () => {
   it('reports each field separately', () => {
     const onBlurField = vi.fn();
     render(
-      <MultiFieldInput fieldDescriptions={fields} onBlurField={onBlurField} />
+      <MultiFieldInput fieldDescriptions={fields} onBlurField={onBlurField} />,
     );
 
     fireEvent.blur(screen.getByTestId('dfk-field-first'));

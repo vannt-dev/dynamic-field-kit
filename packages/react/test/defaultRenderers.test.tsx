@@ -17,7 +17,7 @@ describe('React Default Built-in Renderers', () => {
         value="Hello Default"
         onChange={handleChange}
         id="test-text"
-      />
+      />,
     );
 
     const input = screen.getByRole('textbox') as HTMLInputElement;
@@ -35,7 +35,7 @@ describe('React Default Built-in Renderers', () => {
         value={42}
         onChange={handleChange}
         id="test-number"
-      />
+      />,
     );
 
     const input = screen.getByRole('spinbutton') as HTMLInputElement;
@@ -57,7 +57,7 @@ describe('React Default Built-in Renderers', () => {
         value="vn"
         options={options}
         onChange={handleChange}
-      />
+      />,
     );
 
     const select = screen.getByRole('combobox') as HTMLSelectElement;
@@ -70,7 +70,7 @@ describe('React Default Built-in Renderers', () => {
   it('renders default checkbox input when type is "checkbox"', () => {
     const handleChange = vi.fn();
     render(
-      <DynamicInput type="checkbox" value={true} onChange={handleChange} />
+      <DynamicInput type="checkbox" value={true} onChange={handleChange} />,
     );
 
     const checkbox = screen.getByRole('checkbox') as HTMLInputElement;
@@ -83,7 +83,11 @@ describe('React Default Built-in Renderers', () => {
   it('renders default password input when type is "password"', () => {
     const handleChange = vi.fn();
     render(
-      <DynamicInput type="password" value="secret123" onChange={handleChange} />
+      <DynamicInput
+        type="password"
+        value="secret123"
+        onChange={handleChange}
+      />,
     );
 
     const input = screen.getByDisplayValue('secret123') as HTMLInputElement;
@@ -100,7 +104,7 @@ describe('React Default Built-in Renderers', () => {
         type="email"
         value="user@example.com"
         onChange={handleChange}
-      />
+      />,
     );
 
     const input = screen.getByRole('textbox') as HTMLInputElement;
@@ -117,7 +121,7 @@ describe('React Default Built-in Renderers', () => {
         type="textarea"
         value="Multi line text"
         onChange={handleChange}
-      />
+      />,
     );
 
     const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;

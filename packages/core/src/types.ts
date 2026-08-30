@@ -61,7 +61,7 @@ export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {
   validate?: (
     value: unknown,
     data: Properties,
-    rootData?: Properties
+    rootData?: Properties,
   ) => string | string[] | undefined | Promise<string | string[] | undefined>;
   /**
    * Runtime visibility condition. `data` is the data at this field's own level
@@ -85,8 +85,7 @@ export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {
   readOnlyCondition?: (data: Properties, rootData?: Properties) => boolean;
   /** Dynamic options list or static mảng options. */
   options?:
-    | Properties[]
-    | ((data: Properties, rootData?: Properties) => Properties[]);
+    Properties[] | ((data: Properties, rootData?: Properties) => Properties[]);
   min?: number | string;
   max?: number | string;
   step?: number | string;

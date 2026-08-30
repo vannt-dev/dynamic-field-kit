@@ -72,7 +72,7 @@ describe('MultiFieldInput blur reporting (Vue)', () => {
     });
 
     await expect(
-      wrapper.find('[data-testid="dfk-field-first"]').trigger('blur')
+      wrapper.find('[data-testid="dfk-field-first"]').trigger('blur'),
     ).resolves.not.toThrow();
   });
 });

@@ -74,7 +74,7 @@ export function useDynamicForm({
 
   function handleSubmit(
     onValid: (data: Properties) => void | Promise<void>,
-    onInvalid?: (errors: Record<string, string[]>) => void
+    onInvalid?: (errors: Record<string, string[]>) => void,
   ) {
     return async (e?: Event) => {
       if (e && typeof e.preventDefault === 'function') {

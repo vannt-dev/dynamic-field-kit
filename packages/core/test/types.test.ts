@@ -25,7 +25,7 @@ describe('FieldDescription runtime callbacks', () => {
       (d.tags as string[]).includes('vip');
 
     expect(condition({ role: 'admin', age: 25, tags: ['vip', 'active'] })).toBe(
-      true
+      true,
     );
     expect(condition({ role: 'user', age: 25, tags: ['vip'] })).toBe(false);
     expect(condition({ role: 'admin', age: 15, tags: ['vip'] })).toBe(false);

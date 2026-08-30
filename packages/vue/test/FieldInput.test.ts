@@ -22,7 +22,7 @@ const createMockRenderer = () => ({
 // isolated set of renderers and no global reset is needed between tests.
 function mountField(
   props: Record<string, unknown>,
-  renderers: Record<string, unknown>
+  renderers: Record<string, unknown>,
 ) {
   const registry = new FieldRegistry();
   for (const [type, renderer] of Object.entries(renderers)) {
@@ -55,7 +55,7 @@ describe('FieldInput', () => {
         renderInfos: { username: 'John' },
         onValueChangeField: vi.fn(),
       },
-      { text: mockRenderer }
+      { text: mockRenderer },
     );
 
     expect(wrapper.text()).toContain('Username');
@@ -80,7 +80,7 @@ describe('FieldInput', () => {
         renderInfos: {},
         onValueChangeField: vi.fn(),
       },
-      { select: mockRenderer }
+      { select: mockRenderer },
     );
 
     expect(wrapper.text()).toContain('2 options');
@@ -107,7 +107,7 @@ describe('FieldInput', () => {
         renderInfos: { email: '' },
         onValueChangeField,
       },
-      { text: mockRenderer }
+      { text: mockRenderer },
     );
 
     await wrapper.find('input').setValue('test@email.com');
@@ -135,7 +135,7 @@ describe('FieldInput', () => {
         renderInfos: {},
         onValueChangeField: vi.fn(),
       },
-      { text: mockRenderer }
+      { text: mockRenderer },
     );
   });
 
@@ -157,7 +157,7 @@ describe('FieldInput', () => {
         renderInfos: {},
         onValueChangeField: vi.fn(),
       },
-      { text: mockRenderer }
+      { text: mockRenderer },
     );
 
     expect(wrapper.text()).toContain('This is a help text');
@@ -180,7 +180,7 @@ describe('FieldInput', () => {
         renderInfos: { fullName: 'John Doe' },
         onValueChangeField: vi.fn(),
       },
-      { text: mockRenderer }
+      { text: mockRenderer },
     );
 
     expect(wrapper.text()).toContain('John Doe');

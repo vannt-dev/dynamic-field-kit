@@ -30,7 +30,7 @@ describe('FieldInput', () => {
           onChange={(e) => onValueChange?.(e.target.value)}
         />
       </div>
-    )
+    ),
   );
 
   beforeEach(() => {
@@ -52,7 +52,7 @@ describe('FieldInput', () => {
         fieldDescription={fieldDesc}
         renderInfos={{ username: 'John' }}
         onValueChangeField={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByTestId('label')).toHaveTextContent('Username');
@@ -76,7 +76,7 @@ describe('FieldInput', () => {
         fieldDescription={fieldDesc}
         renderInfos={{}}
         onValueChangeField={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByTestId('options')).toHaveTextContent('2 options');
@@ -98,7 +98,7 @@ describe('FieldInput', () => {
         fieldDescription={fieldDesc}
         renderInfos={{ email: '' }}
         onValueChangeField={onValueChangeField}
-      />
+      />,
     );
 
     const input = screen.getByTestId('input');
@@ -127,7 +127,7 @@ describe('FieldInput', () => {
         fieldDescription={fieldDesc}
         renderInfos={{}}
         onValueChangeField={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByTestId('class-test')).toHaveClass('my-custom-class');
@@ -150,7 +150,7 @@ describe('FieldInput', () => {
         fieldDescription={fieldDesc}
         renderInfos={{}}
         onValueChangeField={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByTestId('desc')).toHaveTextContent('This is a help text');

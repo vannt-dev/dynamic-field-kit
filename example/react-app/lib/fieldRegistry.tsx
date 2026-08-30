@@ -52,7 +52,7 @@ fieldRegistry.register(
         </span>
       )}
     </label>
-  )
+  ),
 );
 
 fieldRegistry.register(
@@ -78,7 +78,7 @@ fieldRegistry.register(
         }}
         onChange={(e) =>
           onValueChange?.(
-            e.target.value === '' ? ('' as any) : Number(e.target.value)
+            e.target.value === '' ? ('' as any) : Number(e.target.value),
           )
         }
         onBlur={onBlur}
@@ -89,7 +89,7 @@ fieldRegistry.register(
         </span>
       )}
     </label>
-  )
+  ),
 );
 
 fieldRegistry.register(
@@ -136,7 +136,7 @@ fieldRegistry.register(
         </span>
       )}
     </label>
-  )
+  ),
 );
 
 export {};

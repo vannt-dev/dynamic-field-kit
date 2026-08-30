@@ -37,7 +37,7 @@ function collectBundleSizes(root, packages = DEFAULT_PACKAGES) {
     }
 
     const { esm, cjs } = entryPoints(
-      JSON.parse(fs.readFileSync(manifest, 'utf8'))
+      JSON.parse(fs.readFileSync(manifest, 'utf8')),
     );
     const found = [];
 
@@ -69,7 +69,7 @@ function formatSizes(sizes) {
   return sizes.map((entry) =>
     entry.missing
       ? `${entry.pkg}: not built`
-      : `${entry.pkg} (${entry.format}): ${(entry.bytes / 1024).toFixed(2)} KB`
+      : `${entry.pkg} (${entry.format}): ${(entry.bytes / 1024).toFixed(2)} KB`,
   );
 }
 

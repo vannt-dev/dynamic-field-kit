@@ -17,7 +17,7 @@ const TextRenderer = defineComponent({
               {
                 style: 'font-weight: 500; display: block; margin-bottom: 4px;',
               },
-              props.label
+              props.label,
             )
           : null,
         h('input', {
@@ -35,7 +35,7 @@ const TextRenderer = defineComponent({
           ? h(
               'span',
               { style: 'color: #ef4444; font-size: 12px; display: block;' },
-              Array.isArray(props.error) ? props.error.join(', ') : props.error
+              Array.isArray(props.error) ? props.error.join(', ') : props.error,
             )
           : null,
       ]);
@@ -54,7 +54,7 @@ const NumberRenderer = defineComponent({
               {
                 style: 'font-weight: 500; display: block; margin-bottom: 4px;',
               },
-              props.label
+              props.label,
             )
           : null,
         h('input', {
@@ -65,7 +65,7 @@ const NumberRenderer = defineComponent({
           onInput: (e: any) =>
             emit(
               'update:value',
-              e.target.value === '' ? undefined : Number(e.target.value)
+              e.target.value === '' ? undefined : Number(e.target.value),
             ),
           onBlur: () => emit('blur'),
           style: `${inputStyle} background-color: ${
@@ -76,7 +76,7 @@ const NumberRenderer = defineComponent({
           ? h(
               'span',
               { style: 'color: #ef4444; font-size: 12px; display: block;' },
-              Array.isArray(props.error) ? props.error.join(', ') : props.error
+              Array.isArray(props.error) ? props.error.join(', ') : props.error,
             )
           : null,
       ]);
@@ -95,7 +95,7 @@ const SelectRenderer = defineComponent({
               {
                 style: 'font-weight: 500; display: block; margin-bottom: 4px;',
               },
-              props.label
+              props.label,
             )
           : null,
         h(
@@ -115,16 +115,16 @@ const SelectRenderer = defineComponent({
               h(
                 'option',
                 { key: opt.value ?? opt, value: opt.value ?? opt },
-                opt.label ?? opt.value ?? opt
-              )
+                opt.label ?? opt.value ?? opt,
+              ),
             ),
-          ]
+          ],
         ),
         props.error
           ? h(
               'span',
               { style: 'color: #ef4444; font-size: 12px; display: block;' },
-              Array.isArray(props.error) ? props.error.join(', ') : props.error
+              Array.isArray(props.error) ? props.error.join(', ') : props.error,
             )
           : null,
       ]);

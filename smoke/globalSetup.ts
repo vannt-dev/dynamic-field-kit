@@ -15,12 +15,12 @@ const requiredArtifacts = [
 
 export default function globalSetup(): void {
   const missing = requiredArtifacts.filter(
-    (rel) => !existsSync(resolve(repoRoot, rel))
+    (rel) => !existsSync(resolve(repoRoot, rel)),
   );
   if (missing.length > 0) {
     throw new Error(
       `Missing build artifact(s): ${missing.join(', ')}. ` +
-        `Run "npm run build" (all packages) before the smoke tests.`
+        `Run "npm run build" (all packages) before the smoke tests.`,
     );
   }
 }

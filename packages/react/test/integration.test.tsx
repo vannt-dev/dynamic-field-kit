@@ -44,7 +44,7 @@ describe('Integration: Form with multiple fields', () => {
           onChange={(e) => onValueChange?.(e.target.value)}
         />
       </div>
-    )
+    ),
   );
 
   const CheckboxInput = vi.fn(
@@ -66,7 +66,7 @@ describe('Integration: Form with multiple fields', () => {
         />
         <span>{label}</span>
       </div>
-    )
+    ),
   );
 
   const SelectInput = vi.fn(
@@ -95,7 +95,7 @@ describe('Integration: Form with multiple fields', () => {
           ))}
         </select>
       </div>
-    )
+    ),
   );
 
   beforeEach(() => {
@@ -180,7 +180,7 @@ describe('Integration: Form with multiple fields', () => {
       <MultiFieldInput
         fieldDescriptions={fields}
         properties={{ accountType: 'personal' }}
-      />
+      />,
     );
 
     expect(screen.queryByText('Company Name')).not.toBeInTheDocument();
@@ -189,7 +189,7 @@ describe('Integration: Form with multiple fields', () => {
       <MultiFieldInput
         fieldDescriptions={fields}
         properties={{ accountType: 'business' }}
-      />
+      />,
     );
 
     expect(screen.getByText('Company Name')).toBeInTheDocument();
@@ -234,7 +234,7 @@ describe('Integration: Layout variations', () => {
     ));
     fieldRegistry.register(
       'text',
-      vi.fn(() => <div data-testid="field">Field</div>) as any
+      vi.fn(() => <div data-testid="field">Field</div>) as any,
     );
   });
 
@@ -245,7 +245,7 @@ describe('Integration: Layout variations', () => {
     ];
 
     render(
-      <MultiFieldInput fieldDescriptions={fields} layout={'test-row' as any} />
+      <MultiFieldInput fieldDescriptions={fields} layout={'test-row' as any} />,
     );
 
     expect(screen.getByTestId('row-layout')).toBeInTheDocument();
@@ -258,7 +258,10 @@ describe('Integration: Layout variations', () => {
     ];
 
     render(
-      <MultiFieldInput fieldDescriptions={fields} layout={'test-grid' as any} />
+      <MultiFieldInput
+        fieldDescriptions={fields}
+        layout={'test-grid' as any}
+      />,
     );
 
     expect(screen.getByTestId('grid-layout')).toBeInTheDocument();
@@ -341,8 +344,8 @@ describe('Integration: DynamicInput with real-world scenarios', () => {
         value === 'us'
           ? ['New York', 'Los Angeles']
           : value === 'vn'
-          ? ['Hanoi', 'Ho Chi Minh']
-          : [];
+            ? ['Hanoi', 'Ho Chi Minh']
+            : [];
 
       return (
         <select

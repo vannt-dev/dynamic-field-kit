@@ -22,7 +22,7 @@ describe('MultiFieldInput', () => {
 
   function mount(
     fields: FieldDescription[],
-    properties: Record<string, unknown>
+    properties: Record<string, unknown>,
   ) {
     const fixture = TestBed.createComponent(MultiFieldInput);
     fixture.componentRef.setInput('fieldDescriptions', fields);
@@ -37,11 +37,11 @@ describe('MultiFieldInput', () => {
         { name: 'first', type: 'text' },
         { name: 'last', type: 'text' },
       ],
-      { first: 'Ada', last: 'Lovelace' }
+      { first: 'Ada', last: 'Lovelace' },
     );
 
     const inputs: HTMLInputElement[] = Array.from(
-      fixture.nativeElement.querySelectorAll('input.txt')
+      fixture.nativeElement.querySelectorAll('input.txt'),
     );
     expect(inputs.map((i) => i.value)).toEqual(['Ada', 'Lovelace']);
   });
@@ -58,13 +58,13 @@ describe('MultiFieldInput', () => {
 
     expect(
       mount(fields, { kind: 'personal' }).nativeElement.querySelectorAll(
-        'input.txt'
-      ).length
+        'input.txt',
+      ).length,
     ).toBe(1);
     expect(
       mount(fields, { kind: 'business' }).nativeElement.querySelectorAll(
-        'input.txt'
-      ).length
+        'input.txt',
+      ).length,
     ).toBe(2);
   });
 
@@ -81,7 +81,7 @@ describe('MultiFieldInput', () => {
     const fixture = mount(fields, { price: '5' });
 
     const inputs: HTMLInputElement[] = Array.from(
-      fixture.nativeElement.querySelectorAll('input.txt')
+      fixture.nativeElement.querySelectorAll('input.txt'),
     );
     expect(inputs[1].value).toBe('10');
   });
@@ -110,11 +110,11 @@ describe('MultiFieldInput', () => {
             String(value).includes('@') ? undefined : 'Invalid email',
         },
       ],
-      { email: 'nope' }
+      { email: 'nope' },
     );
 
     expect(fixture.nativeElement.querySelector('.err').textContent).toBe(
-      'Invalid email'
+      'Invalid email',
     );
   });
 
@@ -132,11 +132,11 @@ describe('MultiFieldInput', () => {
           readOnlyCondition: (data) => data['frozen'] === true,
         },
       ],
-      { frozen: true }
+      { frozen: true },
     );
 
     const inputs: HTMLInputElement[] = Array.from(
-      fixture.nativeElement.querySelectorAll('input.txt')
+      fixture.nativeElement.querySelectorAll('input.txt'),
     );
     expect(inputs[0].disabled).toBe(true);
     expect(inputs[1].readOnly).toBe(true);
@@ -152,7 +152,7 @@ describe('MultiFieldInput', () => {
           validate: () => 'Invalid email',
         },
       ],
-      { email: 'nope' }
+      { email: 'nope' },
     );
 
     expect(fixture.nativeElement.querySelector('.err')).toBeNull();
@@ -206,7 +206,7 @@ describe('MultiFieldInput', () => {
     fixture.componentInstance.onChange.subscribe((d) => seen.push(d));
 
     const addBtn: HTMLButtonElement = Array.from<HTMLButtonElement>(
-      fixture.nativeElement.querySelectorAll('button')
+      fixture.nativeElement.querySelectorAll('button'),
     ).find((b) => b.textContent?.trim() === 'Add')!;
     addBtn.click();
     fixture.detectChanges();
@@ -231,7 +231,7 @@ describe('MultiFieldInput', () => {
     fixture.componentInstance.onChange.subscribe((d) => seen.push(d));
 
     const removeBtn: HTMLButtonElement = Array.from<HTMLButtonElement>(
-      fixture.nativeElement.querySelectorAll('button')
+      fixture.nativeElement.querySelectorAll('button'),
     ).find((b) => b.textContent?.trim() === 'Remove')!;
     removeBtn.click();
     fixture.detectChanges();

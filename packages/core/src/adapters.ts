@@ -1,15 +1,12 @@
 import { Properties } from './types';
 
 export type FieldValidatorResult =
-  | string
-  | string[]
-  | undefined
-  | Promise<string | string[] | undefined>;
+  string | string[] | undefined | Promise<string | string[] | undefined>;
 
 export type FieldValidatorFunction = (
   value: unknown,
   data: Properties,
-  rootData?: Properties
+  rootData?: Properties,
 ) => FieldValidatorResult;
 
 export interface SchemaValidatorOptions {
@@ -31,7 +28,7 @@ export interface SchemaValidatorOptions {
 
 /** Accepts the shorthand `zodValidator(schema, 'email')` or an options object. */
 function normalizeOptions(
-  fieldNameOrOptions?: string | SchemaValidatorOptions
+  fieldNameOrOptions?: string | SchemaValidatorOptions,
 ): Required<Pick<SchemaValidatorOptions, 'target'>> & { field?: string } {
   if (typeof fieldNameOrOptions === 'string') {
     return { field: fieldNameOrOptions, target: 'form' };
@@ -53,7 +50,7 @@ function buildPayload(
   data: Properties,
   value: unknown,
   field: string | undefined,
-  target: 'form' | 'field'
+  target: 'form' | 'field',
 ): unknown {
   if (target === 'field') {
     return value;
@@ -65,7 +62,7 @@ function buildPayload(
 function toMessages(
   issues: any[],
   fieldName: string | undefined,
-  matchPath: (issue: any, fieldName: string) => boolean
+  matchPath: (issue: any, fieldName: string) => boolean,
 ): string[] | undefined {
   const matched = fieldName
     ? issues.filter((issue) => matchPath(issue, fieldName))
@@ -87,7 +84,7 @@ function matchesStringPath(issue: any, fieldName: string): boolean {
 
 function zodResultToMessages(
   res: any,
-  fieldName?: string
+  fieldName?: string,
 ): string[] | undefined {
   if (res.success) {
     return undefined;
@@ -106,7 +103,7 @@ function zodResultToMessages(
  */
 export function zodValidator(
   schema: any,
-  fieldNameOrOptions?: string | SchemaValidatorOptions
+  fieldNameOrOptions?: string | SchemaValidatorOptions,
 ): FieldValidatorFunction {
   const { field, target } = normalizeOptions(fieldNameOrOptions);
   // A scalar schema reports issues with an empty path, so there is nothing to
@@ -141,7 +138,7 @@ function isYupValidationError(err: any): boolean {
 
 function yupErrorToMessages(
   err: any,
-  fieldName?: string
+  fieldName?: string,
 ): string[] | undefined {
   if (Array.isArray(err.inner) && err.inner.length > 0) {
     return toMessages(err.inner, fieldName, matchesStringPath);
@@ -162,7 +159,7 @@ function yupErrorToMessages(
  */
 export function yupValidator(
   schema: any,
-  fieldNameOrOptions?: string | SchemaValidatorOptions
+  fieldNameOrOptions?: string | SchemaValidatorOptions,
 ): FieldValidatorFunction {
   const { field, target } = normalizeOptions(fieldNameOrOptions);
   const filterBy = target === 'field' ? undefined : field;
@@ -200,7 +197,7 @@ export function yupValidator(
 
 function standardResultToMessages(
   result: any,
-  fieldName?: string
+  fieldName?: string,
 ): string[] | undefined {
   if (!result.issues || result.issues.length === 0) {
     return undefined;
@@ -214,7 +211,7 @@ function standardResultToMessages(
  */
 export function standardSchemaValidator(
   schema: any,
-  fieldNameOrOptions?: string | SchemaValidatorOptions
+  fieldNameOrOptions?: string | SchemaValidatorOptions,
 ): FieldValidatorFunction {
   const { field, target } = normalizeOptions(fieldNameOrOptions);
   const filterBy = target === 'field' ? undefined : field;

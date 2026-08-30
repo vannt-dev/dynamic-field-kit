@@ -23,7 +23,7 @@ const accountFields: FieldDescription[] = [
     placeholder: 'example@domain.com',
     validate: validators.compose(
       validators.required('Email bắt buộc'),
-      validators.email('Định dạng email không hợp lệ')
+      validators.email('Định dạng email không hợp lệ'),
     ),
   },
   {
@@ -32,7 +32,7 @@ const accountFields: FieldDescription[] = [
     label: 'Mật khẩu',
     validate: validators.compose(
       validators.required('Mật khẩu bắt buộc'),
-      validators.minLength(8, 'Tối thiểu 8 ký tự')
+      validators.minLength(8, 'Tối thiểu 8 ký tự'),
     ),
   },
 ];

@@ -82,7 +82,7 @@ describe('Angular Signal DynamicFormStore', () => {
     await expect(
       store.handleSubmit(() => {
         throw new Error('boom');
-      })()
+      })(),
     ).rejects.toThrow('boom');
 
     expect(store.isSubmitting()).toBe(false);

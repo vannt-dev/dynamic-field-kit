@@ -212,16 +212,17 @@ const fields: FieldDescription[] = [
 ```
 
 **Common Properties**
-| Property | Description |
-|------|------------|
-| name | Field key in form data |
-| type | Field renderer key |
-| label | UI label |
-| value | Default value |
-| disabled | Forwarded to the renderer as `disabled` |
-| props | Extra, framework-agnostic props forwarded verbatim to the renderer (e.g. `acceptFile`, `maxLength`) - keeps domain-specific inputs out of the adapter layer |
-| appearCondition | Runtime visibility condition. Called as `(data, rootData)`: `data` is this field's own level (the group item, inside a repeatable group), `rootData` is always the top-level form data |
-| computeValue | Derives this field's value from the rest of the form data (e.g. a total or full name) whenever any field changes. Called as `(data, rootData)` like `appearCondition`. Evaluated once per change, not to a fixed point, so avoid chaining `computeValue` fields into a cycle, and return a primitive or a stable reference (a fresh object/array each call defeats render-skipping). |
+
+| Property        | Description                                                                                                                                                                                                                                                                                                                                                                          |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| name            | Field key in form data                                                                                                                                                                                                                                                                                                                                                               |
+| type            | Field renderer key                                                                                                                                                                                                                                                                                                                                                                   |
+| label           | UI label                                                                                                                                                                                                                                                                                                                                                                             |
+| value           | Default value                                                                                                                                                                                                                                                                                                                                                                        |
+| disabled        | Forwarded to the renderer as `disabled`                                                                                                                                                                                                                                                                                                                                              |
+| props           | Extra, framework-agnostic props forwarded verbatim to the renderer (e.g. `acceptFile`, `maxLength`) - keeps domain-specific inputs out of the adapter layer                                                                                                                                                                                                                          |
+| appearCondition | Runtime visibility condition. Called as `(data, rootData)`: `data` is this field's own level (the group item, inside a repeatable group), `rootData` is always the top-level form data                                                                                                                                                                                               |
+| computeValue    | Derives this field's value from the rest of the form data (e.g. a total or full name) whenever any field changes. Called as `(data, rootData)` like `appearCondition`. Evaluated once per change, not to a fixed point, so avoid chaining `computeValue` fields into a cycle, and return a primitive or a stable reference (a fresh object/array each call defeats render-skipping). |
 
 **Repeatable Field Groups**
 
@@ -271,7 +272,7 @@ const fields: FieldDescription[] = [
     // Built-in composed validator
     validate: validators.compose(
       validators.required('Email is required'),
-      validators.email('Invalid email')
+      validators.email('Invalid email'),
     ),
   },
   {

@@ -10,7 +10,7 @@ export interface ValidationResult {
 export function resolveDisabled(
   field: FieldDescription,
   data: Properties,
-  rootData?: Properties
+  rootData?: Properties,
 ): boolean {
   return (
     field.disabled === true ||
@@ -22,7 +22,7 @@ export function resolveDisabled(
 export function resolveReadOnly(
   field: FieldDescription,
   data: Properties,
-  rootData?: Properties
+  rootData?: Properties,
 ): boolean {
   return field.readOnlyCondition?.(data, rootData) === true;
 }
@@ -31,7 +31,7 @@ export function resolveReadOnly(
 export function resolveOptions(
   field: FieldDescription,
   data: Properties,
-  rootData?: Properties
+  rootData?: Properties,
 ): Properties[] | undefined {
   if (!field.options) {
     return undefined;
@@ -47,7 +47,7 @@ export function validateField(
   field: FieldDescription,
   value: unknown,
   data: Properties,
-  rootData?: Properties
+  rootData?: Properties,
 ): string[] {
   if (!field.validate) {
     return [];
@@ -64,7 +64,7 @@ export async function validateFieldAsync(
   field: FieldDescription,
   value: unknown,
   data: Properties,
-  rootData?: Properties
+  rootData?: Properties,
 ): Promise<string[]> {
   if (!field.validate) {
     return [];
@@ -85,7 +85,7 @@ export async function validateFieldAsync(
 export function validateFields(
   fields: FieldDescription[],
   data: Properties,
-  rootData: Properties = data
+  rootData: Properties = data,
 ): ValidationResult {
   const errors: Record<string, string[]> = {};
 
@@ -125,7 +125,7 @@ export function validateFields(
 export async function validateFieldsAsync(
   fields: FieldDescription[],
   data: Properties,
-  rootData: Properties = data
+  rootData: Properties = data,
 ): Promise<ValidationResult> {
   const errors: Record<string, string[]> = {};
 
@@ -145,7 +145,7 @@ export async function validateFieldsAsync(
         const sub = await validateFieldsAsync(
           field.fields,
           items[index],
-          rootData
+          rootData,
         );
         for (const [key, messages] of Object.entries(sub.errors)) {
           errors[`${field.name}[${index}].${key}`] = messages;
@@ -158,7 +158,7 @@ export async function validateFieldsAsync(
       field,
       data[field.name],
       data,
-      rootData
+      rootData,
     );
     if (fieldErrors.length > 0) {
       errors[field.name] = fieldErrors;

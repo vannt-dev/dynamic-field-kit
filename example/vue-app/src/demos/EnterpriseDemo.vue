@@ -43,7 +43,7 @@ const fields: FieldDescription[] = [
     placeholder: 'example@domain.com',
     validate: validators.compose(
       validators.required('Email bắt buộc'),
-      validators.email('Định dạng email không hợp lệ')
+      validators.email('Định dạng email không hợp lệ'),
     ),
   },
   {

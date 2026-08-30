@@ -28,7 +28,7 @@ describe('date/time renderers', () => {
   it('emits the raw string value on change', () => {
     const onValueChange = vi.fn();
     const { container } = render(
-      <DefaultTimeRenderer value="" onValueChange={onValueChange} />
+      <DefaultTimeRenderer value="" onValueChange={onValueChange} />,
     );
 
     fireEvent.change(container.querySelector('input')!, {
@@ -51,7 +51,7 @@ describe('DefaultSwitchRenderer', () => {
   it('emits the checked state', () => {
     const onValueChange = vi.fn();
     const { container } = render(
-      <DefaultSwitchRenderer value={false} onValueChange={onValueChange} />
+      <DefaultSwitchRenderer value={false} onValueChange={onValueChange} />,
     );
 
     fireEvent.click(container.querySelector('input')!);
@@ -111,7 +111,7 @@ describe('option-shaped fallbacks', () => {
         value="1"
         options={[{ id: '1', name: 'One' }]}
         id="sel"
-      />
+      />,
     );
 
     expect(screen.getByRole('option', { name: 'One' })).toHaveValue('1');
@@ -123,7 +123,7 @@ describe('option-shaped fallbacks', () => {
         value="1"
         options={[{ id: '1', name: 'One' }]}
         id="rad"
-      />
+      />,
     );
 
     expect(screen.getByLabelText('One')).toBeChecked();
@@ -152,7 +152,7 @@ describe('DefaultRangeRenderer', () => {
         max={10}
         onValueChange={onValueChange}
         id="r"
-      />
+      />,
     );
 
     fireEvent.change(screen.getByRole('slider'), { target: { value: '7' } });

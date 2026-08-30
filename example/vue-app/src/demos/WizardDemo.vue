@@ -21,7 +21,7 @@ const accountFields: FieldDescription[] = [
     label: 'Email',
     validate: validators.compose(
       validators.required('Email bắt buộc'),
-      validators.email('Định dạng email không hợp lệ')
+      validators.email('Định dạng email không hợp lệ'),
     ),
   },
   {
@@ -30,7 +30,7 @@ const accountFields: FieldDescription[] = [
     label: 'Mật khẩu',
     validate: validators.compose(
       validators.required('Mật khẩu bắt buộc'),
-      validators.minLength(8, 'Tối thiểu 8 ký tự')
+      validators.minLength(8, 'Tối thiểu 8 ký tự'),
     ),
   },
 ];
@@ -114,8 +114,8 @@ function finish() {
             index === wizard.currentStepIndex
               ? '#e8f1fc'
               : isStepCompleted(wizard, index)
-              ? '#eaf7ee'
-              : '#fff',
+                ? '#eaf7ee'
+                : '#fff',
           fontWeight: index === wizard.currentStepIndex ? 600 : 400,
         }"
       >

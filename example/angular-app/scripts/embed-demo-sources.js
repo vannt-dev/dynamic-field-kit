@@ -33,6 +33,6 @@ ${entries}
 fs.writeFileSync(OUT, output, 'utf8');
 process.stdout.write(
   `embed-demo-sources: wrote ${path.relative(process.cwd(), OUT)} (${DEMOS.join(
-    ', '
-  )})\n`
+    ', ',
+  )})\n`,
 );
