@@ -225,14 +225,14 @@ describe('Layout: Responsive', () => {
     });
 
     expect(wrapper.find('div').attributes('style')).toContain(
-      'flex-direction: row'
+      'flex-direction: row',
     );
 
     setWidth(375);
     await wrapper.vm.$nextTick();
 
     expect(wrapper.find('div').attributes('style')).toContain(
-      'flex-direction: column'
+      'flex-direction: column',
     );
   });
 
@@ -251,7 +251,7 @@ describe('Layout: Responsive', () => {
     });
 
     expect(wrapper.find('div').attributes('style')).toContain(
-      'flex-direction: column'
+      'flex-direction: column',
     );
   });
 });

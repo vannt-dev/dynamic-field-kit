@@ -26,7 +26,7 @@ describe('react built package renders', () => {
     render(
       <FieldRegistryProvider registry={registry as never}>
         <DynamicInput type="text" value="hi" />
-      </FieldRegistryProvider>
+      </FieldRegistryProvider>,
     );
 
     expect(screen.getByTestId('smoke').textContent).toBe('hi');

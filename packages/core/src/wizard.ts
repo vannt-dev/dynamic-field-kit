@@ -26,7 +26,7 @@ function clampIndex(index: number, stepCount: number): number {
 
 export function createWizardState(
   steps: FormStep[],
-  initialStepIndex = 0
+  initialStepIndex = 0,
 ): WizardState {
   const safeIndex = clampIndex(initialStepIndex, steps.length);
   return {
@@ -44,7 +44,7 @@ export function createWizardState(
 function atStep(
   state: WizardState,
   index: number,
-  completedSteps: number[]
+  completedSteps: number[],
 ): WizardState {
   const safeIndex = clampIndex(index, state.steps.length);
   return {
@@ -66,7 +66,7 @@ function withCompleted(completedSteps: number[], index: number): number[] {
 
 export function validateStep(
   step: FormStep,
-  data: Properties
+  data: Properties,
 ): ValidationResult {
   return validateFields(step.fields, data);
 }
@@ -90,7 +90,7 @@ export function isStepCompleted(state: WizardState, index: number): boolean {
  */
 export function markStepCompleted(
   state: WizardState,
-  index: number = state.currentStepIndex
+  index: number = state.currentStepIndex,
 ): WizardState {
   if (index < 0 || index >= state.steps.length) {
     return state;
@@ -122,7 +122,7 @@ export function goNext(state: WizardState): WizardState {
   return atStep(
     state,
     state.currentStepIndex + 1,
-    withCompleted(state.completedSteps, state.currentStepIndex)
+    withCompleted(state.completedSteps, state.currentStepIndex),
   );
 }
 

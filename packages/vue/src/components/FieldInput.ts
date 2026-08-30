@@ -52,17 +52,17 @@ const FieldInput = /* @__PURE__ */ defineComponent({
       const disabled = resolveDisabled(
         props.fieldDescription,
         props.renderInfos,
-        props.rootData
+        props.rootData,
       );
       const readOnly = resolveReadOnly(
         props.fieldDescription,
         props.renderInfos,
-        props.rootData
+        props.rootData,
       );
       const resolvedOptions = resolveOptions(
         props.fieldDescription,
         props.renderInfos,
-        props.rootData
+        props.rootData,
       );
       const errors = disabled
         ? []
@@ -70,7 +70,7 @@ const FieldInput = /* @__PURE__ */ defineComponent({
             props.fieldDescription,
             props.renderInfos[name],
             props.renderInfos,
-            props.rootData
+            props.rootData,
           );
       const errorList = errors.length > 0 ? errors : undefined;
       const fieldId = `dfk-field-${name}`;

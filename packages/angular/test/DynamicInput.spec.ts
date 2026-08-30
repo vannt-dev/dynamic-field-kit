@@ -74,7 +74,7 @@ describe('DynamicInput', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('.hint').textContent).toBe(
-      'be brief'
+      'be brief',
     );
   });
 
@@ -140,7 +140,7 @@ describe('DynamicInput', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('.fallback').textContent).toBe(
-      'Name:Ada'
+      'Name:Ada',
     );
   });
 
@@ -158,7 +158,7 @@ describe('DynamicInput', () => {
 
     expect(fixture.nativeElement.querySelector('input.txt')).toBeNull();
     expect(fixture.nativeElement.textContent).toContain(
-      'Failed to render field: text'
+      'Failed to render field: text',
     );
   });
 
@@ -168,7 +168,7 @@ describe('DynamicInput', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain(
-      'Unknown field type: nope'
+      'Unknown field type: nope',
     );
   });
 
@@ -274,7 +274,7 @@ describe('DynamicInput', () => {
     fixture.componentInstance.valueChange.subscribe((v) => seen.push(v));
 
     const checkbox: HTMLInputElement = fixture.nativeElement.querySelector(
-      'input[type="checkbox"]'
+      'input[type="checkbox"]',
     );
     expect(checkbox).not.toBeNull();
     expect(checkbox.checked).toBe(true);
@@ -309,7 +309,7 @@ describe('DynamicInput', () => {
     fixture.detectChanges();
 
     const rendererInstance = fixture.debugElement.query(
-      By.directive(TextRendererComponent)
+      By.directive(TextRendererComponent),
     ).componentInstance as TextRendererComponent;
 
     const seen: unknown[] = [];
@@ -329,7 +329,7 @@ describe('DynamicInput', () => {
     fixture.detectChanges();
 
     const rendererInstance = fixture.debugElement.query(
-      By.directive(LegacyOutputRendererComponent)
+      By.directive(LegacyOutputRendererComponent),
     ).componentInstance as LegacyOutputRendererComponent;
 
     const seen: unknown[] = [];

@@ -107,7 +107,7 @@ const newFields: FieldDescription[] = [
     placeholder: 'example@domain.com',
     validate: validators.compose(
       validators.required('Email bắt buộc'),
-      validators.email('Định dạng email không hợp lệ')
+      validators.email('Định dạng email không hợp lệ'),
     ),
   },
   {
@@ -328,8 +328,7 @@ const handleValidate = async () => {
             "
             >{{
               activeTab === 'enterprise' ? enterpriseSource : wizardSource
-            }}</pre
-          >
+            }}</pre>
         </div>
       </div>
     </div>

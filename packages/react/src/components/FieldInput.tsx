@@ -36,12 +36,12 @@ const FieldInputInner = ({
   // by a freshly-allocated closure on every parent render.
   const handleChange = useCallback(
     (v: unknown) => onValueChangeField(v, name),
-    [onValueChangeField, name]
+    [onValueChangeField, name],
   );
 
   const handleBlur = useCallback(
     () => onBlurField?.(name),
-    [onBlurField, name]
+    [onBlurField, name],
   );
 
   if (fields) {
@@ -62,13 +62,13 @@ const FieldInputInner = ({
   const effectiveDisabled = resolveDisabled(
     fieldDescription,
     renderInfos,
-    rootData
+    rootData,
   );
   const readOnly = resolveReadOnly(fieldDescription, renderInfos, rootData);
   const resolvedOptionsList = resolveOptions(
     fieldDescription,
     renderInfos,
-    rootData
+    rootData,
   );
   const errors = effectiveDisabled
     ? []

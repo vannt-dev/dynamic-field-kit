@@ -44,7 +44,7 @@ function renderForm(ui: React.ReactElement, registry: FieldRegistry) {
   return render(
     <FieldRegistryProvider registry={registry as never}>
       {ui}
-    </FieldRegistryProvider>
+    </FieldRegistryProvider>,
   );
 }
 
@@ -62,7 +62,7 @@ describe('React validation wiring', () => {
         fieldDescriptions={fields}
         properties={{ email: 'x' }}
       />,
-      registryWithText()
+      registryWithText(),
     );
     expect(screen.getByTestId('error')).toHaveTextContent('Invalid');
   });
@@ -78,7 +78,7 @@ describe('React validation wiring', () => {
     ];
     renderForm(
       <MultiFieldInput fieldDescriptions={fields} properties={{ email: '' }} />,
-      registryWithText()
+      registryWithText(),
     );
     expect(screen.queryByTestId('error')).toBeNull();
     expect(screen.getByTestId('input')).toBeDisabled();
@@ -101,7 +101,7 @@ describe('React validation wiring', () => {
         properties={{ type: 'personal', company: '' }}
         onValidityChange={onValidity}
       />,
-      registryWithText()
+      registryWithText(),
     );
     expect(onValidity).toHaveBeenLastCalledWith({ valid: true, errors: {} });
   });

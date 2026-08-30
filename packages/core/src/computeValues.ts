@@ -11,7 +11,7 @@ function isDev(): boolean {
 function runComputePass(
   fieldDescriptions: FieldDescription[],
   data: Properties,
-  rootData: Properties
+  rootData: Properties,
 ): Properties {
   let next = data;
   for (const field of fieldDescriptions) {
@@ -39,7 +39,7 @@ function runComputePass(
 export function applyComputedValues(
   fieldDescriptions: FieldDescription[],
   data: Properties,
-  rootData: Properties = data
+  rootData: Properties = data,
 ): Properties {
   const next = runComputePass(fieldDescriptions, data, rootData);
 
@@ -54,7 +54,7 @@ export function applyComputedValues(
           `[dynamic-field-kit] computeValue for "${field.name}" did not ` +
             `converge in one pass. computeValue is evaluated once per change, ` +
             `not to a fixed point - reorder fields so each computed field only ` +
-            `depends on fields declared before it, and avoid cycles.`
+            `depends on fields declared before it, and avoid cycles.`,
         );
         break;
       }

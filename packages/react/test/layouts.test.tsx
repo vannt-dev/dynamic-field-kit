@@ -1,9 +1,9 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { FieldDescription } from '@dynamic-field-kit/core';
 import { act, render, screen } from '@testing-library/react';
 import React from 'react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { MultiFieldInput, layoutRegistry } from '../src';
 import { fieldRegistry } from '../src/fieldRegistry';
-import type { FieldDescription } from '@dynamic-field-kit/core';
 
 declare module '@dynamic-field-kit/core' {
   interface FieldTypeMap {
@@ -24,7 +24,7 @@ describe('Layout: Row', () => {
             onChange={(e: any) => onValueChange?.(e.target.value)}
           />
         </div>
-      )) as any
+      )) as any,
     );
   });
 
@@ -35,7 +35,7 @@ describe('Layout: Row', () => {
     ];
 
     render(
-      <MultiFieldInput fieldDescriptions={fields} layout={'row' as any} />
+      <MultiFieldInput fieldDescriptions={fields} layout={'row' as any} />,
     );
 
     const fieldsElements = screen.getAllByTestId('field');
@@ -54,7 +54,7 @@ describe('Layout: Row', () => {
       <MultiFieldInput
         fieldDescriptions={fields}
         layout={{ type: 'row', gap: 20 } as any}
-      />
+      />,
     );
 
     const fieldsElements = screen.getAllByTestId('field');
@@ -76,7 +76,7 @@ describe('Layout: Grid', () => {
             onChange={(e: any) => onValueChange?.(e.target.value)}
           />
         </div>
-      )) as any
+      )) as any,
     );
   });
 
@@ -87,7 +87,7 @@ describe('Layout: Grid', () => {
     ];
 
     render(
-      <MultiFieldInput fieldDescriptions={fields} layout={'grid' as any} />
+      <MultiFieldInput fieldDescriptions={fields} layout={'grid' as any} />,
     );
 
     const fieldsElements = screen.getAllByTestId('field');
@@ -109,7 +109,7 @@ describe('Layout: Grid', () => {
       <MultiFieldInput
         fieldDescriptions={fields}
         layout={{ type: 'grid', columns: 3 } as any}
-      />
+      />,
     );
 
     const fieldsElements = screen.getAllByTestId('field');
@@ -129,7 +129,7 @@ describe('Layout: Grid', () => {
       <MultiFieldInput
         fieldDescriptions={fields}
         layout={{ type: 'grid', gap: 24 } as any}
-      />
+      />,
     );
 
     const fieldsElements = screen.getAllByTestId('field');
@@ -151,7 +151,7 @@ describe('Layout: Column', () => {
             onChange={(e: any) => onValueChange?.(e.target.value)}
           />
         </div>
-      )) as any
+      )) as any,
     );
   });
 
@@ -162,7 +162,7 @@ describe('Layout: Column', () => {
     ];
 
     render(
-      <MultiFieldInput fieldDescriptions={fields} layout={'column' as any} />
+      <MultiFieldInput fieldDescriptions={fields} layout={'column' as any} />,
     );
 
     const fieldsElements = screen.getAllByTestId('field');
@@ -183,7 +183,7 @@ describe('Layout: Column', () => {
       <MultiFieldInput
         fieldDescriptions={fields}
         layout={{ type: 'column', gap: 16 } as any}
-      />
+      />,
     );
 
     const fieldsElements = screen.getAllByTestId('field');
@@ -221,7 +221,7 @@ describe('Layout: Responsive', () => {
             onChange={(e: any) => onValueChange?.(e.target.value)}
           />
         </div>
-      )) as any
+      )) as any,
     );
   });
 
@@ -240,7 +240,7 @@ describe('Layout: Responsive', () => {
       <MultiFieldInput
         fieldDescriptions={fields}
         layout={{ type: 'responsive', mobile: 'column', desktop: 'row' } as any}
-      />
+      />,
     );
 
     const fieldsElements = screen.getAllByTestId('field');
@@ -259,7 +259,7 @@ describe('Layout: Responsive', () => {
       <MultiFieldInput
         fieldDescriptions={fields}
         layout={{ type: 'responsive', mobile: 'column', desktop: 'row' } as any}
-      />
+      />,
     );
 
     const fieldsElements = screen.getAllByTestId('field');
@@ -275,7 +275,7 @@ describe('Layout: Responsive', () => {
       <MultiFieldInput
         fieldDescriptions={fields}
         layout={{ type: 'responsive', mobile: 'column', desktop: 'row' } as any}
-      />
+      />,
     );
 
     let layoutContainer = screen.getAllByTestId('field')[0].parentElement;
@@ -302,7 +302,7 @@ describe('Layout: Responsive', () => {
             breakpoint: 1200,
           } as any
         }
-      />
+      />,
     );
 
     const layoutContainer = screen.getAllByTestId('field')[0].parentElement;
@@ -312,9 +312,11 @@ describe('Layout: Responsive', () => {
 
 describe('Layout Registry', () => {
   it('should get registered layout renderer', () => {
-    const renderer = ({ children }: { children: React.ReactNode }) => (
-      <div data-testid="custom">{children}</div>
-    );
+    const renderer = ({
+      children: _children,
+    }: {
+      children: React.ReactNode;
+    }) => <div data-testid="custom">{children}</div>;
     layoutRegistry.register('custom-layout', renderer);
 
     const result = layoutRegistry.get('custom-layout');
@@ -327,12 +329,16 @@ describe('Layout Registry', () => {
   });
 
   it('should warn when registering duplicate layout', () => {
-    const renderer1 = ({ children }: { children: React.ReactNode }) => (
-      <div>1</div>
-    );
-    const renderer2 = ({ children }: { children: React.ReactNode }) => (
-      <div>2</div>
-    );
+    const renderer1 = ({
+      children: _children,
+    }: {
+      children: React.ReactNode;
+    }) => <div>1</div>;
+    const renderer2 = ({
+      children: _children,
+    }: {
+      children: React.ReactNode;
+    }) => <div>2</div>;
 
     layoutRegistry.register('duplicate', renderer1);
     layoutRegistry.register('duplicate', renderer2);

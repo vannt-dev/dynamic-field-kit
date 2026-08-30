@@ -21,7 +21,7 @@ describe('DynamicFormDevTools', () => {
       <DynamicFormDevTools
         data={{}}
         errors={{ name: ['required'], email: ['invalid'] }}
-      />
+      />,
     );
 
     expect(screen.getByText('2')).toBeInTheDocument();
@@ -39,7 +39,7 @@ describe('DynamicFormDevTools', () => {
       <DynamicFormDevTools
         data={{}}
         errors={{ email: ['Invalid email', 'Too short'] }}
-      />
+      />,
     );
     open();
     fireEvent.click(screen.getByRole('button', { name: /errors/i }));
@@ -77,7 +77,7 @@ describe('DynamicFormDevTools', () => {
 
     expect(screen.getByText('email')).toBeInTheDocument();
     expect(
-      screen.getByText(/type: text \| required: true/)
+      screen.getByText(/type: text \| required: true/),
     ).toBeInTheDocument();
   });
 
@@ -87,7 +87,7 @@ describe('DynamicFormDevTools', () => {
     fireEvent.click(screen.getByRole('button', { name: /fields/i }));
 
     expect(
-      screen.getByText('No field descriptions passed')
+      screen.getByText('No field descriptions passed'),
     ).toBeInTheDocument();
   });
 
@@ -96,7 +96,7 @@ describe('DynamicFormDevTools', () => {
     open();
 
     expect(
-      screen.getByRole('button', { name: /errors \(1\)/i })
+      screen.getByRole('button', { name: /errors \(1\)/i }),
     ).toBeInTheDocument();
   });
 
@@ -112,7 +112,7 @@ describe('DynamicFormDevTools', () => {
 
   it('anchors to the bottom left when asked', () => {
     const { container } = render(
-      <DynamicFormDevTools data={{}} position="bottom-left" />
+      <DynamicFormDevTools data={{}} position="bottom-left" />,
     );
 
     expect(container.querySelector('button')).toHaveStyle({ left: '16px' });

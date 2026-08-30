@@ -32,7 +32,7 @@ function registryWithText() {
             ? h(
                 'span',
                 { class: 'error' },
-                ([] as string[]).concat(props.error).join(',')
+                ([] as string[]).concat(props.error).join(','),
               )
             : null,
         ]);

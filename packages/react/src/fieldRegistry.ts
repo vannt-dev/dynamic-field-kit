@@ -12,10 +12,10 @@ export type ReactFieldRenderer<T = unknown> = ComponentType<
 export interface ReactFieldRegistry {
   register<K extends keyof FieldTypeMap>(
     type: K,
-    renderer: ReactFieldRenderer<FieldTypeMap[K]>
+    renderer: ReactFieldRenderer<FieldTypeMap[K]>,
   ): void;
   get<K extends keyof FieldTypeMap>(
-    type: K
+    type: K,
   ): ReactFieldRenderer<FieldTypeMap[K]> | undefined;
 }
 

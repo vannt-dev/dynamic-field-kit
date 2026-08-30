@@ -98,7 +98,7 @@ describe('Wizard Core Module', () => {
 
   it('reports a step with no fields as valid', () => {
     expect(validateStep({ id: 's', title: 'S', fields: [] }, {}).valid).toBe(
-      true
+      true,
     );
   });
 });

@@ -118,15 +118,13 @@ import { FieldDescription, Properties } from '@dynamic-field-kit/core';
           style="margin: 0; white-space: pre-wrap; word-break: break-all; color: #a7f3d0;"
         >
           {{ data | json }}
-        </pre
-        >
+        </pre>
         <pre
           *ngIf="activeTab() === 'errors'"
           style="margin: 0; white-space: pre-wrap; word-break: break-all; color: #f87171;"
         >
           {{ errors | json }}
-        </pre
-        >
+        </pre>
         <div *ngIf="activeTab() === 'meta'">
           <div>isDirty: {{ isDirty }}</div>
           <pre style="margin: 4px 0 0 0; color: #cbd5e1;">{{

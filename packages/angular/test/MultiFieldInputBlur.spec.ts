@@ -27,14 +27,14 @@ describe('MultiFieldInput blur reporting', () => {
 
   function inputs(): HTMLElement[] {
     return Array.from(
-      (fixture.nativeElement as HTMLElement).querySelectorAll('input')
+      (fixture.nativeElement as HTMLElement).querySelectorAll('input'),
     );
   }
 
   it('reports which field was blurred', () => {
     const seen: string[] = [];
     fixture.componentInstance.onBlurField.subscribe((name: string) =>
-      seen.push(name)
+      seen.push(name),
     );
 
     inputs()[1].dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
@@ -46,7 +46,7 @@ describe('MultiFieldInput blur reporting', () => {
   it('reports each field separately', () => {
     const seen: string[] = [];
     fixture.componentInstance.onBlurField.subscribe((name: string) =>
-      seen.push(name)
+      seen.push(name),
     );
 
     inputs()[0].dispatchEvent(new FocusEvent('focusout', { bubbles: true }));

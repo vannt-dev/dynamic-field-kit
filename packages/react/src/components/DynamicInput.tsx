@@ -58,7 +58,7 @@ const DynamicInputInner = <T extends FieldTypeKey>({
     () =>
       ((registry.get(type) as React.ComponentType<FieldRendererProps>) ||
         getDefaultRenderer(type)) as React.ComponentType<FieldRendererProps>,
-    [registry, type]
+    [registry, type],
   );
 
   if (!Renderer) {
@@ -92,7 +92,7 @@ const DynamicInputInner = <T extends FieldTypeKey>({
 // React.memo erases the generic signature, so restore it via an `unknown`
 // round-trip (plain `as typeof DynamicInputInner` fails dts generation).
 const DynamicInput = /* @__PURE__ */ React.memo(
-  DynamicInputInner
+  DynamicInputInner,
 ) as unknown as typeof DynamicInputInner;
 
 export default DynamicInput;

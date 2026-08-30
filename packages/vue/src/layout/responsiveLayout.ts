@@ -6,7 +6,7 @@ import { layoutRegistry } from './layoutRegistry';
 // tracks the dependency correctly since Vue attributes reads to whichever
 // effect is currently active, not to the function's lexical location.
 const windowWidth = ref(
-  typeof window !== 'undefined' ? window.innerWidth : 1024
+  typeof window !== 'undefined' ? window.innerWidth : 1024,
 );
 
 if (typeof window !== 'undefined') {

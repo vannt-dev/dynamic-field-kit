@@ -46,7 +46,7 @@ const angularDist = path.resolve(
   'angular',
   'dist',
   'fesm2022',
-  'dynamic-field-kit-angular.mjs'
+  'dynamic-field-kit-angular.mjs',
 );
 
 async function checkReactAndVue() {
@@ -56,7 +56,7 @@ async function checkReactAndVue() {
 
   if (!core || !reactAdapter || !vueAdapter) {
     console.log(
-      'React/Vue integration check skipped: core, react or vue dist not built yet.'
+      'React/Vue integration check skipped: core, react or vue dist not built yet.',
     );
     return true;
   }
@@ -79,7 +79,7 @@ async function checkReactAndVue() {
   }
 
   console.log(
-    'React/Vue integration check passed: core, react and vue share a registry view.'
+    'React/Vue integration check passed: core, react and vue share a registry view.',
   );
   return true;
 }
@@ -115,7 +115,7 @@ async function checkAngular() {
   }
 
   console.log(
-    'Angular integration check passed: core and angular share a registry view.'
+    'Angular integration check passed: core and angular share a registry view.',
   );
   return true;
 }

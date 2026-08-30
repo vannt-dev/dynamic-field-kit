@@ -30,7 +30,7 @@ export interface UseDynamicFormResult {
   validate: () => boolean;
   handleSubmit: (
     onValid: (data: Properties) => void | Promise<void>,
-    onInvalid?: (errors: Record<string, string[]>) => void
+    onInvalid?: (errors: Record<string, string[]>) => void,
   ) => (e?: React.FormEvent) => Promise<void>;
 }
 
@@ -41,7 +41,7 @@ export function useDynamicForm({
   validateOnChange = false,
 }: UseDynamicFormOptions): UseDynamicFormResult {
   const [data, setData] = useState<Properties>(() =>
-    applyComputedValues(fields, initialValues)
+    applyComputedValues(fields, initialValues),
   );
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [isDirty, setIsDirty] = useState(false);
@@ -66,14 +66,14 @@ export function useDynamicForm({
         setErrors(res.errors);
       }
     },
-    [fields, validateOnChange]
+    [fields, validateOnChange],
   );
 
   const setFieldValue = useCallback(
     (name: string, value: unknown) => {
       handleChange({ ...data, [name]: value });
     },
-    [data, handleChange]
+    [data, handleChange],
   );
 
   const setFieldTouched = useCallback((name: string, isTouched = true) => {
@@ -88,7 +88,7 @@ export function useDynamicForm({
         setErrors(res.errors);
       }
     },
-    [fields, data, validateOnBlur, setFieldTouched]
+    [fields, data, validateOnBlur, setFieldTouched],
   );
 
   const reset = useCallback(
@@ -102,14 +102,14 @@ export function useDynamicForm({
       setIsSubmitting(false);
       setIsSubmitted(false);
     },
-    [fields, initialValues]
+    [fields, initialValues],
   );
 
   const handleSubmit = useCallback(
     (
-        onValid: (data: Properties) => void | Promise<void>,
-        onInvalid?: (errors: Record<string, string[]>) => void
-      ) =>
+      onValid: (data: Properties) => void | Promise<void>,
+      onInvalid?: (errors: Record<string, string[]>) => void,
+    ) =>
       async (e?: React.FormEvent) => {
         if (e && typeof e.preventDefault === 'function') {
           e.preventDefault();
@@ -128,7 +128,7 @@ export function useDynamicForm({
           setIsSubmitting(false);
         }
       },
-    [fields, data]
+    [fields, data],
   );
 
   const isValid = Object.keys(errors).length === 0;

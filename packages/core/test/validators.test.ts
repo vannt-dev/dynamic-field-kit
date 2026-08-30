@@ -48,7 +48,7 @@ describe('validators utility', () => {
   test('validators.compose', () => {
     const composed = validators.compose(
       validators.required('Req'),
-      validators.minLength(5, 'Too short')
+      validators.minLength(5, 'Too short'),
     );
 
     expect(composed('', {})).toEqual(['Req']);

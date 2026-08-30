@@ -2,7 +2,7 @@ import type { FieldDescription } from '@dynamic-field-kit/core';
 import { FieldRegistry, fieldRegistry } from '@dynamic-field-kit/core';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import DynamicInput from '../src/components/DynamicInput';
 import MultiFieldInput from '../src/components/MultiFieldInput';
 import { FieldRegistryProvider } from '../src/FieldRegistryContext';
@@ -31,7 +31,7 @@ describe('FieldRegistryProvider (scoped registry)', () => {
     render(
       <FieldRegistryProvider registry={scoped as any}>
         <DynamicInput type="text" value="hi" />
-      </FieldRegistryProvider>
+      </FieldRegistryProvider>,
     );
 
     expect(screen.getByTestId('scoped')).toHaveTextContent('scoped:hi');
@@ -75,7 +75,7 @@ describe('keyField', () => {
             { id: 'b', label: 'second' },
           ],
         }}
-      />
+      />,
     );
 
     expect(screen.getAllByTestId('input')[0]).toHaveValue('first');

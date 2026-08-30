@@ -102,7 +102,7 @@ describe('findCrossFrameworkImports', () => {
 
   it('finds nothing in this repo', () => {
     expect(findCrossFrameworkImports(path.resolve(__dirname, '..'))).toEqual(
-      []
+      [],
     );
   });
 });

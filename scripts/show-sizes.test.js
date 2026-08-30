@@ -19,7 +19,7 @@ function makeWorkspace(pkg, packageJson, distFiles) {
   fs.mkdirSync(pkgDir, { recursive: true });
   fs.writeFileSync(
     path.join(pkgDir, 'package.json'),
-    JSON.stringify(packageJson)
+    JSON.stringify(packageJson),
   );
 
   for (const [relative, contents] of Object.entries(distFiles)) {
@@ -59,7 +59,7 @@ describe('collectBundleSizes', () => {
       {
         'dist/index.js': 'e'.repeat(2048),
         'dist/index.cjs': 'c'.repeat(1024),
-      }
+      },
     );
 
     expect(collectBundleSizes(root, ['vue'])).toEqual([
@@ -85,7 +85,7 @@ describe('collectBundleSizes', () => {
       {
         'dist/index.mjs': 'e'.repeat(512),
         'dist/index.js': 'c'.repeat(256),
-      }
+      },
     );
 
     expect(collectBundleSizes(root, ['core'])).toEqual([
@@ -105,7 +105,7 @@ describe('collectBundleSizes', () => {
         main: 'dist/fesm2022/dynamic-field-kit-angular.mjs',
         module: 'dist/fesm2022/dynamic-field-kit-angular.mjs',
       },
-      { 'dist/fesm2022/dynamic-field-kit-angular.mjs': 'a'.repeat(4096) }
+      { 'dist/fesm2022/dynamic-field-kit-angular.mjs': 'a'.repeat(4096) },
     );
 
     expect(collectBundleSizes(root, ['angular'])).toEqual([
@@ -121,7 +121,7 @@ describe('collectBundleSizes', () => {
         main: 'dist/index.js',
         module: 'dist/index.mjs',
       },
-      {}
+      {},
     );
 
     expect(collectBundleSizes(root, ['core'])).toEqual([
@@ -132,7 +132,7 @@ describe('collectBundleSizes', () => {
   it('covers every published package by default', () => {
     const root = path.resolve(__dirname, '..');
     const reported = new Set(
-      collectBundleSizes(root).map((entry) => entry.pkg)
+      collectBundleSizes(root).map((entry) => entry.pkg),
     );
 
     expect([...reported].sort()).toEqual(['angular', 'core', 'react', 'vue']);

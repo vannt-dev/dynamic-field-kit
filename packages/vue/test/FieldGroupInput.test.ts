@@ -16,7 +16,8 @@ const textRenderer = {
   props: ['value', 'label', 'onUpdate:value'],
   emits: ['update:value'],
   template:
-    '<div><label v-if="label">{{ label }}</label><input :value="value" @input="$emit(\'update:value\', $event.target.value)" /></div>',
+    '<div><label v-if="label">{{ label }}</label>' +
+    '<input :value="value" @input="$emit(\'update:value\', $event.target.value)" /></div>',
 };
 
 const contactsField: FieldDescription = {
@@ -77,7 +78,7 @@ describe('FieldGroupInput (repeatable field group)', () => {
 
     expect(wrapper.findAll('input')).toHaveLength(1);
     expect(onChange).toHaveBeenLastCalledWith(
-      expect.objectContaining({ contacts: [{ email: '' }] })
+      expect.objectContaining({ contacts: [{ email: '' }] }),
     );
   });
 
@@ -99,7 +100,7 @@ describe('FieldGroupInput (repeatable field group)', () => {
 
     expect(wrapper.findAll('input')).toHaveLength(1);
     expect(onChange).toHaveBeenLastCalledWith(
-      expect.objectContaining({ contacts: [{ email: 'b@x.com' }] })
+      expect.objectContaining({ contacts: [{ email: 'b@x.com' }] }),
     );
   });
 
@@ -117,7 +118,7 @@ describe('FieldGroupInput (repeatable field group)', () => {
     expect(onChange).toHaveBeenLastCalledWith(
       expect.objectContaining({
         contacts: [{ email: '' }, { email: 'x' }],
-      })
+      }),
     );
   });
 

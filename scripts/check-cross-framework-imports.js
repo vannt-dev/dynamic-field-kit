@@ -60,14 +60,14 @@ if (require.main === module) {
     console.error('Cross-framework imports detected:');
     violations.forEach((v) => {
       console.error(
-        ` - ${v.file}:${v.line} (importing @dynamic-field-kit/${v.framework})`
+        ` - ${v.file}:${v.line} (importing @dynamic-field-kit/${v.framework})`,
       );
     });
     process.exit(1);
   }
 
   console.log(
-    'OK: No cross-framework imports found in src of react/vue/angular packages.'
+    'OK: No cross-framework imports found in src of react/vue/angular packages.',
   );
 }
 

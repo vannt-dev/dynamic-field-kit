@@ -30,7 +30,7 @@ const FieldGroupInput = ({
   } = fieldDescription;
 
   const itemKey = (item: Properties, index: number): string | number =>
-    keyField ? (item[keyField] as string | number) ?? index : index;
+    keyField ? ((item[keyField] as string | number) ?? index) : index;
 
   const addText = addLabel ?? 'Add';
   const removeText = removeLabel ?? 'Remove';
@@ -42,7 +42,7 @@ const FieldGroupInput = ({
       nextItems[index] = next;
       onChange(nextItems);
     },
-    [items, onChange]
+    [items, onChange],
   );
 
   const handleAdd = useCallback(() => {
@@ -59,7 +59,7 @@ const FieldGroupInput = ({
       }
       onChange(items.filter((_, i) => i !== index));
     },
-    [fieldDescription, items, onChange]
+    [fieldDescription, items, onChange],
   );
 
   return (

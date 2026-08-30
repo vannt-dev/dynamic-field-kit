@@ -28,7 +28,7 @@ function makeWorkspace(manifests) {
     fs.mkdirSync(pkgDir, { recursive: true });
     fs.writeFileSync(
       path.join(pkgDir, 'package.json'),
-      JSON.stringify(manifests[pkg] || healthyManifest(pkg))
+      JSON.stringify(manifests[pkg] || healthyManifest(pkg)),
     );
   }
 

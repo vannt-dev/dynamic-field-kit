@@ -26,7 +26,7 @@ describe('FieldGroupInput (repeatable field group)', () => {
             onChange={(e: any) => onValueChange?.(e.target.value)}
           />
         </div>
-      )) as any
+      )) as any,
     );
   });
 
@@ -43,7 +43,7 @@ describe('FieldGroupInput (repeatable field group)', () => {
       <MultiFieldInput
         fieldDescriptions={[contactsField]}
         properties={{ contacts: [{ email: 'a@x.com' }, { email: 'b@x.com' }] }}
-      />
+      />,
     );
 
     const inputs = screen.getAllByTestId('input');
@@ -61,7 +61,7 @@ describe('FieldGroupInput (repeatable field group)', () => {
         fieldDescriptions={[contactsField]}
         properties={{ contacts: [] }}
         onChange={onChange}
-      />
+      />,
     );
 
     expect(screen.queryAllByTestId('input')).toHaveLength(0);
@@ -70,7 +70,7 @@ describe('FieldGroupInput (repeatable field group)', () => {
 
     expect(screen.getAllByTestId('input')).toHaveLength(1);
     expect(onChange).toHaveBeenLastCalledWith(
-      expect.objectContaining({ contacts: [{ email: '' }] })
+      expect.objectContaining({ contacts: [{ email: '' }] }),
     );
   });
 
@@ -83,14 +83,14 @@ describe('FieldGroupInput (repeatable field group)', () => {
         fieldDescriptions={[contactsField]}
         properties={{ contacts: [{ email: 'a@x.com' }, { email: 'b@x.com' }] }}
         onChange={onChange}
-      />
+      />,
     );
 
     await userEvent.click(screen.getAllByRole('button', { name: /Remove/ })[0]);
 
     expect(screen.getAllByTestId('input')).toHaveLength(1);
     expect(onChange).toHaveBeenLastCalledWith(
-      expect.objectContaining({ contacts: [{ email: 'b@x.com' }] })
+      expect.objectContaining({ contacts: [{ email: 'b@x.com' }] }),
     );
   });
 
@@ -103,7 +103,7 @@ describe('FieldGroupInput (repeatable field group)', () => {
         fieldDescriptions={[contactsField]}
         properties={{ contacts: [{ email: '' }, { email: '' }] }}
         onChange={onChange}
-      />
+      />,
     );
 
     await userEvent.type(screen.getAllByTestId('input')[1], 'x');
@@ -111,7 +111,7 @@ describe('FieldGroupInput (repeatable field group)', () => {
     expect(onChange).toHaveBeenLastCalledWith(
       expect.objectContaining({
         contacts: [{ email: '' }, { email: 'x' }],
-      })
+      }),
     );
   });
 
@@ -127,7 +127,7 @@ describe('FieldGroupInput (repeatable field group)', () => {
       <MultiFieldInput
         fieldDescriptions={[field]}
         properties={{ contacts: [{ email: 'a@x.com' }, { email: 'b@x.com' }] }}
-      />
+      />,
     );
 
     expect(screen.getByRole('button', { name: /Add/ })).toBeDisabled();
