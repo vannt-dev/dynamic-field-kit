@@ -54,7 +54,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test:coverage": "vitest run --coverage",
     "prepublishOnly": "npm run build",
-    "lint": "eslint src"
+    "lint": "eslint ."
   },
   "repository": {
     "type": "git",

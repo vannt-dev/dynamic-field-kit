@@ -80,7 +80,7 @@ export default tseslint.config(
       ],
       'import/no-unresolved': [
         'error',
-        { ignore: ['^@angular', '^vue', '^@dynamic-field-kit'] },
+        { ignore: ['^@angular', '^vue', '^vitest', '^@dynamic-field-kit'] },
       ],
     },
   },
