@@ -6,6 +6,21 @@ const DEFAULT_PACKAGES = ['core', 'react', 'vue', 'angular'];
 const stripDotSlash = (entry) => entry.replace(/^\.\//, '');
 
 /**
+ * An `exports` condition is either a target string or a nested condition
+ * object. Every package here uses the nested form, because `types` has to be
+ * declared per format before `moduleResolution: node16` will read the right
+ * declarations - so the target has to be unwrapped before it can be a path.
+ */
+const conditionTarget = (condition) => {
+  if (typeof condition === 'string') {
+    return condition;
+  }
+  return condition && typeof condition.default === 'string'
+    ? condition.default
+    : null;
+};
+
+/**
  * Resolves a package's ESM and CJS entry points from its own manifest rather
  * than guessing from file extensions. The `.js`/`.mjs` pair that tsup emits for
  * core and react inverts for vue, which is `"type": "module"` and so ships ESM
@@ -13,8 +28,8 @@ const stripDotSlash = (entry) => entry.replace(/^\.\//, '');
  */
 function entryPoints(pkgJson) {
   const conditions = (pkgJson.exports && pkgJson.exports['.']) || {};
-  const esm = conditions.import || pkgJson.module;
-  const cjs = conditions.require || pkgJson.main;
+  const esm = conditionTarget(conditions.import) || pkgJson.module;
+  const cjs = conditionTarget(conditions.require) || pkgJson.main;
 
   // ng-packagr ships ESM only and points both `main` and `module` at the same
   // fesm2022 bundle, so treating `main` as CJS there would invent a bundle.
@@ -80,4 +95,9 @@ if (require.main === module) {
   }
 }
 
-module.exports = { collectBundleSizes, formatSizes, DEFAULT_PACKAGES };
+module.exports = {
+  collectBundleSizes,
+  formatSizes,
+  entryPoints,
+  DEFAULT_PACKAGES,
+};
