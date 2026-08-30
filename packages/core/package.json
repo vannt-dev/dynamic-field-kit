@@ -9,10 +9,12 @@
   "//sideEffects": "core has no top-level execution - the only module-scope work is `new FieldRegistry()` assigned to an export, which is pure. The adapters cannot say this: their entry side-effect-imports the default layouts to register them.",
   "sideEffects": false,
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   },
   "files": [
-    "dist"
+    "dist",
+    "CHANGELOG.md"
   ],
   "exports": {
     ".": {
@@ -39,7 +41,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vannt-dev/dynamic-field-kit.git"
+    "url": "git+https://github.com/vannt-dev/dynamic-field-kit.git",
+    "directory": "packages/core"
   },
   "keywords": [
     "dynamic-field",
@@ -54,5 +57,9 @@
     "vitest": "^4.1.11",
     "yup": "^1.7.1",
     "zod": "^4.4.3"
+  },
+  "homepage": "https://github.com/vannt-dev/dynamic-field-kit/tree/develop/packages/core#readme",
+  "bugs": {
+    "url": "https://github.com/vannt-dev/dynamic-field-kit/issues"
   }
 }
