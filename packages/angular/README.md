@@ -19,7 +19,7 @@ Note: `@dynamic-field-kit/core`, `@angular/core`, and `@angular/common` are **pe
 If you need to pin versions explicitly:
 
 ```bash
-npm install @dynamic-field-kit/core@^1.0.12 @dynamic-field-kit/angular@^1.2.3
+npm install @dynamic-field-kit/core@^1.5.0 @dynamic-field-kit/angular@^1.5.0
 ```
 
 ## Exports
@@ -36,6 +36,15 @@ npm install @dynamic-field-kit/core@^1.0.12 @dynamic-field-kit/angular@^1.2.3
 - `layoutRegistry` / `LayoutRegistry` (class, for a scoped layout registry)
 - `ColumnLayout` / `RowLayout` / `GridLayout` (the standalone layout components, registered for you)
 - `BaseInputComponent` — the abstract base your custom renderers extend
+- `FieldInputProps` — the inputs `BaseInputComponent` declares; the Angular
+  mirror of core's `FieldRendererProps`
+- `DynamicFormOptions` — what `createDynamicFormStore` takes: `fields`,
+  `initialValues`, `validateOnBlur`, `validateOnChange`
+- `LayoutConfig` / `ColumnLayoutConfig` / `RowLayoutConfig` /
+  `GridLayoutConfig` — the layout config types, re-exported from core
+- `BaseLayoutConfig` / `ResponsiveLayoutConfig` — this adapter's historical
+  aliases for core's `BaseLayout` / `ResponsiveLayout`, kept so existing
+  imports keep resolving
 
 Re-exported from `@dynamic-field-kit/core` so a consumer app rarely has to import
 both packages:
@@ -44,6 +53,8 @@ both packages:
 - `validateFields` / `validateFieldsAsync` — a whole schema, returns `ValidationResult`
 - `resolveDisabled` / `resolveReadOnly` / `resolveOptions` — resolve a field's dynamic conditions and options
 - `validators` — the built-in validator helpers (`required`, `email`, `minLength`, `compose`, …)
+- `FieldDescription` / `FieldTypeKey` / `FieldRendererProps` — the schema and
+  renderer contracts every adapter shares
 - `ValidationResult`
 
 `createDynamicFormStore` validates **synchronously** via `validateFields`,
@@ -324,7 +335,7 @@ The generic adapter forwards only the shared `FieldRendererProps`. For inputs sp
 { name: 'avatar', type: 'file', props: { acceptFile: 'image/*' } }
 ```
 
-## Legacy setup (Angular 14 and earlier with NgModule)
+## Legacy setup (NgModule apps)
 
 ```ts
 import { BrowserModule } from '@angular/platform-browser';
