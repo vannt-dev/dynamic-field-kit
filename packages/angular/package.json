@@ -22,6 +22,7 @@
   },
   "scripts": {
     "build": "ng-packagr -p ng-package.json",
+    "postbuild": "node ../../scripts/strip-sourcemaps.js dist",
     "clean": "rimraf dist coverage",
     "prepublishOnly": "npm run build",
     "test": "vitest run",
