@@ -118,7 +118,7 @@ describe('FieldInput', () => {
   it('should pass className from fieldDescription', async () => {
     const mockRenderer = {
       props: ['class'],
-      render(props: any) {
+      render(_props: any) {
         return null;
       },
     };

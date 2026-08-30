@@ -16,7 +16,8 @@ const textRenderer = {
   props: ['value', 'label', 'onUpdate:value'],
   emits: ['update:value'],
   template:
-    '<div><label v-if="label">{{ label }}</label><input :value="value" @input="$emit(\'update:value\', $event.target.value)" /></div>',
+    '<div><label v-if="label">{{ label }}</label>' +
+    '<input :value="value" @input="$emit(\'update:value\', $event.target.value)" /></div>',
 };
 
 const contactsField: FieldDescription = {

@@ -1,9 +1,9 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { FieldDescription } from '@dynamic-field-kit/core';
 import { act, render, screen } from '@testing-library/react';
 import React from 'react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { MultiFieldInput, layoutRegistry } from '../src';
 import { fieldRegistry } from '../src/fieldRegistry';
-import type { FieldDescription } from '@dynamic-field-kit/core';
 
 declare module '@dynamic-field-kit/core' {
   interface FieldTypeMap {
@@ -312,9 +312,11 @@ describe('Layout: Responsive', () => {
 
 describe('Layout Registry', () => {
   it('should get registered layout renderer', () => {
-    const renderer = ({ children }: { children: React.ReactNode }) => (
-      <div data-testid="custom">{children}</div>
-    );
+    const renderer = ({
+      children: _children,
+    }: {
+      children: React.ReactNode;
+    }) => <div data-testid="custom">{children}</div>;
     layoutRegistry.register('custom-layout', renderer);
 
     const result = layoutRegistry.get('custom-layout');
@@ -327,12 +329,16 @@ describe('Layout Registry', () => {
   });
 
   it('should warn when registering duplicate layout', () => {
-    const renderer1 = ({ children }: { children: React.ReactNode }) => (
-      <div>1</div>
-    );
-    const renderer2 = ({ children }: { children: React.ReactNode }) => (
-      <div>2</div>
-    );
+    const renderer1 = ({
+      children: _children,
+    }: {
+      children: React.ReactNode;
+    }) => <div>1</div>;
+    const renderer2 = ({
+      children: _children,
+    }: {
+      children: React.ReactNode;
+    }) => <div>2</div>;
 
     layoutRegistry.register('duplicate', renderer1);
     layoutRegistry.register('duplicate', renderer2);

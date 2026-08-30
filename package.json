@@ -11,7 +11,7 @@
     "dev": "npm run dev --workspaces",
     "test": "npm run test --workspaces --if-present",
     "test:scripts": "vitest run",
-    "lint": "eslint packages/core/src packages/react/src packages/vue/src packages/angular/src scripts",
+    "lint": "eslint packages scripts",
     "lint:cross-framework": "node scripts/check-cross-framework-imports.js",
     "verify-framework-deps": "node scripts/verify-framework-deps.js",
     "lint:fix": "eslint . --fix",

@@ -144,7 +144,7 @@ describe('DynamicInput', () => {
   it('should pass className to renderer', async () => {
     const mockRenderer = {
       props: ['class'],
-      render(props: any) {
+      render(_props: any) {
         return null;
       },
     };
