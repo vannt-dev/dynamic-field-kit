@@ -16,11 +16,18 @@ jobs:
   changeset:
     name: Changeset present
     runs-on: ubuntu-latest
-    # Skipped on the release PR changesets itself opens: that PR consumes the
-    # changesets and bumps versions, so it changes packages while legitimately
-    # having none left, and would always fail this check.
+    # Only PRs into develop can be missing a changeset, because develop is where
+    # unreleased work accumulates. Skipped elsewhere:
+    #
+    # - the release PR changesets itself opens, which consumes the changesets
+    #   and bumps versions, so it changes packages while legitimately having
+    #   none left;
+    # - any PR into master, which carries changes that were already released
+    #   from develop - their changesets are gone by definition, and demanding a
+    #   new one would mean releasing the same work twice.
     if: >-
       github.event_name == 'pull_request' &&
+      github.base_ref == 'develop' &&
       !startsWith(github.head_ref, 'changeset-release/')
     steps:
       - uses: actions/checkout@v7
