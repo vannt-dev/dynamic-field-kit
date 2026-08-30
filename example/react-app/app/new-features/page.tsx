@@ -6,7 +6,7 @@ export default function NewFeaturesPage() {
   return (
     <DemoShell
       current="new-features"
-      title="Tính Năng Enterprise-Grade (v1.4+)"
+      title="Tính Năng Enterprise-Grade (v1.5+)"
       code={readDemoSource('new-features/demo.tsx')}
       codePath="app/new-features/demo.tsx"
       intro={
