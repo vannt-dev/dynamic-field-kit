@@ -29,10 +29,7 @@
     "lint": "eslint src",
     "test": "vitest run --passWithNoTests",
     "test:types": "vitest --run --typecheck.only",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "release:patch": "npm version patch && npm publish",
-    "release:minor": "npm version minor && npm publish",
-    "release:major": "npm version major && npm publish"
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "repository": {
     "type": "git",
@@ -44,7 +41,7 @@
     "dynamic-field-kit/core"
   ],
   "devDependencies": {
-    "@types/node": "^20.0.0",
+    "@types/node": "^22.0.0",
     "@vitest/coverage-v8": "^1.6.0",
     "rimraf": "^6.1.3",
     "tsup": "^8.0.1",
