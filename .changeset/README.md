@@ -6,3 +6,23 @@ find the full documentation for it [in our repository](https://github.com/change
 
 We have a quick list of common questions to get you started engaging with this project in
 [our documentation](https://github.com/changesets/changesets/blob/main/docs/common-questions.md).
+
+## How this repo is configured
+
+`config.json` cannot carry comments, so the two non-default settings are
+explained here.
+
+**`linked`** holds all four published packages. They are one product released
+together — `release.yml` writes a changeset for every package unless its
+`packages` input names a subset — but `core` had fewer releases early on and
+ended up a whole minor behind the three adapters (core 1.3.0 against adapter
+1.4.0). `linked` makes every package that is released in the same pass take the
+same version, which closes that gap once and keeps it closed. It is deliberately
+not `fixed`: a patch that only touches angular still must not bump and republish
+three packages whose tarballs did not change.
+
+**`onlyUpdatePeerDependentsWhenOutOfRange`** stops a core release from
+rewriting each adapter's `@dynamic-field-kit/core` peer range. The adapters use
+only core APIs that have existed since 1.3.0, so `^1.3.0` is the honest range —
+tightening it on every core release would force consumers to upgrade core for
+features their adapter does not call.
