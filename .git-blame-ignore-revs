@@ -1,0 +1,8 @@
+# Revisions that only reformat. `git blame --ignore-revs-file .git-blame-ignore-revs`
+# skips them, and `git config blame.ignoreRevsFile .git-blame-ignore-revs` makes
+# that the default for this clone. GitHub reads this file automatically.
+#
+# Add a commit here only when it changes formatting and nothing else.
+
+# chore(deps): move to prettier 3 and take its trailing-comma default
+899ebbc2c6c5d485fb167b102e1fd073121bb9cc
