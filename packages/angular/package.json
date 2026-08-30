@@ -5,7 +5,9 @@
   "license": "MIT",
   "private": false,
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": [
+    "**/fesm2022/*.mjs"
+  ],
   "main": "dist/fesm2022/dynamic-field-kit-angular.mjs",
   "module": "dist/fesm2022/dynamic-field-kit-angular.mjs",
   "types": "dist/index.d.ts",
