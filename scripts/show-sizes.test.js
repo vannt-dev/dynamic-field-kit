@@ -3,7 +3,7 @@ import os from 'os';
 import path from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { collectBundleSizes } from './show-sizes.js';
+import { collectBundleSizes, entryPoints } from './show-sizes.js';
 
 const tempRoots = [];
 
@@ -145,5 +145,49 @@ describe('collectBundleSizes', () => {
     // Regression guard: `dist/index.js` in the vue package is ESM. An
     // extension-based guess reports it as CJS and never reports `dist/index.cjs`.
     expect(vue.map((entry) => entry.format)).toEqual(['ESM', 'CJS']);
+  });
+});
+
+describe('entryPoints', () => {
+  // Every package declares `types` per format, so each condition is an object
+  // rather than a path. Reading `.import` as a string threw
+  // "entry.replace is not a function" and took the whole size report down.
+  it('unwraps a nested condition to its default target', () => {
+    expect(
+      entryPoints({
+        exports: {
+          '.': {
+            import: {
+              types: './dist/index.d.mts',
+              default: './dist/index.mjs',
+            },
+            require: { types: './dist/index.d.ts', default: './dist/index.js' },
+          },
+        },
+      }),
+    ).toEqual({ esm: './dist/index.mjs', cjs: './dist/index.js' });
+  });
+
+  it('still reads a plain string condition', () => {
+    expect(
+      entryPoints({
+        exports: {
+          '.': { import: './dist/index.mjs', require: './dist/index.js' },
+        },
+      }),
+    ).toEqual({ esm: './dist/index.mjs', cjs: './dist/index.js' });
+  });
+
+  // angular's map has no import/require pair at all - it is ESM only.
+  it('falls back to module/main when the map declares no formats', () => {
+    expect(
+      entryPoints({
+        exports: {
+          '.': { types: './dist/index.d.ts', default: './dist/f.mjs' },
+        },
+        main: 'dist/f.mjs',
+        module: 'dist/f.mjs',
+      }),
+    ).toEqual({ esm: 'dist/f.mjs', cjs: null });
   });
 });
