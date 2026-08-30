@@ -47,7 +47,7 @@ const DEFAULT_BREAKPOINT = 768;
       [ngClass]="{
         'flex flex-col': resolvedLayoutType === 'column',
         'flex flex-row': resolvedLayoutType === 'row',
-        grid: resolvedLayoutType === 'grid'
+        grid: resolvedLayoutType === 'grid',
       }"
       [style.gap.px]="gap"
       [style.gridTemplateColumns]="
@@ -205,12 +205,12 @@ export class MultiFieldInput implements OnInit, OnChanges {
   // else the index. Cached by field reference so the template hands Angular the
   // same function each change-detection pass.
   groupTrackBy(
-    field: FieldDescription
+    field: FieldDescription,
   ): (index: number, item: Properties) => unknown {
     let fn = this.groupTrackByCache.get(field);
     if (!fn) {
       fn = (index: number, item: Properties) =>
-        field.keyField ? item[field.keyField] ?? index : index;
+        field.keyField ? (item[field.keyField] ?? index) : index;
       this.groupTrackByCache.set(field, fn);
     }
     return fn;
@@ -228,14 +228,14 @@ export class MultiFieldInput implements OnInit, OnChanges {
   private updateIsMobile(): void {
     const breakpoint =
       typeof this.layout === 'object' && this.layout.type === 'responsive'
-        ? this.layout.breakpoint ?? DEFAULT_BREAKPOINT
+        ? (this.layout.breakpoint ?? DEFAULT_BREAKPOINT)
         : DEFAULT_BREAKPOINT;
     if (
       typeof window !== 'undefined' &&
       typeof window.matchMedia === 'function'
     ) {
       this.isMobile = window.matchMedia(
-        `(max-width: ${breakpoint - 1}px)`
+        `(max-width: ${breakpoint - 1}px)`,
       ).matches;
     } else {
       this.isMobile =
@@ -248,19 +248,19 @@ export class MultiFieldInput implements OnInit, OnChanges {
       this.data = applyComputedValues(
         this.fieldDescriptions,
         { ...this.properties },
-        this.rootData
+        this.rootData,
       );
     }
     this.updateVisibleFields();
     this.validityChange.emit(
-      validateFields(this.fieldDescriptions, this.data, this.rootData)
+      validateFields(this.fieldDescriptions, this.data, this.rootData),
     );
   }
 
   private updateVisibleFields() {
     const root = this.rootData ?? this.data;
     this.visibleFields = this.fieldDescriptions.filter(
-      (f) => !f.appearCondition || f.appearCondition(this.data, root)
+      (f) => !f.appearCondition || f.appearCondition(this.data, root),
     );
   }
 
@@ -293,7 +293,7 @@ export class MultiFieldInput implements OnInit, OnChanges {
       field,
       this.data[field.name],
       this.data,
-      this.rootData
+      this.rootData,
     );
     return errors.length > 0 ? errors : undefined;
   }
@@ -328,7 +328,7 @@ export class MultiFieldInput implements OnInit, OnChanges {
   onGroupItemChange(
     field: FieldDescription,
     index: number,
-    next: Properties
+    next: Properties,
   ): void {
     const items = this.getItems(field).slice();
     items[index] = next;
@@ -339,12 +339,12 @@ export class MultiFieldInput implements OnInit, OnChanges {
     this.data = applyComputedValues(
       this.fieldDescriptions,
       nextData,
-      this.rootData
+      this.rootData,
     );
     this.updateVisibleFields();
     this.onChange.emit(this.data);
     this.validityChange.emit(
-      validateFields(this.fieldDescriptions, this.data, this.rootData)
+      validateFields(this.fieldDescriptions, this.data, this.rootData),
     );
     this.cdr.markForCheck();
   }

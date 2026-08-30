@@ -33,7 +33,7 @@ const mockRenderer = vi.fn(
         Change
       </button>
     </div>
-  )
+  ),
 );
 
 // Render inside a scoped registry so each test gets an isolated set of
@@ -42,7 +42,7 @@ function renderWithRegistry(ui: React.ReactElement, registry: FieldRegistry) {
   return render(
     <FieldRegistryProvider registry={registry as never}>
       {ui}
-    </FieldRegistryProvider>
+    </FieldRegistryProvider>,
   );
 }
 
@@ -62,7 +62,7 @@ describe('DynamicInput', () => {
 
     renderWithRegistry(
       <DynamicInput type="text" value="hello" label="Test Label" />,
-      registry
+      registry,
     );
 
     expect(screen.getByTestId('label')).toHaveTextContent('Test Label');
@@ -78,7 +78,7 @@ describe('DynamicInput', () => {
     const onChange = vi.fn();
     renderWithRegistry(
       <DynamicInput type="text" onChange={onChange} />,
-      registry
+      registry,
     );
 
     await userEvent.click(screen.getByTestId('change-btn'));
@@ -94,7 +94,7 @@ describe('DynamicInput', () => {
             <span key={i}>{opt.label}</span>
           ))}
         </div>
-      )
+      ),
     );
     const registry = new FieldRegistry();
     registry.register('select', optionsRenderer as never);
@@ -102,7 +102,7 @@ describe('DynamicInput', () => {
     const options = [{ label: 'Option 1' }, { label: 'Option 2' }];
     renderWithRegistry(
       <DynamicInput type="select" options={options} />,
-      registry
+      registry,
     );
 
     expect(screen.getByText('Option 1')).toBeInTheDocument();
@@ -120,7 +120,7 @@ describe('DynamicInput', () => {
 
     renderWithRegistry(
       <DynamicInput type="text" className="custom-class" />,
-      registry
+      registry,
     );
 
     expect(screen.getByTestId('class-test')).toHaveClass('custom-class');
@@ -130,18 +130,18 @@ describe('DynamicInput', () => {
     const descRenderer = vi.fn(
       ({ description }: { description?: React.ReactNode }) => (
         <div data-testid="desc-test">{description}</div>
-      )
+      ),
     );
     const registry = new FieldRegistry();
     registry.register('text', descRenderer as never);
 
     renderWithRegistry(
       <DynamicInput type="text" description="Test description" />,
-      registry
+      registry,
     );
 
     expect(screen.getByTestId('desc-test')).toHaveTextContent(
-      'Test description'
+      'Test description',
     );
   });
 });

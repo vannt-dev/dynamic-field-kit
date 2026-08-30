@@ -78,7 +78,7 @@ describe('FieldGroupInput (repeatable field group)', () => {
 
     expect(wrapper.findAll('input')).toHaveLength(1);
     expect(onChange).toHaveBeenLastCalledWith(
-      expect.objectContaining({ contacts: [{ email: '' }] })
+      expect.objectContaining({ contacts: [{ email: '' }] }),
     );
   });
 
@@ -100,7 +100,7 @@ describe('FieldGroupInput (repeatable field group)', () => {
 
     expect(wrapper.findAll('input')).toHaveLength(1);
     expect(onChange).toHaveBeenLastCalledWith(
-      expect.objectContaining({ contacts: [{ email: 'b@x.com' }] })
+      expect.objectContaining({ contacts: [{ email: 'b@x.com' }] }),
     );
   });
 
@@ -118,7 +118,7 @@ describe('FieldGroupInput (repeatable field group)', () => {
     expect(onChange).toHaveBeenLastCalledWith(
       expect.objectContaining({
         contacts: [{ email: '' }, { email: 'x' }],
-      })
+      }),
     );
   });
 

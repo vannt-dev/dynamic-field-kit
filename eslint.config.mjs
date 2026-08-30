@@ -90,5 +90,5 @@ export default tseslint.config(
     files: ['scripts/**/*.js', '**/*.cjs'],
     languageOptions: { sourceType: 'commonjs' },
     rules: { '@typescript-eslint/no-require-imports': 'off' },
-  }
+  },
 );

@@ -44,7 +44,7 @@ const fields: FieldDescription[] = [
     placeholder: 'example@domain.com',
     validate: validators.compose(
       validators.required('Email bắt buộc'),
-      validators.email('Định dạng email không hợp lệ')
+      validators.email('Định dạng email không hợp lệ'),
     ),
   },
   {
@@ -74,7 +74,7 @@ export default function NewFeaturesDemo() {
     <>
       <form
         onSubmit={form.handleSubmit((validData) =>
-          alert(`Submit thành công:\n${JSON.stringify(validData, null, 2)}`)
+          alert(`Submit thành công:\n${JSON.stringify(validData, null, 2)}`),
         )}
       >
         <MultiFieldInput
@@ -151,7 +151,7 @@ export default function NewFeaturesDemo() {
               errors: form.errors,
             },
             null,
-            2
+            2,
           )}
         </pre>
       </div>

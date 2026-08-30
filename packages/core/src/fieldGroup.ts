@@ -1,7 +1,7 @@
 import type { FieldDescription, Properties } from './types';
 
 export function isFieldGroup(
-  field: FieldDescription
+  field: FieldDescription,
 ): field is FieldDescription & { fields: FieldDescription[] } {
   return Array.isArray(field.fields);
 }
@@ -12,14 +12,14 @@ export function createGroupItem(field: FieldDescription): Properties {
 
 export function canAddGroupItem(
   field: FieldDescription,
-  items: Properties[]
+  items: Properties[],
 ): boolean {
   return field.maxItems === undefined || items.length < field.maxItems;
 }
 
 export function canRemoveGroupItem(
   field: FieldDescription,
-  items: Properties[]
+  items: Properties[],
 ): boolean {
   return field.minItems === undefined || items.length > field.minItems;
 }
@@ -27,7 +27,7 @@ export function canRemoveGroupItem(
 export function moveGroupItem(
   items: Properties[],
   fromIndex: number,
-  toIndex: number
+  toIndex: number,
 ): Properties[] {
   if (
     fromIndex < 0 ||
@@ -46,7 +46,7 @@ export function moveGroupItem(
 export function swapGroupItems(
   items: Properties[],
   indexA: number,
-  indexB: number
+  indexB: number,
 ): Properties[] {
   if (
     indexA < 0 ||
@@ -66,7 +66,7 @@ export function swapGroupItems(
 export function insertGroupItem(
   items: Properties[],
   index: number,
-  newItem: Properties = {}
+  newItem: Properties = {},
 ): Properties[] {
   const safeIndex = Math.max(0, Math.min(index, items.length));
   const result = [...items];
@@ -75,14 +75,14 @@ export function insertGroupItem(
 }
 
 export function focusFirstInvalidField(
-  containerOrForm?: HTMLElement | null
+  containerOrForm?: HTMLElement | null,
 ): boolean {
   if (typeof document === 'undefined') {
     return false;
   }
   const root = containerOrForm || document.body;
   const invalidElement = root.querySelector<HTMLElement>(
-    '[aria-invalid="true"], input:invalid, select:invalid, textarea:invalid'
+    '[aria-invalid="true"], input:invalid, select:invalid, textarea:invalid',
   );
   if (invalidElement && typeof invalidElement.focus === 'function') {
     invalidElement.focus();

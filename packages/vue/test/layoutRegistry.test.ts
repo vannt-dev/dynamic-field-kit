@@ -32,7 +32,7 @@ describe('LayoutRegistry', () => {
     registry.register('duplicate', renderer2);
 
     expect(consoleSpy).toHaveBeenCalledWith(
-      expect.stringContaining('already exists')
+      expect.stringContaining('already exists'),
     );
     expect(registry.get('duplicate')).toBe(renderer2);
 

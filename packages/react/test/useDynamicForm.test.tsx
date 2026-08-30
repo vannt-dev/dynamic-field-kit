@@ -26,7 +26,7 @@ describe('useDynamicForm submission state', () => {
       release = resolve;
     });
     const { result } = renderHook(() =>
-      useDynamicForm({ fields, initialValues: { name: 'Alice' } })
+      useDynamicForm({ fields, initialValues: { name: 'Alice' } }),
     );
 
     let submission!: Promise<void>;
@@ -47,14 +47,14 @@ describe('useDynamicForm submission state', () => {
 
   it('clears isSubmitting when the submit handler throws', async () => {
     const { result } = renderHook(() =>
-      useDynamicForm({ fields, initialValues: { name: 'Alice' } })
+      useDynamicForm({ fields, initialValues: { name: 'Alice' } }),
     );
 
     await act(async () => {
       await expect(
         result.current.handleSubmit(() => {
           throw new Error('boom');
-        })()
+        })(),
       ).rejects.toThrow('boom');
     });
 
@@ -78,7 +78,7 @@ describe('useDynamicForm submission state', () => {
 
   it('resets submission state', async () => {
     const { result } = renderHook(() =>
-      useDynamicForm({ fields, initialValues: { name: 'Alice' } })
+      useDynamicForm({ fields, initialValues: { name: 'Alice' } }),
     );
 
     await act(async () => {
@@ -97,7 +97,7 @@ describe('useDynamicForm behaviour', () => {
   it('calls preventDefault on the submitted event', async () => {
     const preventDefault = vi.fn();
     const { result } = renderHook(() =>
-      useDynamicForm({ fields, initialValues: { name: 'Alice' } })
+      useDynamicForm({ fields, initialValues: { name: 'Alice' } }),
     );
 
     await act(async () => {
@@ -137,7 +137,7 @@ describe('useDynamicForm behaviour', () => {
 
   it('skips blur validation when validateOnBlur is false', () => {
     const { result } = renderHook(() =>
-      useDynamicForm({ fields, validateOnBlur: false })
+      useDynamicForm({ fields, validateOnBlur: false }),
     );
 
     act(() => result.current.handleBlur('name'));
@@ -152,7 +152,7 @@ describe('useDynamicForm behaviour', () => {
         fields,
         initialValues: { name: 'Alice' },
         validateOnChange: true,
-      })
+      }),
     );
 
     act(() => result.current.setFieldValue('name', ''));
@@ -182,7 +182,7 @@ describe('useDynamicForm behaviour', () => {
       },
     ];
     const { result } = renderHook(() =>
-      useDynamicForm({ fields: computed, initialValues: { first: 'ada' } })
+      useDynamicForm({ fields: computed, initialValues: { first: 'ada' } }),
     );
 
     expect(result.current.data.upper).toBe('ADA');
@@ -190,7 +190,7 @@ describe('useDynamicForm behaviour', () => {
 
   it('resets to explicitly supplied values', () => {
     const { result } = renderHook(() =>
-      useDynamicForm({ fields, initialValues: { name: 'Alice' } })
+      useDynamicForm({ fields, initialValues: { name: 'Alice' } }),
     );
 
     act(() => result.current.reset({ name: 'Grace' }));

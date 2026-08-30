@@ -130,7 +130,7 @@ describe('option-shaped fallbacks (Vue)', () => {
 
     expect(wrapper.text()).toContain('One');
     expect(
-      (wrapper.find('input[type="radio"]').element as HTMLInputElement).checked
+      (wrapper.find('input[type="radio"]').element as HTMLInputElement).checked,
     ).toBe(true);
   });
 

@@ -77,7 +77,7 @@ describe('default layouts', () => {
     fixture.detectChanges();
 
     const column: HTMLElement = fixture.nativeElement.querySelector(
-      'dfk-column-layout > div'
+      'dfk-column-layout > div',
     );
     expect(column.style.flexDirection).toBe('column');
     expect(column.style.gap).toBe('20px');
@@ -89,7 +89,7 @@ describe('default layouts', () => {
     fixture.detectChanges();
 
     const row: HTMLElement = fixture.nativeElement.querySelector(
-      'dfk-row-layout > div'
+      'dfk-row-layout > div',
     );
     expect(row.style.flexDirection).toBe('row');
     expect(row.style.gap).toBe('12px');
@@ -100,7 +100,7 @@ describe('default layouts', () => {
     fixture.detectChanges();
 
     const grid: HTMLElement = fixture.nativeElement.querySelector(
-      'dfk-grid-layout > div'
+      'dfk-grid-layout > div',
     );
     expect(grid.style.display).toBe('grid');
     expect(grid.style.gridTemplateColumns).toBe('repeat(3, 1fr)');
@@ -112,7 +112,7 @@ describe('default layouts', () => {
     fixture.detectChanges();
 
     const grid: HTMLElement = fixture.nativeElement.querySelector(
-      'dfk-grid-layout > div'
+      'dfk-grid-layout > div',
     );
     expect(grid.style.gridTemplateColumns).toBe('repeat(2, 1fr)');
   });

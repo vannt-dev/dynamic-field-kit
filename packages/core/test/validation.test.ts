@@ -46,7 +46,7 @@ describe('validateField', () => {
         `${value}:${data.country}:${rootData?.locale}`,
     };
     expect(
-      validateField(field, 'x', { country: 'vn' }, { locale: 'en' })
+      validateField(field, 'x', { country: 'vn' }, { locale: 'en' }),
     ).toEqual(['x:vn:en']);
   });
 });
@@ -55,13 +55,13 @@ describe('resolveDisabled / resolveReadOnly', () => {
   test('resolveDisabled OR-s the static flag and the condition', () => {
     expect(resolveDisabled({ name: 'a', type: 'text' }, {})).toBe(false);
     expect(
-      resolveDisabled({ name: 'a', type: 'text', disabled: true }, {})
+      resolveDisabled({ name: 'a', type: 'text', disabled: true }, {}),
     ).toBe(true);
     expect(
       resolveDisabled(
         { name: 'a', type: 'text', disabledCondition: (d) => d.lock === true },
-        { lock: true }
-      )
+        { lock: true },
+      ),
     ).toBe(true);
   });
 
@@ -74,14 +74,14 @@ describe('resolveDisabled / resolveReadOnly', () => {
           type: 'text',
           readOnlyCondition: (d) => d.frozen === true,
         },
-        { frozen: true }
-      )
+        { frozen: true },
+      ),
     ).toBe(true);
   });
 });
 
 describe('validateFields', () => {
-  const required = (msg: string) => (v: unknown) => v ? undefined : msg;
+  const required = (msg: string) => (v: unknown) => (v ? undefined : msg);
 
   test('collects leaf errors and reports overall validity', () => {
     const fields: FieldDescription[] = [

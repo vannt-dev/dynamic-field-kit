@@ -111,11 +111,11 @@ export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {
   // (the group item when nested in a repeatable group).
   appearCondition?: (
     data: Record<string, any>,
-    rootData?: Record<string, any>
+    rootData?: Record<string, any>,
   ) => boolean;
   computeValue?: (
     data: Record<string, any>,
-    rootData?: Record<string, any>
+    rootData?: Record<string, any>,
   ) => unknown;
   options?: Record<string, any>[];
   className?: string;
@@ -145,21 +145,18 @@ export type Properties = Record<string, unknown>;
 export type ValidatorFn = (
   value: unknown,
   data?: Properties,
-  rootData?: Properties
+  rootData?: Properties,
 ) => string | undefined;
 
 // What a `FieldDescription.validate` hook may return. The Promise arm is what
 // makes a field async-only -- see "Sync vs async validation" below.
 export type FieldValidatorResult =
-  | string
-  | string[]
-  | undefined
-  | Promise<string | string[] | undefined>;
+  string | string[] | undefined | Promise<string | string[] | undefined>;
 
 export type FieldValidatorFunction = (
   value: unknown,
   data: Properties,
-  rootData?: Properties
+  rootData?: Properties,
 ) => FieldValidatorResult;
 ```
 
@@ -211,7 +208,7 @@ const fields: FieldDescription[] = [
     // Built-in composed validator
     validate: validators.compose(
       validators.required('Email is required'),
-      validators.email('Must be a valid email address')
+      validators.email('Must be a valid email address'),
     ),
     readOnlyCondition: (data, rootData) => (rootData ?? data).frozen === true,
   },
@@ -495,7 +492,7 @@ fieldRegistry.register(
     setup() {
       return () => h('input');
     },
-  })
+  }),
 );
 ```
 

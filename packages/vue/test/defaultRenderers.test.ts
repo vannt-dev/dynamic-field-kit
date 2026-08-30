@@ -108,7 +108,7 @@ describe('Vue Default Built-in Renderers', () => {
     const textarea = wrapper.find('textarea');
     expect(textarea.exists()).toBe(true);
     expect((textarea.element as HTMLTextAreaElement).value).toBe(
-      'Multi line content'
+      'Multi line content',
     );
 
     await textarea.setValue('Line A\nLine B');

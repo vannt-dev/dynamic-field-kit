@@ -24,7 +24,7 @@ const createMockRenderer = (returnValue: string) => {
 // isolated set of renderers and no global reset is needed between tests.
 function mountWithRegistry(
   props: Record<string, unknown>,
-  renderers: Record<string, unknown> = {}
+  renderers: Record<string, unknown> = {},
 ) {
   const registry = new FieldRegistry();
   for (const [type, renderer] of Object.entries(renderers)) {
@@ -59,7 +59,7 @@ describe('DynamicInput', () => {
         value: 'hello',
         label: 'Test Label',
       },
-      { text: mockRenderer }
+      { text: mockRenderer },
     );
 
     expect(wrapper.text()).toContain('Test Label');
@@ -74,7 +74,7 @@ describe('DynamicInput', () => {
         type: 'text',
         value: 'test-value',
       },
-      { text: mockRenderer }
+      { text: mockRenderer },
     );
 
     expect(wrapper.find('div').text()).toBe('value');
@@ -91,7 +91,7 @@ describe('DynamicInput', () => {
         type: 'text',
         label: 'My Label',
       },
-      { text: mockRenderer }
+      { text: mockRenderer },
     );
 
     expect(wrapper.text()).toContain('My Label');
@@ -111,7 +111,7 @@ describe('DynamicInput', () => {
         type: 'text',
         onChange,
       },
-      { text: mockRenderer }
+      { text: mockRenderer },
     );
 
     await wrapper.find('input').setValue('new-value');
@@ -135,7 +135,7 @@ describe('DynamicInput', () => {
         type: 'select',
         options,
       },
-      { select: mockRenderer }
+      { select: mockRenderer },
     );
 
     expect(wrapper.text()).toContain('2');
@@ -154,7 +154,7 @@ describe('DynamicInput', () => {
         type: 'text',
         className: 'custom-class',
       },
-      { text: mockRenderer }
+      { text: mockRenderer },
     );
   });
 
@@ -169,7 +169,7 @@ describe('DynamicInput', () => {
         type: 'text',
         description: 'Test description',
       },
-      { text: mockRenderer }
+      { text: mockRenderer },
     );
 
     expect(wrapper.text()).toContain('Test description');

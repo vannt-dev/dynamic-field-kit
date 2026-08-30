@@ -32,13 +32,13 @@ describe('MultiFieldInput', () => {
           onChange={(e) => onValueChange?.(e.target.value)}
         />
       </div>
-    )
+    ),
   );
 
   const mockColumnLayout = vi.fn(
     ({ children }: { children: React.ReactNode }) => (
       <div data-testid="column-layout">{children}</div>
-    )
+    ),
   );
 
   beforeEach(() => {
@@ -69,7 +69,7 @@ describe('MultiFieldInput', () => {
       <MultiFieldInput
         fieldDescriptions={fields}
         properties={{ name: 'John Doe' }}
-      />
+      />,
     );
 
     expect(screen.getByTestId('input')).toHaveValue('John Doe');
@@ -86,7 +86,7 @@ describe('MultiFieldInput', () => {
     await userEvent.type(screen.getByTestId('input'), 'Jane');
 
     expect(onChange).toHaveBeenLastCalledWith(
-      expect.objectContaining({ name: 'Jane' })
+      expect.objectContaining({ name: 'Jane' }),
     );
   });
 
@@ -105,7 +105,7 @@ describe('MultiFieldInput', () => {
       <MultiFieldInput
         fieldDescriptions={fields}
         properties={{ firstName: 'John' }}
-      />
+      />,
     );
 
     expect(screen.getAllByTestId('text-input')).toHaveLength(2);
@@ -114,7 +114,7 @@ describe('MultiFieldInput', () => {
       <MultiFieldInput
         fieldDescriptions={fields}
         properties={{ firstName: 'Jane' }}
-      />
+      />,
     );
 
     expect(screen.queryByText('Last Name')).not.toBeInTheDocument();
@@ -142,7 +142,7 @@ describe('MultiFieldInput', () => {
         <MultiFieldInput
           fieldDescriptions={fields}
           layout={{ type: 'unknown' } as any}
-        />
+        />,
       );
     }).toThrow('Unknown layout');
 
@@ -156,7 +156,7 @@ describe('MultiFieldInput', () => {
       <MultiFieldInput
         fieldDescriptions={fields}
         properties={{ name: 'Initial' }}
-      />
+      />,
     );
 
     expect(screen.getByTestId('input')).toHaveValue('Initial');
@@ -165,7 +165,7 @@ describe('MultiFieldInput', () => {
       <MultiFieldInput
         fieldDescriptions={fields}
         properties={{ name: 'Updated' }}
-      />
+      />,
     );
 
     expect(screen.getByTestId('input')).toHaveValue('Updated');
@@ -187,7 +187,7 @@ describe('MultiFieldInput', () => {
       <MultiFieldInput
         fieldDescriptions={fields}
         properties={{ firstName: 'Ada', lastName: 'Lovelace' }}
-      />
+      />,
     );
 
     const inputs = screen.getAllByTestId('input');
@@ -212,7 +212,7 @@ describe('MultiFieldInput', () => {
     await userEvent.type(screen.getAllByTestId('input')[0], 'Ada');
 
     expect(onChange).toHaveBeenLastCalledWith(
-      expect.objectContaining({ firstName: 'Ada', greeting: 'Hello Ada' })
+      expect.objectContaining({ firstName: 'Ada', greeting: 'Hello Ada' }),
     );
     expect(screen.getAllByTestId('input')[1]).toHaveValue('Hello Ada');
   });

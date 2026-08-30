@@ -66,7 +66,7 @@ for (const p of changedPaths) {
   if (idx >= 0 && parts.length > idx + 1) {
     const pkgDirName = parts[idx + 1];
     const possiblePath = path.normalize(
-      path.join('packages', pkgDirName, 'package.json')
+      path.join('packages', pkgDirName, 'package.json'),
     );
     // Resolve absolute path to match keys in pkgMap
     const abs = path.resolve(root, possiblePath);

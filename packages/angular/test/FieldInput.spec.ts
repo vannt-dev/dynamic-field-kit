@@ -110,7 +110,7 @@ describe('FieldInput', () => {
     expect(input.disabled).toBe(true);
     expect(input.readOnly).toBe(true);
     expect(fixture.nativeElement.querySelector('.err').textContent).toBe(
-      'Required, Invalid'
+      'Required, Invalid',
     );
   });
 
@@ -124,7 +124,7 @@ describe('FieldInput', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('.hint').textContent).toBe(
-      'keep it short'
+      'keep it short',
     );
   });
 
@@ -164,7 +164,7 @@ describe('FieldInput option resolution', () => {
 
   function renderedOptions(fixture: { nativeElement: HTMLElement }): string[] {
     return Array.from(fixture.nativeElement.querySelectorAll('.opt')).map((n) =>
-      (n.textContent || '').trim()
+      (n.textContent || '').trim(),
     );
   }
 

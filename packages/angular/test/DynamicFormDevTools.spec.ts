@@ -8,10 +8,10 @@ function text(fixture: ComponentFixture<DynamicFormDevToolsComponent>): string {
 }
 
 function buttons(
-  fixture: ComponentFixture<DynamicFormDevToolsComponent>
+  fixture: ComponentFixture<DynamicFormDevToolsComponent>,
 ): HTMLButtonElement[] {
   return Array.from(
-    (fixture.nativeElement as HTMLElement).querySelectorAll('button')
+    (fixture.nativeElement as HTMLElement).querySelectorAll('button'),
   );
 }
 
@@ -22,10 +22,10 @@ function open(fixture: ComponentFixture<DynamicFormDevToolsComponent>) {
 
 function clickTab(
   fixture: ComponentFixture<DynamicFormDevToolsComponent>,
-  label: string
+  label: string,
 ) {
   const tab = buttons(fixture).find((b) =>
-    (b.textContent || '').trim().toLowerCase().startsWith(label)
+    (b.textContent || '').trim().toLowerCase().startsWith(label),
   );
   tab?.click();
   fixture.detectChanges();
@@ -53,8 +53,8 @@ describe('DynamicFormDevToolsComponent', () => {
   it('shows no error badge when the form is clean', () => {
     expect(
       (fixture.nativeElement as HTMLElement).querySelector(
-        '.dfk-devtools-badge'
-      )
+        '.dfk-devtools-badge',
+      ),
     ).toBeNull();
   });
 
@@ -68,7 +68,7 @@ describe('DynamicFormDevToolsComponent', () => {
     fixture.detectChanges();
 
     const badge = (fixture.nativeElement as HTMLElement).querySelector(
-      '.dfk-devtools-badge'
+      '.dfk-devtools-badge',
     );
     expect(badge?.textContent?.trim()).toBe('2');
   });
@@ -84,8 +84,8 @@ describe('DynamicFormDevToolsComponent', () => {
     expect(fixture.componentInstance.errorCount()).toBe(0);
     expect(
       (fixture.nativeElement as HTMLElement).querySelector(
-        '.dfk-devtools-badge'
-      )
+        '.dfk-devtools-badge',
+      ),
     ).toBeNull();
   });
 
@@ -94,7 +94,7 @@ describe('DynamicFormDevToolsComponent', () => {
     open(fixture);
 
     const tab = buttons(fixture).find((b) =>
-      (b.textContent || '').trim().toLowerCase().startsWith('errors')
+      (b.textContent || '').trim().toLowerCase().startsWith('errors'),
     );
     expect(tab?.textContent?.replace(/\s+/g, ' ').trim()).toBe('errors (1)');
   });
@@ -138,7 +138,7 @@ describe('DynamicFormDevToolsComponent', () => {
     open(fixture);
 
     const close = buttons(fixture).find(
-      (b) => (b.textContent || '').trim() === '✕'
+      (b) => (b.textContent || '').trim() === '✕',
     );
     close?.click();
     fixture.detectChanges();

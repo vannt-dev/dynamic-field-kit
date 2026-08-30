@@ -66,7 +66,7 @@ const DynamicInput = /* @__PURE__ */ defineComponent({
   setup(props) {
     const registry = useFieldRegistry();
     const Renderer = computed(
-      () => registry.get(props.type) || getDefaultRenderer(props.type)
+      () => registry.get(props.type) || getDefaultRenderer(props.type),
     );
 
     return () => {

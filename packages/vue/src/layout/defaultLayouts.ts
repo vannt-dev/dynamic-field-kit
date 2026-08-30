@@ -11,7 +11,7 @@ layoutRegistry.register('column', ({ children, config }) => {
         gap: `${config?.gap ?? 16}px`,
       },
     },
-    children
+    children,
   );
 });
 
@@ -25,7 +25,7 @@ layoutRegistry.register('row', ({ children, config }) => {
         gap: `${config?.gap ?? 16}px`,
       },
     },
-    children
+    children,
   );
 });
 
@@ -45,7 +45,7 @@ const renderGrid = ({
         gap: `${config?.gap ?? 16}px`,
       },
     },
-    children as never[]
+    children as never[],
   );
 
 layoutRegistry.register('grid', renderGrid);
