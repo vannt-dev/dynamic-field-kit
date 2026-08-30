@@ -12,11 +12,11 @@ export default defineConfig({
     alias: {
       '@dynamic-field-kit/core': path.resolve(
         __dirname,
-        '../../packages/core/dist/index.mjs'
+        '../../packages/core/dist/index.mjs',
       ),
       '@dynamic-field-kit/vue': path.resolve(
         __dirname,
-        '../../packages/vue/dist/index.js'
+        '../../packages/vue/dist/index.js',
       ),
     },
   },

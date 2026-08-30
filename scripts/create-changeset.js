@@ -64,7 +64,7 @@ function readPublishablePackages() {
 function resolveRequested(requested, publishable) {
   return requested.map((token) => {
     const match = publishable.find(
-      (pkg) => pkg.name === token || pkg.dir === token
+      (pkg) => pkg.name === token || pkg.dir === token,
     );
     if (!match) {
       const known = publishable.map((p) => p.dir).join(', ');
@@ -80,7 +80,7 @@ function main() {
 
   if (!VALID_BUMPS.includes(bump)) {
     throw new Error(
-      `--bump must be one of ${VALID_BUMPS.join(', ')} (received "${bump}")`
+      `--bump must be one of ${VALID_BUMPS.join(', ')} (received "${bump}")`,
     );
   }
 
@@ -97,7 +97,7 @@ function main() {
           .split(',')
           .map((token) => token.trim())
           .filter(Boolean),
-        publishable
+        publishable,
       )
     : publishable.map((pkg) => pkg.name);
 
@@ -121,7 +121,7 @@ function main() {
     `Created .changeset/${fileName}\n` +
       `  bump:     ${bump}\n` +
       `  packages: ${names.join(', ')}\n` +
-      `  message:  ${message}\n`
+      `  message:  ${message}\n`,
   );
 }
 

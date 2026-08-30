@@ -168,7 +168,7 @@ describe('field-level (scalar) schemas via target: "field"', () => {
       'Invalid email',
     ]);
     expect(
-      zodValidator(schema, { field: 'email' })('bad', { email: 'bad' })
+      zodValidator(schema, { field: 'email' })('bad', { email: 'bad' }),
     ).toEqual(['Invalid email']);
   });
 });

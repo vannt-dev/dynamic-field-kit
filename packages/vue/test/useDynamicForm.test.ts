@@ -45,7 +45,7 @@ describe('useDynamicForm submission state', () => {
     await expect(
       form.handleSubmit(() => {
         throw new Error('boom');
-      })()
+      })(),
     ).rejects.toThrow('boom');
 
     expect(form.isSubmitting.value).toBe(false);

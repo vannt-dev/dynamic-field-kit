@@ -2,9 +2,9 @@ import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { FieldRegistry, fieldRegistry } from '@dynamic-field-kit/core';
 import { describe, expect, it } from 'vitest';
-import * as publicApi from '../src/public-api';
 import { FIELD_REGISTRY } from '../src/fieldRegistryToken';
 import { DynamicFieldKitModule } from '../src/lib/dynamic-field-kit.module';
+import * as publicApi from '../src/public-api';
 import { makeRegistry, TextRendererComponent } from './helpers/renderers';
 
 describe('public API', () => {

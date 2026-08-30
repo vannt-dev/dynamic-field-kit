@@ -23,7 +23,7 @@ describe('React Extended Features', () => {
         value="male"
         options={options}
         onChange={handleChange}
-      />
+      />,
     );
 
     const femaleRadio = screen.getByLabelText('Female');
@@ -41,7 +41,7 @@ describe('React Extended Features', () => {
         value={50}
         extraProps={{ min: 0, max: 100 }}
         onChange={handleChange}
-      />
+      />,
     );
 
     const slider = screen.getByRole('slider');
@@ -87,7 +87,7 @@ describe('React Extended Features', () => {
       <DynamicFormDevTools
         data={{ email: 'test@example.com' }}
         isDirty={true}
-      />
+      />,
     );
 
     const devToolsBtn = screen.getByText('🔍 DevTools');

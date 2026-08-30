@@ -3,7 +3,7 @@ import type { Properties } from './types';
 export type ValidatorFn = (
   value: unknown,
   data?: Properties,
-  rootData?: Properties
+  rootData?: Properties,
 ) => string | undefined;
 
 export const validators = {
@@ -117,7 +117,7 @@ export const validators = {
   ): (
     value: unknown,
     data: Properties,
-    rootData?: Properties
+    rootData?: Properties,
   ) => string[] | undefined {
     return (value: unknown, data: Properties, rootData?: Properties) => {
       const errors: string[] = [];

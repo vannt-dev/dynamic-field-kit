@@ -216,7 +216,7 @@ export const DefaultSelectRenderer = /* @__PURE__ */ defineComponent({
         return h(
           'option',
           { key: String(optVal) + i, value: String(optVal) },
-          String(optLabel)
+          String(optLabel),
         );
       });
 
@@ -238,7 +238,7 @@ export const DefaultSelectRenderer = /* @__PURE__ */ defineComponent({
         [
           h('option', { value: '', disabled: true }, '-- Select --'),
           ...optionNodes,
-        ]
+        ],
       );
     };
   },
@@ -295,7 +295,7 @@ export const DefaultRadioRenderer = /* @__PURE__ */ defineComponent({
               'aria-describedby': props.ariaDescribedBy,
             }),
             h('span', { style: { marginLeft: '4px' } }, String(optLabel)),
-          ]
+          ],
         );
       });
 
@@ -306,7 +306,7 @@ export const DefaultRadioRenderer = /* @__PURE__ */ defineComponent({
           id: props.id,
           onBlur: props.onBlur,
         },
-        radioNodes
+        radioNodes,
       );
     };
   },

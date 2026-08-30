@@ -1,5 +1,5 @@
-import { fieldRegistry } from '../src';
 import { describe, test, expect } from 'vitest';
+import { fieldRegistry } from '../src';
 
 // Module augmentation to extend FieldTypeMap with a new type 'text'
 declare module '../src' {

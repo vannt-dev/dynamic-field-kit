@@ -26,7 +26,7 @@ const steps: FormStep[] = [
         label: 'Email',
         validate: validators.compose(
           validators.required('Email bắt buộc'),
-          validators.email('Định dạng email không hợp lệ')
+          validators.email('Định dạng email không hợp lệ'),
         ),
       },
       {
@@ -35,7 +35,7 @@ const steps: FormStep[] = [
         label: 'Mật khẩu',
         validate: validators.compose(
           validators.required('Mật khẩu bắt buộc'),
-          validators.minLength(8, 'Tối thiểu 8 ký tự')
+          validators.minLength(8, 'Tối thiểu 8 ký tự'),
         ),
       },
     ] as FieldDescription[],
@@ -94,8 +94,8 @@ const steps: FormStep[] = [
           i === wizard.currentStepIndex
             ? '#e8f1fc'
             : completed(i)
-            ? '#eaf7ee'
-            : '#fff'
+              ? '#eaf7ee'
+              : '#fff'
         "
         [style.font-weight]="i === wizard.currentStepIndex ? 600 : 400"
       >

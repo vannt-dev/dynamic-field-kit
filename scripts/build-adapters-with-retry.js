@@ -9,7 +9,7 @@ function runBuild() {
       stdio: 'inherit',
       shell: true,
       windowsHide: false,
-    }
+    },
   );
   return res.status === 0;
 }
@@ -27,7 +27,7 @@ if (!ok) {
     const retryOk = runBuild();
     if (!retryOk) {
       console.error(
-        'Adapter/core build failed after retry. Exiting with error.'
+        'Adapter/core build failed after retry. Exiting with error.',
       );
       process.exit(1);
     } else {

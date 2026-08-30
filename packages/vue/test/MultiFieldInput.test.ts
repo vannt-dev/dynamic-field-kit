@@ -24,7 +24,7 @@ const createTextRenderer = () => ({
 // text renderer is used. Each test gets its own isolated registry.
 function mountMulti(
   props: Record<string, unknown>,
-  textRenderer: unknown = createTextRenderer()
+  textRenderer: unknown = createTextRenderer(),
 ) {
   const registry = new FieldRegistry();
   registry.register('text', textRenderer as never);
@@ -83,13 +83,13 @@ describe('MultiFieldInput', () => {
         fieldDescriptions: fields,
         onChange,
       },
-      textRenderer
+      textRenderer,
     );
 
     await wrapper.find('input').setValue('Jane');
 
     expect(onChange).toHaveBeenCalledWith(
-      expect.objectContaining({ name: 'Jane' })
+      expect.objectContaining({ name: 'Jane' }),
     );
   });
 
@@ -250,13 +250,13 @@ describe('MultiFieldInput', () => {
 
     const wrapper = mountMulti(
       { fieldDescriptions: fields, onChange },
-      textRenderer
+      textRenderer,
     );
 
     await wrapper.findAll('input')[0].setValue('Ada');
 
     expect(onChange).toHaveBeenLastCalledWith(
-      expect.objectContaining({ firstName: 'Ada', greeting: 'Hello Ada' })
+      expect.objectContaining({ firstName: 'Ada', greeting: 'Hello Ada' }),
     );
     expect(wrapper.findAll('input')[1].element.value).toBe('Hello Ada');
   });

@@ -11,5 +11,5 @@ export const FIELD_REGISTRY = new InjectionToken<FieldRegistry>(
   {
     providedIn: 'root',
     factory: () => fieldRegistry,
-  }
+  },
 );

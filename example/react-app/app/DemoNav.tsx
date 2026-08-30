@@ -55,7 +55,7 @@ export default function DemoNav({ current }: { current: Page }) {
           <Link key={page.id} href={page.href} style={linkStyle}>
             {page.label}
           </Link>
-        )
+        ),
       )}
     </nav>
   );

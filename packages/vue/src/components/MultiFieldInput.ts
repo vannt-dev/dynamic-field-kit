@@ -115,28 +115,28 @@ const MultiFieldInput = /* @__PURE__ */ defineComponent({
           applyComputedValues(
             props.fieldDescriptions,
             { ...data },
-            props.rootData
-          )
+            props.rootData,
+          ),
         );
       },
-      { immediate: true, deep: true }
+      { immediate: true, deep: true },
     );
 
     watch(
       () => [props.fieldDescriptions, { ...data }] as const,
       () => {
         props.onValidityChange?.(
-          validateFields(props.fieldDescriptions, { ...data }, props.rootData)
+          validateFields(props.fieldDescriptions, { ...data }, props.rootData),
         );
       },
-      { immediate: true, deep: true }
+      { immediate: true, deep: true },
     );
 
     const visibleFields = computed(() =>
       props.fieldDescriptions.filter(
         (f) =>
-          !f.appearCondition || f.appearCondition(data, props.rootData ?? data)
-      )
+          !f.appearCondition || f.appearCondition(data, props.rootData ?? data),
+      ),
     );
 
     const layoutInfo = computed(() => resolveLayout(props.layout));
@@ -148,7 +148,7 @@ const MultiFieldInput = /* @__PURE__ */ defineComponent({
       // tracking only invalidates the keys that actually changed value.
       Object.assign(
         data,
-        applyComputedValues(props.fieldDescriptions, next, props.rootData)
+        applyComputedValues(props.fieldDescriptions, next, props.rootData),
       );
       props.onChange?.({ ...data });
     };
@@ -165,7 +165,7 @@ const MultiFieldInput = /* @__PURE__ */ defineComponent({
     const handleGroupItemChange = (
       field: FieldDescription,
       index: number,
-      next: Properties
+      next: Properties,
     ) => {
       const items = getItems(field).slice();
       items[index] = next;
@@ -194,10 +194,10 @@ const MultiFieldInput = /* @__PURE__ */ defineComponent({
     const itemKey = (
       field: FieldDescription,
       item: Properties,
-      index: number
+      index: number,
     ): string | number =>
       field.keyField
-        ? (item[field.keyField] as string | number) ?? index
+        ? ((item[field.keyField] as string | number) ?? index)
         : index;
 
     const renderGroupField = (field: FieldDescription) => {
@@ -234,10 +234,10 @@ const MultiFieldInput = /* @__PURE__ */ defineComponent({
                   onClick: () => handleGroupItemRemove(field, index),
                   disabled: !canRemoveGroupItem(field, items),
                 },
-                removeText
+                removeText,
               ),
-            ]
-          )
+            ],
+          ),
         ),
         h(
           'button',
@@ -247,7 +247,7 @@ const MultiFieldInput = /* @__PURE__ */ defineComponent({
             onClick: () => handleGroupItemAdd(field),
             disabled: !canAddGroupItem(field, items),
           },
-          addText
+          addText,
         ),
       ]);
     };
@@ -268,7 +268,7 @@ const MultiFieldInput = /* @__PURE__ */ defineComponent({
               touched: Boolean(touchedFields[f.name]),
               onValueChangeField: handleValueChange,
               onBlurField: handleBlurField,
-            })
+            }),
       );
 
       return Layout.value({

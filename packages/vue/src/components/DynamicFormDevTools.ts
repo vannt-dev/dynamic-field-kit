@@ -80,10 +80,10 @@ export const DynamicFormDevTools = /* @__PURE__ */ defineComponent({
                       fontSize: '10px',
                     },
                   },
-                  String(errorCount)
+                  String(errorCount),
                 )
               : null,
-          ]
+          ],
         );
       }
 
@@ -126,7 +126,7 @@ export const DynamicFormDevTools = /* @__PURE__ */ defineComponent({
               h(
                 'span',
                 { style: { fontWeight: 'bold', color: '#38bdf8' } },
-                '🛠️ Form DevTools'
+                '🛠️ Form DevTools',
               ),
               h(
                 'button',
@@ -141,9 +141,9 @@ export const DynamicFormDevTools = /* @__PURE__ */ defineComponent({
                     cursor: 'pointer',
                   },
                 },
-                '✕'
+                '✕',
               ),
-            ]
+            ],
           ),
           // Tabs
           h(
@@ -177,9 +177,9 @@ export const DynamicFormDevTools = /* @__PURE__ */ defineComponent({
                 },
                 `${tab}${
                   tab === 'errors' && errorCount > 0 ? ` (${errorCount})` : ''
-                }`
-              )
-            )
+                }`,
+              ),
+            ),
           ),
           // Content
           h('div', { style: { padding: '12px', overflowY: 'auto', flex: 1 } }, [
@@ -194,7 +194,7 @@ export const DynamicFormDevTools = /* @__PURE__ */ defineComponent({
                       color: '#a7f3d0',
                     },
                   },
-                  JSON.stringify(props.data, null, 2)
+                  JSON.stringify(props.data, null, 2),
                 )
               : null,
             activeTab.value === 'errors'
@@ -205,7 +205,7 @@ export const DynamicFormDevTools = /* @__PURE__ */ defineComponent({
                         h(
                           'span',
                           { style: { color: '#4ade80' } },
-                          '✓ No validation errors'
+                          '✓ No validation errors',
                         ),
                       ]
                     : Object.entries(props.errors).map(([field, msgs]) =>
@@ -218,7 +218,7 @@ export const DynamicFormDevTools = /* @__PURE__ */ defineComponent({
                               {
                                 style: { color: '#f87171', fontWeight: 'bold' },
                               },
-                              `${field}:`
+                              `${field}:`,
                             ),
                             h(
                               'ul',
@@ -227,13 +227,13 @@ export const DynamicFormDevTools = /* @__PURE__ */ defineComponent({
                                 h(
                                   'li',
                                   { key: i, style: { color: '#fca5a5' } },
-                                  m
-                                )
-                              )
+                                  m,
+                                ),
+                              ),
                             ),
-                          ]
-                        )
-                      )
+                          ],
+                        ),
+                      ),
                 )
               : null,
             activeTab.value === 'meta'
@@ -245,19 +245,19 @@ export const DynamicFormDevTools = /* @__PURE__ */ defineComponent({
                       {
                         style: { color: props.isDirty ? '#facc15' : '#4ade80' },
                       },
-                      String(props.isDirty)
+                      String(props.isDirty),
                     ),
                   ]),
                   h('div', [
                     h(
                       'span',
                       { style: { color: '#94a3b8' } },
-                      'Touched Fields:'
+                      'Touched Fields:',
                     ),
                     h(
                       'pre',
                       { style: { margin: '4px 0 0 0', color: '#cbd5e1' } },
-                      JSON.stringify(props.touched, null, 2)
+                      JSON.stringify(props.touched, null, 2),
                     ),
                   ]),
                 ])
@@ -270,7 +270,7 @@ export const DynamicFormDevTools = /* @__PURE__ */ defineComponent({
                         h(
                           'span',
                           { style: { color: '#94a3b8' } },
-                          'No field descriptions passed'
+                          'No field descriptions passed',
                         ),
                       ]
                     : props.fields.map((f) =>
@@ -291,22 +291,22 @@ export const DynamicFormDevTools = /* @__PURE__ */ defineComponent({
                               {
                                 style: { color: '#38bdf8', fontWeight: 'bold' },
                               },
-                              f.name
+                              f.name,
                             ),
                             h(
                               'div',
                               { style: { color: '#94a3b8', fontSize: '10px' } },
                               `type: ${f.type} | required: ${String(
-                                Boolean(f.required)
-                              )}`
+                                Boolean(f.required),
+                              )}`,
                             ),
-                          ]
-                        )
-                      )
+                          ],
+                        ),
+                      ),
                 )
               : null,
           ]),
-        ]
+        ],
       );
     };
   },

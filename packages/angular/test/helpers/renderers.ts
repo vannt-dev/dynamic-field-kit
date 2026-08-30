@@ -80,7 +80,7 @@ export class DefaultsRendererComponent {
 
 export function fallbackRenderer(props: Record<string, unknown>): string {
   return `<span class="fallback">${String(props['label'] ?? '')}:${String(
-    props['value'] ?? ''
+    props['value'] ?? '',
   )}</span>`;
 }
 

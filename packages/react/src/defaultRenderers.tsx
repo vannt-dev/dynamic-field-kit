@@ -58,7 +58,7 @@ export const DefaultNumberRenderer: React.FC<FieldRendererProps> = ({
     value={(value as number) ?? ''}
     onChange={(e) =>
       onValueChange?.(
-        e.target.value === '' ? undefined : Number(e.target.value)
+        e.target.value === '' ? undefined : Number(e.target.value),
       )
     }
     onBlur={onBlur}
@@ -73,7 +73,7 @@ export const DefaultNumberRenderer: React.FC<FieldRendererProps> = ({
 );
 
 export const DefaultPasswordRenderer: React.FC<FieldRendererProps> = (
-  props
+  props,
 ) => <DefaultTextRenderer {...props} inputType="password" />;
 
 export const DefaultEmailRenderer: React.FC<FieldRendererProps> = (props) => (
@@ -302,7 +302,7 @@ export const DefaultTimeRenderer: React.FC<FieldRendererProps> = (props) => (
 );
 
 export const DefaultDateTimeLocalRenderer: React.FC<FieldRendererProps> = (
-  props
+  props,
 ) => <DefaultTextRenderer {...props} inputType="datetime-local" />;
 
 export const DefaultSwitchRenderer: React.FC<FieldRendererProps> = (props) => (
@@ -330,7 +330,7 @@ export const defaultRenderersMap: Record<
 };
 
 export function getDefaultRenderer(
-  type: string
+  type: string,
 ): React.FC<FieldRendererProps> | undefined {
   return defaultRenderersMap[type];
 }

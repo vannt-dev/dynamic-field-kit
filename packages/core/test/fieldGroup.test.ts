@@ -38,7 +38,7 @@ describe('fieldGroup', () => {
 
   test('createGroupItem defaults to an empty object', () => {
     expect(createGroupItem({ name: 'x', type: 'group', fields: [] })).toEqual(
-      {}
+      {},
     );
   });
 
