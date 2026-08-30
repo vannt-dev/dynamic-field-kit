@@ -1,6 +1,6 @@
 import js from '@eslint/js';
 import prettierConfig from 'eslint-config-prettier';
-import importPlugin from 'eslint-plugin-import';
+import importX from 'eslint-plugin-import-x';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
@@ -28,8 +28,7 @@ export default tseslint.config(
 
   js.configs.recommended,
   ...tseslint.configs.recommended,
-  importPlugin.flatConfigs.recommended,
-  importPlugin.flatConfigs.typescript,
+  importX.flatConfigs.recommended,
 
   // eslint-config-prettier only turns off rules that fight the formatter.
   // Formatting itself is not linted: `npm run format-check` is its own CI gate
@@ -46,12 +45,32 @@ export default tseslint.config(
       sourceType: 'module',
     },
     settings: {
-      'import/resolver': {
-        node: { extensions: ['.ts', '.tsx', '.js', '.jsx'] },
-      },
-      'import/ignore': ['node_modules', '\\.d\\.ts$'],
+      // import-x 4 replaced the string-keyed resolver map with a resolver
+      // object. createNodeResolver is the plugin's own, so this needs no
+      // separate eslint-import-resolver-* package, and it understands node
+      // builtins and package `exports` maps, which the old node resolver did
+      // not.
+      'import-x/resolver-next': [
+        importX.createNodeResolver({
+          extensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'],
+        }),
+      ],
+      'import-x/ignore': ['node_modules', '\\.d\\.ts$'],
     },
     rules: {
+      // TypeScript already resolves and checks these, and it sees things
+      // import-x cannot: `@dynamic-field-kit/core` resolves to its built
+      // dist/index.mjs, where a type-only export has no runtime binding, so
+      // import-x/named reports every `import type { FieldDescription }` as
+      // missing. eslint-plugin-import's typescript preset turned these four
+      // off for the same reason; import-x's equivalent preset wants a
+      // separate resolver package, so they are turned off here instead,
+      // where the reason is written down.
+      'import-x/named': 'off',
+      'import-x/namespace': 'off',
+      'import-x/default': 'off',
+      'import-x/no-named-as-default-member': 'off',
+
       curly: 'error',
       eqeqeq: 'error',
       semi: ['error', 'always'],
@@ -64,7 +83,7 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'off',
       'max-len': ['error', { code: 120 }],
       'prefer-const': 'error',
-      'import/order': [
+      'import-x/order': [
         'error',
         {
           groups: [
@@ -78,7 +97,7 @@ export default tseslint.config(
           alphabetize: { order: 'asc', caseInsensitive: true },
         },
       ],
-      'import/no-unresolved': [
+      'import-x/no-unresolved': [
         'error',
         { ignore: ['^@angular', '^vue', '^vitest', '^@dynamic-field-kit'] },
       ],
