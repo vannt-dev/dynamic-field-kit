@@ -110,12 +110,24 @@ jobs:
           git push origin HEAD:${{ github.ref_name }}
 
       # changeset publish pushes each package that is not already on npm at its
-      # current version, and tags the commit per package.
+      # current version. Its own tagging is off: it writes one tag per package,
+      # and with all four on a single version line that is the same release
+      # stated four times. One annotated tag carries it instead, named after
+      # core - the anchor of the version line - with the exact version of each
+      # package in its body, which is what disambiguates the case where the
+      # `linked` group lets one package move on its own.
       - name: Publish to npm
         if: ${{ !inputs.dry_run }}
         run: |
-          npx changeset publish
-          git push origin --follow-tags
+          npx changeset publish --no-git-tag
+
+          version=$(node -p "require('./packages/core/package.json').version")
+          published=$(for pkg in core react vue angular; do
+            echo "@dynamic-field-kit/$pkg@$(node -p "require('./packages/$pkg/package.json').version")"
+          done)
+
+          git tag -a "v$version" -m "Release v$version" -m "$published"
+          git push origin "v$version"
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
