@@ -192,3 +192,11 @@ jobs:
           node scripts/verify-framework-deps.js
           node scripts/check-cross-framework-imports.js
           node scripts/integration-cross-registry.js
+
+      # Packs the built packages and renders them under every React major the
+      # peerDependencies range claims, in a throwaway project outside the
+      # workspace. Separate from the step above because it installs from the
+      # network, so it is the one verification step that can fail for reasons
+      # unrelated to the code.
+      - name: Verify the declared React peer range
+        run: node scripts/verify-react-peer-range.js
