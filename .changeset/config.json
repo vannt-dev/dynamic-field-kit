@@ -3,7 +3,14 @@
   "changelog": "@changesets/cli/changelog",
   "commit": false,
   "fixed": [],
-  "linked": [],
+  "linked": [
+    [
+      "@dynamic-field-kit/core",
+      "@dynamic-field-kit/react",
+      "@dynamic-field-kit/vue",
+      "@dynamic-field-kit/angular"
+    ]
+  ],
   "access": "public",
   "baseBranch": "develop",
   "updateInternalDependencies": "patch",
