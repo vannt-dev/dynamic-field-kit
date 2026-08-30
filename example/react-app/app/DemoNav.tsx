@@ -25,7 +25,7 @@ type Page = 'basics' | 'new-features' | 'wizard';
 
 const PAGES: { id: Page; href: string; label: string }[] = [
   { id: 'basics', href: '/', label: '📌 Cơ bản' },
-  { id: 'new-features', href: '/new-features', label: '✨ Enterprise (v1.4+)' },
+  { id: 'new-features', href: '/new-features', label: '✨ Enterprise (v1.5+)' },
   { id: 'wizard', href: '/wizard', label: '🧭 Wizard nhiều bước' },
 ];
 

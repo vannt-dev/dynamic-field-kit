@@ -56,7 +56,7 @@
         cursor: pointer;
       "
     >
-      🚀 Enterprise (v1.4+)
+      🚀 Enterprise (v1.5+)
     </button>
     <button
       (click)="activeTab = 'wizard'"
@@ -86,7 +86,7 @@
     </a>
   </nav>
 
-  <!-- Tab 3 & 4: v1.4 features, with their own source beside them -->
+  <!-- Tab 3 & 4: v1.5 features, with their own source beside them -->
   <div *ngIf="activeTab === 'enterprise' || activeTab === 'wizard'">
     <div
       style="
@@ -99,7 +99,7 @@
       <h2 style="margin: 0; font-size: 20px">
         {{
           activeTab === 'enterprise'
-            ? 'Tính năng Enterprise (v1.4+)'
+            ? 'Tính năng Enterprise (v1.5+)'
             : 'Multi-Step Wizard'
         }}
       </h2>

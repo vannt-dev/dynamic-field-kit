@@ -31,7 +31,7 @@ A lightweight, extensible **dynamic form engine** for React, Angular, and Vue, b
 - Framework-agnostic core (works with React, Angular, Vue, or vanilla JS)
 - Ideal for form builders & design systems
 
-### 🚀 Enterprise Features (v1.4+)
+### 🚀 Enterprise Features (v1.5+)
 
 - **Form State Hook / Composable / Signal Store**: `useDynamicForm` for React & Vue 3, `createDynamicFormStore` for Angular Signals. All three expose the same surface — including `isSubmitting` / `isSubmitted` — and `handleSubmit(onValid, onInvalid)` returns a submit handler in every framework.
 - **Extended HTML5 Renderers**: Built-in support for `radio`, `range`, `file`, `date`, `time`, `datetime-local`, and `switch`.

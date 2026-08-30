@@ -223,7 +223,7 @@ const handleValidate = async () => {
         ✨ Demo Tính Năng Mới (v1.3+)
       </button>
       <button @click="activeTab = 'enterprise'" :style="tabStyle('enterprise')">
-        🚀 Enterprise (v1.4+)
+        🚀 Enterprise (v1.5+)
       </button>
       <button @click="activeTab = 'wizard'" :style="tabStyle('wizard')">
         🧭 Wizard
@@ -256,7 +256,7 @@ const handleValidate = async () => {
         <h1 style="margin: 0; font-size: 22px">
           {{
             activeTab === 'enterprise'
-              ? 'Tính năng Enterprise (v1.4+)'
+              ? 'Tính năng Enterprise (v1.5+)'
               : 'Multi-Step Wizard'
           }}
         </h1>
