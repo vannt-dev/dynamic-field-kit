@@ -191,6 +191,7 @@ jobs:
         run: |
           node scripts/verify-framework-deps.js
           node scripts/check-cross-framework-imports.js
+          node scripts/check-renderer-prop-parity.js
           node scripts/integration-cross-registry.js
 
       # Packs the built packages and renders them under every React major the
