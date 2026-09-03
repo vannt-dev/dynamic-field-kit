@@ -141,16 +141,29 @@ const onSubmit = form.handleSubmit((data) => save(data));
 
 <template>
   <form @submit="onSubmit">
-    <MultiFieldInput
-      :field-descriptions="fields"
-      :properties="form.data.value"
-      :on-change="form.handleChange"
-      :on-blur-field="form.handleBlur"
-    />
+    <MultiFieldInput :field-descriptions="fields" :form="form" />
     <button :disabled="form.isSubmitting.value">Save</button>
   </form>
 </template>
 ```
+
+`:form` is shorthand for four props at once, and is the recommended wiring:
+
+```vue
+<MultiFieldInput
+  :field-descriptions="fields"
+  :properties="form.data.value"
+  :on-change="form.handleChange"
+  :on-blur-field="form.handleBlur"
+  :touched="form.touched.value"
+/>
+```
+
+Passing `touched` is what makes an invalid submit visible: `handleSubmit` marks
+every field touched before validating, so a renderer that gates its error on
+`touched` shows it even for fields the user never focused. `reset()` clears
+touched the same way. Individually passed props win over the ones `form`
+derives.
 
 | Member                              | Description                                                                       |
 | ----------------------------------- | --------------------------------------------------------------------------------- |
@@ -163,12 +176,42 @@ const onSubmit = form.handleSubmit((data) => save(data));
 | `setFieldValue(name, value)`        | Change one field                                                                  |
 | `handleBlur(name)`                  | Mark touched, and validate when `validateOnBlur`                                  |
 | `setFieldTouched(name, value?)`     | Set touched explicitly                                                            |
+| `touchAll()`                        | Mark every field touched — `handleSubmit` already calls it                        |
+| `resetTouched()`                    | Clear touched only, leaving data/errors/dirty alone                               |
 | `validate()`                        | Validate now, returns a boolean                                                   |
 | `reset(values?)`                    | Back to `initialValues` (or the values given), clearing errors/touched/submission |
 | `handleSubmit(onValid, onInvalid?)` | Returns a submit handler; calls `preventDefault`, validates, then dispatches      |
 
 `onBlurField` is what connects `handleBlur` — and therefore `touched` and
 `validateOnBlur` — to the rendered form.
+
+Leave `touched` off and `MultiFieldInput` falls back to tracking it internally
+from blur alone, as it always did. In that mode nothing outside the component
+can clear it, so it exposes `resetTouched()`, `setFieldTouched(name, value?)`
+and `getTouched()` on its instance:
+
+```vue
+<MultiFieldInput ref="formRef" :field-descriptions="fields" />
+<script setup>
+const formRef = ref();
+// after a successful submit
+formRef.value.resetTouched();
+</script>
+```
+
+## Field ids
+
+Each field renders with ``id={`${idPrefix}-${name}`}``, where `idPrefix`
+defaults to a value unique to the `MultiFieldInput` instance. Two forms
+containing a field of the same name therefore no longer emit the same DOM id
+twice.
+
+```vue
+<!-- pinned ids — reproduces the pre-1.6 `dfk-field-title` -->
+<MultiFieldInput :field-descriptions="fields" id-prefix="dfk-field" />
+```
+
+For one field, set `id` on its `FieldDescription`; it wins over the prefix.
 
 ## Default renderers
 
