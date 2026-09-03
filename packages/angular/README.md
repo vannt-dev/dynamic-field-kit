@@ -59,12 +59,14 @@ both packages:
   renderer contracts every adapter shares
 - `ValidationResult`
 
-`createDynamicFormStore` validates **synchronously** via `validateFields`,
-including on submit. Fields whose `validate` hook returns a Promise are treated
-as valid on that path, so run async rules through `validateFieldsAsync`
-yourself. See the
+`createDynamicFormStore` keeps live validation synchronous. Its `handleSubmit`
+runs one async-capable validation pass; call the exposed `validateAsync()` when
+you need that result before submit. See the
 [core README](https://github.com/vannt-dev/dynamic-field-kit/tree/develop/packages/core#sync-vs-async-validation)
 for the full rules.
+
+For a complete UI integration, see the
+[Angular Material recipe](../../docs/ui-kit-recipes.md#angular--angular-material).
 
 ## Basic setup (Angular 19+)
 
@@ -144,6 +146,7 @@ import {
         [fieldDescriptions]="fields"
         [properties]="store.data()"
         [touched]="store.touched()"
+        [errors]="store.errors()"
         (onChange)="store.handleChange($event)"
         (onBlurField)="store.handleBlur($event)"
       ></dfk-multi-field-input>
@@ -168,7 +171,7 @@ export class MyForm {
 | ----------------------------------- | --------------------------------------------------------------------------------- |
 | `data()`                            | Current form data, with `computeValue` fields applied                             |
 | `errors()`                          | `Record<string, string[]>`, keyed like `validateFields`                           |
-| `isValid()` / `isDirty()`           | No errors recorded / any value has changed                                        |
+| `isValid()` / `isDirty()`           | Current synchronous validity / any value has changed                              |
 | `isSubmitting()` / `isSubmitted()`  | In-flight submit / at least one submit attempted                                  |
 | `touched()`                         | Fields that have been blurred                                                     |
 | `handleChange(data)`                | Replace the whole form data — bind to `(onChange)`                                |
@@ -178,6 +181,7 @@ export class MyForm {
 | `touchAll()`                        | Mark every field touched — `handleSubmit` already calls it                        |
 | `resetTouched()`                    | Clear touched only, leaving data/errors/dirty alone                               |
 | `validate()`                        | Validate now, returns a boolean                                                   |
+| `validateAsync()`                   | Validate now, awaiting Promise-based rules                                        |
 | `reset(values?)`                    | Back to `initialValues` (or the values given), clearing errors/touched/submission |
 | `handleSubmit(onValid, onInvalid?)` | Returns an async handler; calls `preventDefault`, validates, then dispatches      |
 
@@ -185,8 +189,9 @@ export class MyForm {
 `focusout` listener — so it works with any renderer, without the renderer
 needing a blur output of its own.
 
-Binding `[touched]="store.touched()"` makes the store the single source of
-truth, and is what makes an invalid submit visible: `handleSubmit` marks every
+Binding `[touched]="store.touched()"` and `[errors]="store.errors()"` makes the
+store the single source of truth for renderer metadata. Touched state is what
+makes an invalid submit visible: `handleSubmit` marks every
 field touched before validating, so a renderer that gates its error on the
 `touched` input shows it even for fields the user never focused. `reset()`
 clears touched the same way. Leave `[touched]` unbound and `MultiFieldInput`
