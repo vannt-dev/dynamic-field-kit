@@ -64,7 +64,7 @@
     "dynamic-field-kit"
   ],
   "devDependencies": {
-    "@types/node": "^22.0.0",
+    "@types/node": "^26.4.1",
     "@vitest/coverage-v8": "^4.1.11",
     "rimraf": "^6.1.3",
     "tsup": "^8.0.1",

@@ -14,7 +14,7 @@ export default defineConfig({
       reporter: ['text', 'lcov', 'html'],
       include: ['src/**/*.{ts,tsx}'],
       exclude: ['**/*.d.ts', '**/dist/**'],
-      // Coverage floor — fails the run when coverage drops below these numbers.
+      // Coverage floor - fails the run when coverage drops below these numbers.
       thresholds: {
         statements: 85,
         branches: 75,
