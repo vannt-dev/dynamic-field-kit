@@ -112,6 +112,25 @@ describe('useDynamicForm behaviour', () => {
     expect(form.touched.value.nickname).toBe(false);
   });
 
+  it('touchAll expands every existing repeatable group item', () => {
+    const form = useDynamicForm({
+      fields: [
+        {
+          name: 'contacts',
+          type: 'text',
+          fields: [{ name: 'email', type: 'text' }],
+        },
+      ],
+      initialValues: { contacts: [{ email: '' }, { email: '' }] },
+    });
+
+    form.touchAll();
+    expect(form.touched.value).toEqual({
+      'contacts[0].email': true,
+      'contacts[1].email': true,
+    });
+  });
+
   it('validates on blur by default', () => {
     const form = useDynamicForm({ fields });
 
@@ -176,6 +195,35 @@ describe('useDynamicForm behaviour', () => {
     });
   });
 
+  it('ignores a stale async validation result', async () => {
+    const releases = new Map<string, (message?: string) => void>();
+    const form = useDynamicForm({
+      fields: [
+        {
+          name: 'username',
+          type: 'text',
+          validationMode: 'async',
+          validate: (value) =>
+            new Promise<string | undefined>((resolve) => {
+              releases.set(String(value), resolve);
+            }),
+        },
+      ],
+      initialValues: { username: 'old' },
+    });
+
+    const oldRun = form.validateAsync();
+    form.setFieldValue('username', 'new');
+    const newRun = form.validateAsync();
+    releases.get('new')?.();
+    await newRun;
+    releases.get('old')?.('Stale error');
+    await oldRun;
+
+    expect(form.errors.value).toEqual({});
+    expect(form.isValidating.value).toBe(false);
+  });
+
   it('applies computed values to the initial data', () => {
     const computed: FieldDescription[] = [
       { name: 'first', type: 'text' },
@@ -211,5 +259,38 @@ describe('useDynamicForm behaviour', () => {
 
     expect(form.data.value).toEqual({ name: 'Bulk', nickname: 'B' });
     expect(form.isDirty.value).toBe(true);
+  });
+
+  it('completes a submit even when the user edits a field while it runs', async () => {
+    let release: ((value: string | undefined) => void) | undefined;
+    const slow: FieldDescription[] = [
+      { name: 'name', type: 'text' },
+      {
+        name: 'code',
+        type: 'text',
+        // Only the submit's async pass invokes it, so `release` belongs to
+        // that one run.
+        validationMode: 'async',
+        validate: () =>
+          new Promise<string | undefined>((resolve) => {
+            release = resolve;
+          }),
+      },
+    ];
+    const onValid = vi.fn();
+    const form = useDynamicForm({
+      fields: slow,
+      initialValues: { name: 'Ada', code: '1' },
+    });
+
+    const submitted = form.handleSubmit(onValid)();
+    form.handleChange({ name: 'Grace', code: '1' });
+    release?.(undefined);
+    await submitted;
+
+    expect(onValid).toHaveBeenCalledTimes(1);
+    expect(onValid).toHaveBeenCalledWith({ name: 'Ada', code: '1' });
+    expect(form.isSubmitted.value).toBe(true);
+    expect(form.isSubmitting.value).toBe(false);
   });
 });

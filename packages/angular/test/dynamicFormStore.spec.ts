@@ -140,6 +140,25 @@ describe('Angular Signal DynamicFormStore', () => {
     expect(store.errors().username).toEqual(['Username is required']);
   });
 
+  it('touchAll expands every existing repeatable group item', () => {
+    const store = createDynamicFormStore({
+      fields: [
+        {
+          name: 'contacts',
+          type: 'text',
+          fields: [{ name: 'email', type: 'text' }],
+        },
+      ],
+      initialValues: { contacts: [{ email: '' }, { email: '' }] },
+    });
+
+    store.touchAll();
+    expect(store.touched()).toEqual({
+      'contacts[0].email': true,
+      'contacts[1].email': true,
+    });
+  });
+
   it('awaits async validation explicitly and during submit', async () => {
     const asyncFields: FieldDescription[] = [
       {
@@ -164,6 +183,67 @@ describe('Angular Signal DynamicFormStore', () => {
     expect(onInvalid).toHaveBeenCalledWith({
       username: ['Already taken'],
     });
+  });
+
+  it('ignores a stale async validation result', async () => {
+    const releases = new Map<string, (message?: string) => void>();
+    const store = createDynamicFormStore({
+      fields: [
+        {
+          name: 'username',
+          type: 'text',
+          validationMode: 'async',
+          validate: (value) =>
+            new Promise<string | undefined>((resolve) => {
+              releases.set(String(value), resolve);
+            }),
+        },
+      ],
+      initialValues: { username: 'old' },
+    });
+
+    const oldRun = store.validateAsync();
+    store.setFieldValue('username', 'new');
+    const newRun = store.validateAsync();
+    releases.get('new')?.();
+    await newRun;
+    releases.get('old')?.('Stale error');
+    await oldRun;
+
+    expect(store.errors()).toEqual({});
+    expect(store.isValidating()).toBe(false);
+  });
+
+  it('completes a submit even when the user edits a field while it runs', async () => {
+    let release: ((value: string | undefined) => void) | undefined;
+    const onValid = vi.fn();
+    const store = createDynamicFormStore({
+      fields: [
+        { name: 'username', type: 'text' },
+        {
+          name: 'code',
+          type: 'text',
+          // Only the submit's async pass invokes it, so `release` belongs to
+          // that one run.
+          validationMode: 'async',
+          validate: () =>
+            new Promise<string | undefined>((resolve) => {
+              release = resolve;
+            }),
+        },
+      ],
+      initialValues: { username: 'ada', code: '1' },
+    });
+
+    const submitted = store.handleSubmit(onValid)();
+    store.setFieldValue('username', 'grace');
+    release?.(undefined);
+    await submitted;
+
+    expect(onValid).toHaveBeenCalledTimes(1);
+    expect(onValid).toHaveBeenCalledWith({ username: 'ada', code: '1' });
+    expect(store.isSubmitted()).toBe(true);
+    expect(store.isSubmitting()).toBe(false);
   });
 
   it('resets to explicitly supplied values', () => {

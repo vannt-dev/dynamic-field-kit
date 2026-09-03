@@ -73,4 +73,27 @@ describe('MultiFieldInput blur reporting', () => {
     expect(fixture.componentInstance.isTouched('first')).toBe(true);
     expect(fixture.componentInstance.isTouched('second')).toBe(false);
   });
+
+  it('reports the full path for a field inside a repeatable group', () => {
+    const seen: string[] = [];
+    fixture.componentInstance.onBlurField.subscribe((name: string) =>
+      seen.push(name),
+    );
+    fixture.componentRef.setInput('fieldDescriptions', [
+      {
+        name: 'contacts',
+        type: 'text',
+        fields: [{ name: 'email', type: 'text' }],
+      },
+    ]);
+    fixture.componentRef.setInput('properties', {
+      contacts: [{ email: '' }],
+    });
+    fixture.detectChanges();
+
+    inputs()[0].dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+    fixture.detectChanges();
+
+    expect(seen).toEqual(['contacts[0].email']);
+  });
 });

@@ -1,5 +1,6 @@
 import {
   applyComputedValues,
+  isFieldGroup,
   validateFields,
   FieldDescription,
   Properties,
@@ -266,6 +267,10 @@ const MultiFieldInputInner = (
           rootData={effectiveRoot}
           idPrefix={effectiveIdPrefix}
           touched={Boolean(effectiveTouched[f.name])}
+          // Only a repeatable group needs the whole map; handing it to every
+          // field would make each blur re-render all of them, since the map
+          // gets a new identity on every touch.
+          touchedMap={isFieldGroup(f) ? effectiveTouched : undefined}
           errors={effectiveErrors}
           dirty={data[f.name] !== initialPropertiesRef.current[f.name]}
           onBlurField={handleBlurField}

@@ -103,6 +103,11 @@ describe('React validation wiring', () => {
       />,
       registryWithText(),
     );
-    expect(onValidity).toHaveBeenLastCalledWith({ valid: true, errors: {} });
+    expect(onValidity).toHaveBeenLastCalledWith({
+      valid: true,
+      errors: {},
+      complete: true,
+      status: 'valid',
+    });
   });
 });

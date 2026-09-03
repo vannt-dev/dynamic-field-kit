@@ -1,7 +1,9 @@
 import {
   applyComputedValues,
+  collectFieldPaths,
   FieldDescription,
   Properties,
+  type ValidationResult,
   validateFields,
   validateFieldsAsync,
 } from '@dynamic-field-kit/core';
@@ -26,30 +28,71 @@ export function useDynamicForm({
   const touched = ref<Record<string, boolean>>({});
   const isSubmitting = ref<boolean>(false);
   const isSubmitted = ref<boolean>(false);
+  const initialValidation = validateFields(fields, data.value);
+  const validationResult = ref<ValidationResult>(initialValidation);
+  const isValidating = ref(false);
+  let validationRun = 0;
+  let validationController: AbortController | undefined;
+  // A submit gets its own run counter and controller. Typing aborts the live
+  // validation run, and a submit must not be collateral damage of that.
+  let submitRun = 0;
+  let submitController: AbortController | undefined;
 
-  // Errors remain lazy for display, while validity always reflects current
-  // data. Promise-based rules are provisional until validateAsync/submit.
-  const isValid = computed(() => validateFields(fields, data.value).valid);
+  const isValid = computed(() => validationResult.value.valid);
+  const isValidationComplete = computed(
+    () => validationResult.value.complete && !isValidating.value,
+  );
+  const validationStatus = computed<ValidationResult['status']>(() =>
+    isValidating.value ? 'pending' : validationResult.value.status,
+  );
+
+  function commitSyncResult(res: ValidationResult) {
+    validationResult.value = res;
+    return res.valid;
+  }
 
   function validate() {
     const res = validateFields(fields, data.value);
     errors.value = res.errors;
-    return res.valid;
+    return commitSyncResult(res);
   }
 
   async function validateAsync() {
-    const res = await validateFieldsAsync(fields, data.value);
-    errors.value = res.errors;
-    return res.valid;
+    const run = ++validationRun;
+    validationController?.abort();
+    const controller = new AbortController();
+    validationController = controller;
+    const snapshot = data.value;
+    isValidating.value = true;
+    try {
+      const res = await validateFieldsAsync(fields, snapshot, snapshot, {
+        signal: controller.signal,
+      });
+      if (run !== validationRun || data.value !== snapshot) {
+        return res.valid;
+      }
+      errors.value = res.errors;
+      validationResult.value = res;
+      return res.valid;
+    } finally {
+      if (run === validationRun) {
+        isValidating.value = false;
+      }
+    }
   }
 
   function handleChange(newData: Properties) {
     const next = applyComputedValues(fields, newData);
     data.value = next;
     isDirty.value = true;
+    validationController?.abort();
+    validationRun += 1;
+    isValidating.value = false;
+
+    const res = validateFields(fields, next);
+    commitSyncResult(res);
 
     if (validateOnChange) {
-      const res = validateFields(fields, next);
       errors.value = res.errors;
     }
   }
@@ -69,7 +112,9 @@ export function useDynamicForm({
    */
   function touchAll() {
     touched.value = Object.fromEntries(
-      fields.map((f) => [f.name, true] as const),
+      collectFieldPaths(fields, data.value).map(
+        (path) => [path, true] as const,
+      ),
     );
   }
 
@@ -83,6 +128,7 @@ export function useDynamicForm({
     if (validateOnBlur) {
       const res = validateFields(fields, data.value);
       errors.value = res.errors;
+      commitSyncResult(res);
     }
   }
 
@@ -95,6 +141,10 @@ export function useDynamicForm({
     touched.value = {};
     isSubmitting.value = false;
     isSubmitted.value = false;
+    validationController?.abort();
+    validationRun += 1;
+    isValidating.value = false;
+    commitSyncResult(validateFields(fields, next));
   }
 
   function handleSubmit(
@@ -106,21 +156,50 @@ export function useDynamicForm({
         e.preventDefault();
       }
       isSubmitting.value = true;
+      const thisSubmit = ++submitRun;
       try {
         // Touch everything before validating: a submit is the user asserting
         // the form is finished, so a field they never focused should still
         // show its error. Without this, submitting an untouched form appears
         // to do nothing at all.
         touchAll();
-        const res = await validateFieldsAsync(fields, data.value);
-        errors.value = res.errors;
+        const run = ++validationRun;
+        // Cancel any live run so its (older) result cannot land on top of this
+        // one, but validate under a controller of the submit's own.
+        validationController?.abort();
+        submitController?.abort();
+        const controller = new AbortController();
+        submitController = controller;
+        const snapshot = data.value;
+        isValidating.value = true;
+        const res = await validateFieldsAsync(fields, snapshot, snapshot, {
+          signal: controller.signal,
+        });
+        if (thisSubmit !== submitRun) {
+          return;
+        }
+        // Editing during the submit does not cancel it - the user submitted
+        // this snapshot and is owed an answer for it. What the form *shows*
+        // still has to describe the data on screen, so when it moved on, the
+        // displayed state is re-derived instead of showing the old pass.
+        if (data.value === snapshot && run === validationRun) {
+          errors.value = res.errors;
+          validationResult.value = res;
+        } else {
+          const live = validateFields(fields, data.value);
+          errors.value = live.errors;
+          validationResult.value = live;
+        }
         isSubmitted.value = true;
         if (res.valid) {
-          await onValid(data.value);
+          await onValid(snapshot);
         } else if (onInvalid) {
           onInvalid(res.errors);
         }
       } finally {
+        if (thisSubmit === submitRun) {
+          isValidating.value = false;
+        }
         isSubmitting.value = false;
       }
     };
@@ -130,6 +209,9 @@ export function useDynamicForm({
     data,
     errors,
     isValid,
+    isValidating,
+    isValidationComplete,
+    validationStatus,
     isDirty,
     touched,
     isSubmitting,

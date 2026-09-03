@@ -21,3 +21,4 @@ export * from './adapters';
 export * from './wizard';
 
 export * from './rendererProps';
+export * from './pathMaps';

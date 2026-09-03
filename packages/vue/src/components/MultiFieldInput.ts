@@ -3,6 +3,7 @@ import {
   canAddGroupItem,
   canRemoveGroupItem,
   createGroupItem,
+  indexGroupPathMap,
   validateFields,
   FieldDescription,
   Properties,
@@ -65,6 +66,9 @@ function selfRef(): Component {
   // eslint-disable-next-line @typescript-eslint/no-use-before-define
   return MultiFieldInput;
 }
+
+/** Shared so an untouched item keeps a stable touched-map identity. */
+const EMPTY_TOUCHED: Record<string, boolean> = Object.freeze({});
 
 // Repeatable field groups render a nested MultiFieldInput per item, so this
 // component renders itself recursively (see renderGroupField below) rather
@@ -339,17 +343,22 @@ const MultiFieldInput = /* @__PURE__ */ defineComponent({
         ? ((item[field.keyField] as string | number) ?? index)
         : index;
 
-    const errorsForItem = (fieldName: string, index: number) => {
-      if (effectiveErrors.value === undefined) {
-        return undefined;
-      }
-      const prefix = `${fieldName}[${index}].`;
-      return Object.fromEntries(
-        Object.entries(effectiveErrors.value)
-          .filter(([key]) => key.startsWith(prefix))
-          .map(([key, messages]) => [key.slice(prefix.length), messages]),
-      );
-    };
+    const errorsByGroup = computed(() =>
+      Object.fromEntries(
+        props.fieldDescriptions.map((field) => [
+          field.name,
+          indexGroupPathMap(effectiveErrors.value, field.name),
+        ]),
+      ),
+    );
+    const touchedByGroup = computed(() =>
+      Object.fromEntries(
+        props.fieldDescriptions.map((field) => [
+          field.name,
+          indexGroupPathMap(effectiveTouched.value, field.name),
+        ]),
+      ),
+    );
 
     const renderGroupField = (field: FieldDescription) => {
       const items = getItems(field);
@@ -373,7 +382,18 @@ const MultiFieldInput = /* @__PURE__ */ defineComponent({
                   fieldDescriptions: fields,
                   properties: item,
                   rootData: props.rootData ?? data,
-                  errors: errorsForItem(field.name, index),
+                  errors: errorsByGroup.value[field.name]?.[index],
+                  // An item with no touched keys still has to receive a map,
+                  // or the nested input reads `undefined` as "uncontrolled"
+                  // and starts tracking touched on its own - which then
+                  // survives the owner clearing the map.
+                  touched:
+                    controlledTouched.value === undefined
+                      ? undefined
+                      : (touchedByGroup.value[field.name]?.[index] ??
+                        EMPTY_TOUCHED),
+                  onBlurField: (key: string) =>
+                    handleBlurField(`${field.name}[${index}].${key}`),
                   onChange: (next: Properties) =>
                     handleGroupItemChange(field, index, next),
                 }),
