@@ -67,7 +67,9 @@ validate: zodValidator(z.string().email(), { target: 'field' });
 Adapters parse **synchronously** so their result works with `validateFields` (and
 therefore with `useDynamicForm`). A schema containing async refinements or async
 `.test()` rules cannot be parsed synchronously — those return a Promise, so
-validate through `validateFieldsAsync` instead.
+validate through `validateFieldsAsync` instead, and mark the field
+`validationMode: 'async'` so the live pass skips it rather than calling it on
+every keystroke.
 
 ---
 
@@ -308,7 +310,8 @@ const fields: FieldDescription[] = [
 
 | Property          | Description                                                                                         |
 | ----------------- | --------------------------------------------------------------------------------------------------- |
-| validate          | `(value, data, rootData?) => string \| string[] \| undefined \| Promise<...>`. Falsy means valid.   |
+| validate          | `(value, data, rootData?, context?) => string                                                       | string[]                                                                                                                            | undefined | Promise<...>`. Falsy means valid. `context.signal` aborts when a newer run supersedes this one. |
+| validationMode    | `'sync'                                                                                             | 'async'`. Declares a validator that returns a Promise without the `async` keyword, so the live pass skips it instead of calling it. |
 | validators        | Built-in helpers: `required`, `email`, `minLength`, `maxLength`, `min`, `max`, `pattern`, `compose` |
 | options           | Array of option objects or dynamic callback function `(data, rootData?) => Option[]`                |
 | disabledCondition | `(data, rootData?) => boolean`. OR-ed with the static `disabled` flag.                              |
@@ -324,12 +327,22 @@ group items) call `validateFields` or `validateFieldsAsync`:
 ```ts
 import { validateFields, validateFieldsAsync } from '@dynamic-field-kit/core';
 
-const { valid, errors } = validateFields(fields, data);
+const { valid, errors, status } = validateFields(fields, data);
 // errors: { "email": ["Required"], "contacts[1].email": ["Invalid"] }
+// status: 'valid' | 'invalid' | 'pending'
 
-// Or for async validation:
-const asyncResult = await validateFieldsAsync(fields, data);
+// Async rules are never run by the sync pass - they come back as 'pending'.
+// Await them for a final answer, optionally under an AbortSignal:
+const controller = new AbortController();
+const asyncResult = await validateFieldsAsync(fields, data, data, {
+  signal: controller.signal,
+});
 ```
+
+Read `status` rather than `valid` alone: with a remote rule still unanswered,
+`valid` is `true` and means only "no synchronous rule failed". The form helpers
+surface the same distinction as `isValidating`, `isValidationComplete` and
+`validationStatus`, and cancel a superseded run for you.
 
 **Default Built-in HTML5 Renderers (Zero Config)**
 
@@ -430,6 +443,12 @@ submit visible: `handleSubmit` calls `touchAll()` before validating, so a
 renderer that gates its error on `touched` shows it even for fields the user
 never focused, and `reset()` clears it again. Omit it and `MultiFieldInput`
 keeps its own blur-only tracker, which only a ref (`resetTouched()`) can clear.
+
+The map is keyed by full path, so it reaches inside repeatable groups:
+`touchAll()` produces `contacts[0].email`, not `contacts`, and a group item
+reports its blur under the same key. Fields that are hidden by
+`appearCondition` or disabled are left out - validation skips them too, so they
+can never carry an error to reveal.
 
 ```ts
 // Vue — same names, refs instead of plain values

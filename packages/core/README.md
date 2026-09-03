@@ -19,7 +19,8 @@ documented below.
 - `fieldRegistry` as the shared runtime registry instance, plus the `FieldRegistry` class for isolated (scoped) registries
 - Layout config types (`LayoutConfig`, `BaseLayout`, `ResponsiveLayout`, `ColumnLayoutConfig`, `RowLayoutConfig`, `GridLayoutConfig`) - the single source of truth re-exported by every adapter
 - `applyComputedValues` to resolve `computeValue` fields against form data
-- `validateField` / `validateFieldAsync`, `validateFields` / `validateFieldsAsync`, `resolveDisabled`, `resolveReadOnly`, `resolveOptions` and the `ValidationResult` type for opt-in, app-supplied validation and dynamic disabled/readOnly/options conditions
+- `validateField` / `validateFieldAsync`, `validateFields` / `validateFieldsAsync`, `resolveDisabled`, `resolveReadOnly`, `resolveOptions` and the `ValidationResult` / `ValidationContext` types for opt-in, app-supplied validation and dynamic disabled/readOnly/options conditions
+- `collectFieldPaths` to expand a schema into the leaf paths that exist in the data (`contacts[0].email`), and `indexGroupPathMap` to index an error or touched map by group item
 - `isFieldGroup`, `createGroupItem`, `canAddGroupItem`, `canRemoveGroupItem` to work with repeatable field groups (`FieldDescription.fields`), plus `moveGroupItem`, `swapGroupItems`, `insertGroupItem` and `focusFirstInvalidField` for driving a group's array yourself
 - `zodValidator`, `yupValidator`, `valibotValidator` / `standardSchemaValidator` to validate with an existing schema library
 - A multi-step wizard state machine: `createWizardState`, `validateStep`, `canGoNext` / `canGoPrev`, `goNext` / `goPrev` / `goToStep`, `markStepCompleted` / `isStepCompleted`
@@ -308,19 +309,39 @@ const fields: FieldDescription[] = [
 - `validators.pattern(regex, message?)` - Enforces regex pattern match
 - `validators.compose(...fns)` - Combines multiple validator functions into one
 
-`validateFields(fields, data, rootData?)` returns `{ valid, errors }`, recursing
-into repeatable groups (keys like `contacts[0].email`) and skipping fields that
-are hidden by `appearCondition` or disabled. Adapters call `validateField` /
+`validateFields(fields, data, rootData?)` returns `{ valid, errors, complete,
+status }`, recursing into repeatable groups (keys like `contacts[0].email`) and
+skipping fields that are hidden by `appearCondition` or disabled. Adapters call `validateField` /
 `resolveDisabled` / `resolveReadOnly` / `resolveOptions` per field to surface
 `error`, `disabled`, `readOnly` and the resolved `options` to renderers
 reactively.
 
+### Reading a ValidationResult
+
+```ts
+interface ValidationResult {
+  valid: boolean;
+  errors: Record<string, string[]>;
+  /** Fields whose validator could not run synchronously. Omitted when empty. */
+  pending?: string[];
+  /** True only when every applicable validator finished in this pass. */
+  complete: boolean;
+  status: 'valid' | 'invalid' | 'pending';
+}
+```
+
+Read `status`. `valid` on its own cannot tell "nothing is wrong" from "nothing
+is wrong yet": a form whose only remaining rule is a remote uniqueness check
+reports `valid: true` while that check has not run, which reads as a green
+light. `status` is `'pending'` exactly when something is still unanswered, and
+`complete` says whether every applicable validator finished.
+
 ### Sync vs async validation
 
-`validateField` and `validateFields` are synchronous. When a `validate` hook
-returns a Promise, `validateFields` lists the field in `result.pending`; its
-`valid` flag then means only that no synchronous rule failed. Async validators
-must go through the async pair for a final answer:
+`validateField` and `validateFields` are synchronous. An async validator is
+never invoked on that path - it is listed in `result.pending` instead, and the
+result comes back `status: 'pending'`. Async validators must go through the
+async pair for a final answer:
 
 ```ts
 import {
@@ -339,9 +360,65 @@ const result = validateFields(fields, data); // sync hooks only
 const resultAsync = await validateFieldsAsync(fields, data); // awaits each hook
 ```
 
+`validateFieldsAsync` starts independent validators in parallel rather than
+awaiting them one after another, so a form with several remote rules costs the
+slowest one, not their sum.
+
 The framework form helpers keep live validation synchronous, but their submit
 handlers automatically run an async-capable validation pass. They also
 expose `validateAsync()` for checks that must finish before submit.
+
+#### Declaring an async validator
+
+Detection covers a native `async` function. A function that returns a Promise
+without the `async` keyword is indistinguishable from a sync one until it has
+been called, so declare it:
+
+```ts
+const field: FieldDescription = {
+  name: 'username',
+  type: 'text',
+  validationMode: 'async',
+  validate: (value) => checkAvailability(value), // returns a Promise
+};
+```
+
+With `validationMode: 'async'` the sync pass never invokes the validator - no
+wasted request per keystroke - and the dev-mode warning about a field live
+validation cannot check stays quiet, because you have said you know.
+
+#### Cancelling a run
+
+`validateFieldsAsync(fields, data, rootData?, options?)` takes a
+`ValidationContext` and hands its `AbortSignal` to every validator as a fourth
+argument:
+
+```ts
+const controller = new AbortController();
+const result = await validateFieldsAsync(fields, data, data, {
+  signal: controller.signal,
+});
+
+const field: FieldDescription = {
+  name: 'username',
+  type: 'text',
+  validationMode: 'async',
+  validate: (value, _data, _rootData, context) =>
+    fetch(`/api/available?u=${value}`, { signal: context?.signal }).then((r) =>
+      r.ok ? undefined : 'Already taken',
+    ),
+};
+```
+
+Once the signal aborts, remaining validators are skipped and the result comes
+back `complete: false` / `status: 'pending'` - a partial answer, never a false
+"valid". A validator that honours the signal by rejecting with an `AbortError`
+is treated the same way, so an aborted run does not reject the caller. Any
+other error still propagates.
+
+The framework form helpers create and abort these controllers for you: typing
+cancels the live validation run in flight so a stale result cannot overwrite a
+newer one.
 
 `resolveOptions(field, data, rootData?)` returns `Properties[] | undefined`,
 calling `field.options` when it is a callback and passing it through when it is a
