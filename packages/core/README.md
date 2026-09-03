@@ -85,13 +85,27 @@ Make sure that file is included by your app's `tsconfig.json`.
 export interface FieldRendererProps<T = any> {
   value?: T;
   onValueChange?: (value: T) => void;
+  onBlur?: () => void;
   label?: string;
   placeholder?: string;
   required?: boolean;
   disabled?: boolean;
+  readOnly?: boolean;
+  touched?: boolean;
+  dirty?: boolean;
+  error?: string | string[];
   options?: Record<string, any>[];
   className?: string;
   description?: any;
+  id?: string;
+  ariaInvalid?: boolean;
+  ariaDescribedBy?: string;
+  ariaRequired?: boolean;
+  min?: number | string;
+  max?: number | string;
+  step?: number | string;
+  accept?: string;
+  multiple?: boolean;
 }
 ```
 
@@ -99,10 +113,58 @@ Each adapter feeds a renderer the same inbound props but reports changes with it
 framework's native idiom: React calls the `onValueChange` prop, Angular emits a
 `valueChange` (or `onValueChange`) `EventEmitter`, and Vue emits `update:value`.
 
+### The contract is enforced, not merely declared
+
+Every prop above reaches the renderer on **all three adapters**. That is not a
+convention — the list lives in core as `FIELD_RENDERER_PROP_KEYS`, the bag is
+built once by `buildFieldRendererProps`, every adapter calls it, and
+`scripts/check-renderer-prop-parity.js` fails the build if one of them stops
+carrying a key across its own component boundary. Before 1.6 each adapter
+hand-wrote its own list and they drifted: React silently dropped `placeholder`,
+`min`, `max`, `step`, `accept` and `multiple`; Vue dropped `required`, `id`,
+`dirty` and the aria flags; Angular dropped `touched`, `dirty` and `id`. A
+renderer written for one framework could not be ported to another, which is the
+opposite of the point.
+
+One deliberate deviation remains, and it is a framework constraint rather than
+drift: **Vue delivers `className` as `class`**. Forwarding `className` too would
+let it fall through to a renderer's root element, where Vue assigns
+`el.className` — an undefined value becomes `''` and wipes whatever class the
+renderer set on itself.
+
+`ariaDescribedBy` is the one prop no adapter fills in: none of them render the
+description or error node, so pointing `aria-describedby` at an id that may not
+exist would be worse than leaving it unset. It is plumbed through all three so a
+renderer that _does_ render those nodes can set it from `id` (via
+`FieldDescription.props`) and have it arrive the same way everywhere.
+
+```ts
+import { buildFieldRendererProps, makeFieldId } from '@dynamic-field-kit/core';
+
+// What every adapter's FieldInput does. Resolves disabled/readOnly/options,
+// validates (skipping disabled fields), and sets the aria flags.
+const props = buildFieldRendererProps({
+  fieldDescription: field,
+  data, // this field's own level
+  rootData, // the top-level form
+  id: makeFieldId(field, idPrefix),
+  touched,
+  dirty,
+});
+```
+
+`makeFieldId(field, prefix)` returns `field.id` when set, else
+`` `${prefix}-${field.name}` ``. Adapters pass a prefix unique to each
+`MultiFieldInput` instance, so two forms holding a field of the same name no
+longer emit duplicate DOM ids.
+
 ```ts
 export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {
   name: string;
   type: T;
+  // Pins this field's DOM id. Otherwise the id is the owning MultiFieldInput's
+  // instance prefix plus `name`.
+  id?: string;
   label?: string;
   placeholder?: string;
   required?: boolean;

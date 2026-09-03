@@ -38,7 +38,8 @@ A lightweight, extensible **dynamic form engine** for React, Angular, and Vue, b
 - **Schema Validation Adapters**: Integrated `zodValidator`, `yupValidator`, `valibotValidator`, and Standard Schema adapters.
 - **Multi-Step Form Wizard Engine**: `createWizardState`, `validateStep`, `canGoNext`, `canGoPrev`, `goNext`, `goPrev`, `goToStep`, `markStepCompleted`, `isStepCompleted`. State is immutable — every navigation returns a new state, and `goNext` records the step it leaves in `completedSteps`.
 - **Interactive Form DevTools**: Floating overlay component (`<DynamicFormDevTools />`) for realtime debugging.
-- **Blur wiring**: `MultiFieldInput` reports blur via `onBlurField` (an `@Output` in Angular), so a form store's `handleBlur` / `touched` / `validateOnBlur` can be connected to it.
+- **Blur wiring**: `MultiFieldInput` reports blur via `onBlurField` (an `@Output` in Angular), so a form store's `handleBlur` / `touched` / `validateOnBlur` can be connected to it. Pass `touched` back in to make the store its single source of truth.
+- **Unique field ids**: ids are namespaced per `MultiFieldInput` instance, so two forms holding a field of the same name do not collide. Override with `idPrefix`, or `FieldDescription.id` per field.
 - **Group Array Manipulation Helpers**: `moveGroupItem`, `swapGroupItems`, `insertGroupItem`, and `focusFirstInvalidField`.
 
 #### Schema adapters
@@ -154,17 +155,36 @@ declare module '@dynamic-field-kit/core' {
 export interface FieldRendererProps<T = any> {
   value?: T;
   onValueChange?: (value: T) => void;
+  onBlur?: () => void;
   label?: string;
   placeholder?: string;
   required?: boolean;
   disabled?: boolean;
+  readOnly?: boolean;
+  touched?: boolean;
+  dirty?: boolean;
+  error?: string | string[];
   options?: Record<string, unknown>[];
   className?: string;
   description?: unknown;
+  id?: string;
+  ariaInvalid?: boolean;
+  ariaDescribedBy?: string;
+  ariaRequired?: boolean;
+  min?: number | string;
+  max?: number | string;
+  step?: number | string;
+  accept?: string;
+  multiple?: boolean;
 }
 ```
 
-👉 A common contract for all field renderers
+👉 A common contract for all field renderers — and an enforced one. Core builds
+the bag in `buildFieldRendererProps`, all three adapters call it, and
+`scripts/check-renderer-prop-parity.js` fails the build if any of them stops
+forwarding a key. The single deliberate deviation is Vue's `class` in place of
+`className` (Vue assigns `el.className` on fallthrough, which would wipe the
+class a renderer sets on itself).
 
 **How a renderer reports a new value (per framework)**
 
@@ -395,17 +415,21 @@ const form = useDynamicForm({
 });
 
 <form onSubmit={form.handleSubmit((data) => save(data))}>
-  <MultiFieldInput
-    fieldDescriptions={fields}
-    properties={form.data}
-    onChange={form.handleChange}
-    onBlurField={form.handleBlur} // wires touched + validateOnBlur
-  />
+  {/* `form` wires properties, onChange, onBlurField and touched at once */}
+  <MultiFieldInput fieldDescriptions={fields} form={form} />
   <button disabled={form.isSubmitting}>
     {form.isSubmitting ? 'Saving…' : 'Save'}
   </button>
 </form>;
 ```
+
+Passing `touched` (which `form` does for you; Angular binds
+`[touched]="store.touched()"`) hands the form store ownership of it, the same
+way `properties`/`onChange` already own the data. That is what makes an invalid
+submit visible: `handleSubmit` calls `touchAll()` before validating, so a
+renderer that gates its error on `touched` shows it even for fields the user
+never focused, and `reset()` clears it again. Omit it and `MultiFieldInput`
+keeps its own blur-only tracker, which only a ref (`resetTouched()`) can clear.
 
 ```ts
 // Vue — same names, refs instead of plain values
@@ -430,6 +454,8 @@ store.isSubmitting();
 | `setFieldValue(name, value)`        | Change one field                                                                  |
 | `handleBlur(name)`                  | Mark touched, and validate when `validateOnBlur`                                  |
 | `setFieldTouched(name, value?)`     | Set touched explicitly                                                            |
+| `touchAll()`                        | Mark every field touched — `handleSubmit` already calls it                        |
+| `resetTouched()`                    | Clear touched only, leaving data/errors/dirty alone                               |
 | `validate()`                        | Validate now, returns a boolean                                                   |
 | `reset(values?)`                    | Back to `initialValues` (or the values given), clearing errors/touched/submission |
 | `handleSubmit(onValid, onInvalid?)` | Returns a submit handler; calls `preventDefault`, validates, then dispatches      |

@@ -132,17 +132,30 @@ const form = useDynamicForm({
 });
 
 <form onSubmit={form.handleSubmit((data) => save(data))}>
-  <MultiFieldInput
-    fieldDescriptions={fields}
-    properties={form.data}
-    onChange={form.handleChange}
-    onBlurField={form.handleBlur} // wires touched + validateOnBlur
-  />
+  <MultiFieldInput fieldDescriptions={fields} form={form} />
   <button disabled={form.isSubmitting}>
     {form.isSubmitting ? 'Saving…' : 'Save'}
   </button>
 </form>;
 ```
+
+`form` is shorthand for four props at once, and is the recommended wiring:
+
+```tsx
+<MultiFieldInput
+  fieldDescriptions={fields}
+  properties={form.data}
+  onChange={form.handleChange}
+  onBlurField={form.handleBlur} // touched + validateOnBlur
+  touched={form.touched} // makes the hook the only source of truth
+/>
+```
+
+Passing `touched` is what makes an invalid submit visible: `handleSubmit`
+marks every field touched before validating, so a renderer that gates its error
+on `touched` shows it even for fields the user never focused. `reset()` clears
+touched the same way. Individually passed props win over the ones `form`
+derives, so you can pass `form` and still override one wire.
 
 | Member                              | Description                                                                       |
 | ----------------------------------- | --------------------------------------------------------------------------------- |
@@ -155,13 +168,45 @@ const form = useDynamicForm({
 | `setFieldValue(name, value)`        | Change one field                                                                  |
 | `handleBlur(name)`                  | Mark touched, and validate when `validateOnBlur`                                  |
 | `setFieldTouched(name, value?)`     | Set touched explicitly                                                            |
+| `touchAll()`                        | Mark every field touched — `handleSubmit` already calls it                        |
+| `resetTouched()`                    | Clear touched only, leaving data/errors/dirty alone                               |
+| `setTouched`                        | Raw setter for the whole touched map                                              |
 | `setData`                           | Raw state setter, for escape hatches                                              |
 | `validate()`                        | Validate now, returns a boolean                                                   |
 | `reset(values?)`                    | Back to `initialValues` (or the values given), clearing errors/touched/submission |
 | `handleSubmit(onValid, onInvalid?)` | Returns a submit handler; calls `preventDefault`, validates, then dispatches      |
 
-`MultiFieldInput` tracks touched internally regardless; `onBlurField` is the
-hook for driving an external store like this one.
+Leave `touched` off and `MultiFieldInput` falls back to tracking it internally
+from blur alone, as it always did. In that mode nothing outside the component
+can clear it — a form that stays mounted across submits will keep showing the
+errors of the previous round after `reset()` — so it exposes a ref for it:
+
+```tsx
+const ref = useRef<MultiFieldInputHandle>(null);
+
+<MultiFieldInput ref={ref} fieldDescriptions={fields} />;
+// after a successful submit
+ref.current?.resetTouched();
+```
+
+`resetTouched()`, `setFieldTouched(name, value?)` and `getTouched()` are the
+handle's members. Controlled mode needs none of them: `form.reset()` covers it.
+
+## Field ids
+
+Each field renders with `id={`${idPrefix}-${name}`}`, where `idPrefix` defaults
+to a value unique to the `MultiFieldInput` instance (from `useId`, so server and
+client agree). Two forms containing a field of the same name therefore no longer
+emit the same DOM id twice.
+
+```tsx
+// pinned ids — reproduces the pre-1.6 `dfk-field-title`
+<MultiFieldInput fieldDescriptions={fields} idPrefix="dfk-field" />
+```
+
+For one field, set `id` on its `FieldDescription`; it wins over the prefix.
+Renderers receive the resolved value as the `id` prop, so a `<label htmlFor>` in
+a renderer points at exactly one input.
 
 ## Default renderers
 
