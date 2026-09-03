@@ -19,3 +19,5 @@ export {
 
 export * from './adapters';
 export * from './wizard';
+
+export * from './rendererProps';
