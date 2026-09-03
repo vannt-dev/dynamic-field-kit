@@ -1,8 +1,6 @@
 import {
-  resolveDisabled,
-  resolveOptions,
-  resolveReadOnly,
-  validateField,
+  buildFieldRendererProps,
+  makeFieldId,
   FieldDescription,
   Properties,
 } from '@dynamic-field-kit/core';
@@ -24,6 +22,11 @@ const FieldInput = /* @__PURE__ */ defineComponent({
       type: Object as PropType<Properties>,
       default: undefined,
     },
+    /** Per-form-instance id namespace; see core's `makeFieldId`. */
+    idPrefix: {
+      type: String,
+      default: 'dfk-field',
+    },
     onValueChangeField: {
       type: Function as PropType<(value: unknown, key: string) => void>,
       required: true,
@@ -36,61 +39,26 @@ const FieldInput = /* @__PURE__ */ defineComponent({
       type: Boolean,
       default: undefined,
     },
+    dirty: {
+      type: Boolean,
+      default: undefined,
+    },
   },
   setup(props) {
     return () => {
-      const {
-        name,
-        type,
-        label,
-        className,
-        description,
-        required,
-        props: extraProps,
-      } = props.fieldDescription;
+      const { name } = props.fieldDescription;
 
-      const disabled = resolveDisabled(
-        props.fieldDescription,
-        props.renderInfos,
-        props.rootData,
-      );
-      const readOnly = resolveReadOnly(
-        props.fieldDescription,
-        props.renderInfos,
-        props.rootData,
-      );
-      const resolvedOptions = resolveOptions(
-        props.fieldDescription,
-        props.renderInfos,
-        props.rootData,
-      );
-      const errors = disabled
-        ? []
-        : validateField(
-            props.fieldDescription,
-            props.renderInfos[name],
-            props.renderInfos,
-            props.rootData,
-          );
-      const errorList = errors.length > 0 ? errors : undefined;
-      const fieldId = `dfk-field-${name}`;
+      const rendererProps = buildFieldRendererProps({
+        fieldDescription: props.fieldDescription,
+        data: props.renderInfos,
+        rootData: props.rootData,
+        id: makeFieldId(props.fieldDescription, props.idPrefix),
+        touched: props.touched,
+        dirty: props.dirty,
+      });
 
       return h(DynamicInput, {
-        id: fieldId,
-        type,
-        label,
-        value: props.renderInfos[name],
-        options: resolvedOptions,
-        className,
-        description,
-        disabled,
-        readOnly,
-        required,
-        error: errorList,
-        ariaInvalid: Boolean(errorList),
-        ariaRequired: Boolean(required),
-        extraProps,
-        touched: props.touched,
+        ...rendererProps,
         onChange: (v: unknown) => props.onValueChangeField(v, name),
         onBlur: () => props.onBlurField?.(name),
       });
