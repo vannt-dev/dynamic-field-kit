@@ -53,6 +53,20 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
     touched.set({ ...touched(), [name]: isTouched });
   }
 
+  /**
+   * Marks every field touched at once. `handleSubmit` calls this for you, so
+   * an invalid submit surfaces errors on fields the user never focused - bind
+   * `[touched]` on `<dfk-multi-field-input>` for it to take effect.
+   */
+  function touchAll() {
+    touched.set(Object.fromEntries(fields.map((f) => [f.name, true] as const)));
+  }
+
+  /** Clears the touched map without touching data, errors or dirty state. */
+  function resetTouched() {
+    touched.set({});
+  }
+
   function handleBlur(fieldName: string) {
     setFieldTouched(fieldName, true);
     if (validateOnBlur) {
@@ -87,6 +101,11 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
       }
       isSubmitting.set(true);
       try {
+        // Touch everything before validating: a submit is the user asserting
+        // the form is finished, so a field they never focused should still
+        // show its error. Without this, submitting an untouched form appears
+        // to do nothing at all.
+        touchAll();
         const res = validateFields(fields, data());
         errors.set(res.errors);
         isSubmitted.set(true);
@@ -111,6 +130,8 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
     isSubmitted,
     setFieldValue,
     setFieldTouched,
+    touchAll,
+    resetTouched,
     handleChange,
     handleBlur,
     reset,

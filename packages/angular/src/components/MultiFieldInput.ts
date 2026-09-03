@@ -16,10 +16,6 @@ import {
   canAddGroupItem,
   canRemoveGroupItem,
   createGroupItem,
-  resolveDisabled,
-  resolveOptions,
-  resolveReadOnly,
-  validateField,
   validateFields,
   FieldDescription,
   Properties,
@@ -29,6 +25,14 @@ import { BaseLayoutConfig, LayoutConfig } from '../types/layout';
 import { FieldInput } from './FieldInput';
 
 const DEFAULT_BREAKPOINT = 768;
+
+// Per-instance id counter, so two forms rendering the same field name emit
+// different DOM ids.
+let instanceCounter = 0;
+function nextInstanceId(): number {
+  instanceCounter += 1;
+  return instanceCounter;
+}
 
 @Component({
   selector: 'dfk-multi-field-input',
@@ -58,11 +62,11 @@ const DEFAULT_BREAKPOINT = 768;
         <dfk-field-input
           *ngIf="!field.fields"
           [fieldDescription]="field"
-          [value]="data[field.name]"
-          [options]="getResolvedOptions(field)"
-          [disabled]="getDisabled(field)"
-          [readOnly]="getReadOnly(field)"
-          [error]="getError(field)"
+          [data]="data"
+          [rootData]="rootData"
+          [idPrefix]="effectiveIdPrefix"
+          [touched]="isTouched(field.name)"
+          [dirty]="isFieldDirty(field.name)"
           (onValueChangeField)="onFieldChange($event)"
           (onBlurField)="handleBlurField($event)"
         ></dfk-field-input>
@@ -127,17 +131,80 @@ export class MultiFieldInput implements OnInit, OnChanges {
    * `validateOnBlur` behaviour.
    */
   @Output() onBlurField = new EventEmitter<string>();
+  /**
+   * Controlled touched map. When bound it is the single source of truth and
+   * the internal tracker is bypassed, so `createDynamicFormStore`'s `touched`
+   * signal (updated by setFieldTouched/touchAll/handleSubmit, cleared by
+   * reset) is what renderers actually see. Leave it unbound to keep the
+   * internal, blur-only tracker.
+   */
+  @Input() touched?: Record<string, boolean>;
+  /** Emits the next touched map whenever a field is blurred. */
+  @Output() touchedChange = new EventEmitter<Record<string, boolean>>();
+  /**
+   * Namespace for generated field ids: a field renders with
+   * `${idPrefix}-${name}`. Defaults to a value unique to this component
+   * instance, so two forms containing the same field name do not emit
+   * duplicate DOM ids. Bind a fixed string to pin ids (`idPrefix="dfk-field"`
+   * restores the pre-1.6 ids), or set `FieldDescription.id` per field.
+   */
+  @Input() idPrefix?: string;
 
   private touchedFields: Record<string, boolean> = {};
+  // Unique per component instance. Angular has no useId equivalent, and this
+  // component is client-rendered by the time ids matter, so a module counter
+  // is enough.
+  private readonly instanceId = nextInstanceId();
+  private initialProperties: Properties = {};
+
+  get effectiveIdPrefix(): string {
+    return this.idPrefix ?? `dfk-${this.instanceId}`;
+  }
+
+  /** The touched map in effect: the controlled input, else the internal one. */
+  private get effectiveTouched(): Record<string, boolean> {
+    return this.touched ?? this.touchedFields;
+  }
 
   handleBlurField(fieldName: string): void {
-    this.touchedFields = { ...this.touchedFields, [fieldName]: true };
+    if (this.touched === undefined) {
+      this.touchedFields = { ...this.touchedFields, [fieldName]: true };
+    }
+    this.touchedChange.emit({ ...this.effectiveTouched, [fieldName]: true });
     this.onBlurField.emit(fieldName);
+    this.cdr.markForCheck();
   }
 
   /** Whether this field has been blurred at least once. */
   isTouched(fieldName: string): boolean {
-    return Boolean(this.touchedFields[fieldName]);
+    return Boolean(this.effectiveTouched[fieldName]);
+  }
+
+  /** Whether this field's value differs from the one the form opened with. */
+  isFieldDirty(fieldName: string): boolean {
+    return this.data[fieldName] !== this.initialProperties[fieldName];
+  }
+
+  /**
+   * Clears the internally tracked touched state. Only meaningful in
+   * uncontrolled mode - when `touched` is bound, resetting the form store
+   * (e.g. `createDynamicFormStore().reset()`) already clears it.
+   */
+  resetTouched(): void {
+    this.touchedFields = {};
+    this.touchedChange.emit(this.effectiveTouched);
+    this.cdr.markForCheck();
+  }
+
+  setFieldTouched(fieldName: string, isTouched = true): void {
+    if (this.touched === undefined) {
+      this.touchedFields = { ...this.touchedFields, [fieldName]: isTouched };
+    }
+    this.touchedChange.emit({
+      ...this.effectiveTouched,
+      [fieldName]: isTouched,
+    });
+    this.cdr.markForCheck();
   }
   @Input() layout: LayoutConfig = 'column';
   // Top-level form data, threaded down through repeatable groups so a nested
@@ -147,6 +214,7 @@ export class MultiFieldInput implements OnInit, OnChanges {
 
   data: Properties = {};
   visibleFields: FieldDescription[] = [];
+  private initialised = false;
   private isMobile = false;
 
   constructor(private cdr: ChangeDetectorRef) {}
@@ -250,6 +318,12 @@ export class MultiFieldInput implements OnInit, OnChanges {
         { ...this.properties },
         this.rootData,
       );
+      // Baseline for the `dirty` flag: the values the form opened with, not
+      // whatever `properties` happens to hold after later edits.
+      if (!this.initialised) {
+        this.initialProperties = { ...this.properties };
+        this.initialised = true;
+      }
     }
     this.updateVisibleFields();
     this.validityChange.emit(
@@ -273,30 +347,11 @@ export class MultiFieldInput implements OnInit, OnChanges {
     return Array.isArray(value) ? (value as Properties[]) : [];
   }
 
-  getResolvedOptions(field: FieldDescription): Properties[] | undefined {
-    return resolveOptions(field, this.data, this.rootData);
-  }
-
-  getDisabled(field: FieldDescription): boolean {
-    return resolveDisabled(field, this.data, this.rootData);
-  }
-
-  getReadOnly(field: FieldDescription): boolean {
-    return resolveReadOnly(field, this.data, this.rootData);
-  }
-
-  getError(field: FieldDescription): string[] | undefined {
-    if (this.getDisabled(field)) {
-      return undefined;
-    }
-    const errors = validateField(
-      field,
-      this.data[field.name],
-      this.data,
-      this.rootData,
-    );
-    return errors.length > 0 ? errors : undefined;
-  }
+  // The per-field getResolvedOptions/getDisabled/getReadOnly/getError helpers
+  // that used to live here are gone: FieldInput now resolves all of it through
+  // core's shared buildFieldRendererProps. Keeping a second copy of that logic
+  // beside the shared one is exactly how the adapters drifted apart in the
+  // first place.
 
   canAddItem(field: FieldDescription): boolean {
     return canAddGroupItem(field, this.getItems(field));
