@@ -49,6 +49,12 @@ export interface FieldRendererProps<T = unknown> {
 export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {
   name: string;
   type: T;
+  /**
+   * Pins this field's DOM id. When omitted the id is derived from the owning
+   * MultiFieldInput's instance prefix plus `name`, which keeps it unique when
+   * two forms render the same field name at once.
+   */
+  id?: string;
   label?: string;
   placeholder?: string;
   required?: boolean;
