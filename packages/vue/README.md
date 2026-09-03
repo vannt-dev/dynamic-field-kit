@@ -2,6 +2,12 @@
 
 Vue 3 adapter for `@dynamic-field-kit/core`.
 
+Requires **Vue 3.2 or newer** (`peerDependencies: vue ^3.2.0`). The floor is
+3.2 because `useDynamicForm` uses `getCurrentScope` / `onScopeDispose` to
+abort an in-flight validation when the owning scope goes away.
+`scripts/verify-vue-peer-range.js` renders the packed tarballs under 3.2 and
+the newest 3.x in CI, so the range is proven rather than asserted.
+
 This package provides Vue components that render `FieldDescription[]` and resolve field renderers through the shared registry used by `dynamic-field-kit`.
 
 Live demo: https://vannt-dev.github.io/dynamic-field-kit/vue/ — tabs for the
@@ -39,9 +45,11 @@ both packages:
 
 - `validateField` / `validateFieldAsync` — one field, returns `string[]`
 - `validateFields` / `validateFieldsAsync` — a whole schema, returns `ValidationResult`
+- `collectFieldPaths` — the leaf paths a schema actually has in the data (`contacts[0].email`)
+- `indexGroupPathMap` — index an error or touched map by repeatable-group item
 - `resolveDisabled` / `resolveReadOnly` / `resolveOptions` — resolve a field's dynamic conditions and options
 - `validators` — the built-in validator helpers (`required`, `email`, `minLength`, `compose`, …)
-- `ValidationResult`
+- `ValidationResult` / `ValidationContext`
 
 `useDynamicForm` keeps live validation synchronous - a validator declared or
 detected as async is never invoked on that path. Its `handleSubmit` runs one
