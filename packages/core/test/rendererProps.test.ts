@@ -1,0 +1,138 @@
+import { describe, expect, it } from 'vitest';
+import {
+  buildFieldRendererProps,
+  FIELD_RENDERER_PROP_KEYS,
+  makeFieldId,
+} from '../src/rendererProps';
+import type { FieldDescription } from '../src/types';
+
+describe('makeFieldId', () => {
+  const title: FieldDescription = { name: 'title', type: 'text' };
+
+  it('namespaces a field name under a prefix', () => {
+    expect(makeFieldId(title, 'dfk-r1')).toBe('dfk-r1-title');
+  });
+
+  it('lets a field pin its own id, ignoring the prefix', () => {
+    const pinned: FieldDescription = { ...title, id: 'my-title' };
+    expect(makeFieldId(pinned, 'dfk-r1')).toBe('my-title');
+  });
+
+  it('produces different ids for two instances sharing a field name', () => {
+    const field: FieldDescription = { name: 'title', type: 'text' };
+    expect(makeFieldId(field, 'dfk-r1')).not.toBe(makeFieldId(field, 'dfk-r2'));
+  });
+});
+
+describe('buildFieldRendererProps', () => {
+  const field: FieldDescription = {
+    name: 'username',
+    type: 'text',
+    label: 'Username',
+    placeholder: 'Type your name',
+    required: true,
+    min: 1,
+    max: 10,
+    step: 1,
+    accept: '.png',
+    multiple: true,
+    className: 'c',
+    description: 'd',
+    props: { maxLength: 5 },
+  };
+
+  it('forwards every declared FieldDescription prop the renderer contract names', () => {
+    const p = buildFieldRendererProps({
+      fieldDescription: field,
+      data: { username: 'bob' },
+      id: 'dfk-r1-username',
+    });
+
+    expect(p.placeholder).toBe('Type your name');
+    expect(p.required).toBe(true);
+    expect(p.min).toBe(1);
+    expect(p.max).toBe(10);
+    expect(p.step).toBe(1);
+    expect(p.accept).toBe('.png');
+    expect(p.multiple).toBe(true);
+    expect(p.label).toBe('Username');
+    expect(p.value).toBe('bob');
+    expect(p.id).toBe('dfk-r1-username');
+    expect(p.extraProps).toEqual({ maxLength: 5 });
+  });
+
+  it('passes touched and dirty straight through', () => {
+    const p = buildFieldRendererProps({
+      fieldDescription: field,
+      data: {},
+      id: 'x',
+      touched: true,
+      dirty: true,
+    });
+    expect(p.touched).toBe(true);
+    expect(p.dirty).toBe(true);
+  });
+
+  it('validates and sets aria flags', () => {
+    const required: FieldDescription = {
+      name: 'a',
+      type: 'text',
+      required: true,
+      validate: (v) => (v ? undefined : 'Required'),
+    };
+    const p = buildFieldRendererProps({
+      fieldDescription: required,
+      data: { a: '' },
+      id: 'x',
+    });
+    expect(p.error).toEqual(['Required']);
+    expect(p.ariaInvalid).toBe(true);
+    expect(p.ariaRequired).toBe(true);
+  });
+
+  it('skips validation for a disabled field', () => {
+    const disabled: FieldDescription = {
+      name: 'a',
+      type: 'text',
+      disabled: true,
+      validate: () => 'Required',
+    };
+    const p = buildFieldRendererProps({
+      fieldDescription: disabled,
+      data: { a: '' },
+      id: 'x',
+    });
+    expect(p.error).toBeUndefined();
+    expect(p.ariaInvalid).toBe(false);
+    expect(p.disabled).toBe(true);
+  });
+
+  it('resolves dynamic options against data and rootData', () => {
+    const dyn: FieldDescription = {
+      name: 'city',
+      type: 'select',
+      options: (data, rootData) => [
+        { value: data['c'] },
+        { value: rootData?.['r'] },
+      ],
+    };
+    const p = buildFieldRendererProps({
+      fieldDescription: dyn,
+      data: { c: 1 },
+      rootData: { r: 2 },
+      id: 'x',
+    });
+    expect(p.options).toEqual([{ value: 1 }, { value: 2 }]);
+  });
+
+  it('returns a key for every prop the contract declares', () => {
+    const p = buildFieldRendererProps({
+      fieldDescription: field,
+      data: {},
+      id: 'x',
+    });
+    for (const key of FIELD_RENDERER_PROP_KEYS) {
+      expect(Object.prototype.hasOwnProperty.call(p, key)).toBe(true);
+    }
+  });
+});
