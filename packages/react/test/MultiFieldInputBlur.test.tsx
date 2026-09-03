@@ -32,7 +32,11 @@ describe('MultiFieldInput blur reporting', () => {
   it('reports which field was blurred', () => {
     const onBlurField = vi.fn();
     render(
-      <MultiFieldInput fieldDescriptions={fields} onBlurField={onBlurField} />,
+      <MultiFieldInput
+        fieldDescriptions={fields}
+        idPrefix="dfk-field"
+        onBlurField={onBlurField}
+      />,
     );
 
     fireEvent.blur(screen.getByTestId('dfk-field-second'));
@@ -43,7 +47,11 @@ describe('MultiFieldInput blur reporting', () => {
   it('reports each field separately', () => {
     const onBlurField = vi.fn();
     render(
-      <MultiFieldInput fieldDescriptions={fields} onBlurField={onBlurField} />,
+      <MultiFieldInput
+        fieldDescriptions={fields}
+        idPrefix="dfk-field"
+        onBlurField={onBlurField}
+      />,
     );
 
     fireEvent.blur(screen.getByTestId('dfk-field-first'));
@@ -57,7 +65,9 @@ describe('MultiFieldInput blur reporting', () => {
 
   it('still tracks touched internally when no handler is passed', () => {
     expect(() => {
-      render(<MultiFieldInput fieldDescriptions={fields} />);
+      render(
+        <MultiFieldInput fieldDescriptions={fields} idPrefix="dfk-field" />,
+      );
       fireEvent.blur(screen.getByTestId('dfk-field-first'));
     }).not.toThrow();
   });

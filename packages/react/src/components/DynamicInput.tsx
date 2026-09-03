@@ -13,6 +13,7 @@ interface Props<T extends FieldTypeKey> {
   onChange?: (value: unknown) => void;
   onBlur?: () => void;
   label?: string;
+  placeholder?: string;
   options?: Properties[];
   className?: string;
   description?: ReactNode;
@@ -26,30 +27,21 @@ interface Props<T extends FieldTypeKey> {
   ariaInvalid?: boolean;
   ariaDescribedBy?: string;
   ariaRequired?: boolean;
+  min?: number | string;
+  max?: number | string;
+  step?: number | string;
+  accept?: string;
+  multiple?: boolean;
   /** Extra, framework-agnostic props forwarded verbatim to the renderer. */
   extraProps?: Properties;
 }
 
 const DynamicInputInner = <T extends FieldTypeKey>({
   type,
-  value,
   onChange,
   onBlur,
-  label,
-  options,
-  className,
-  description,
-  disabled,
-  readOnly,
-  required,
-  touched,
-  dirty,
-  error,
-  id,
-  ariaInvalid,
-  ariaDescribedBy,
-  ariaRequired,
   extraProps,
+  ...rendererProps
 }: Props<T>) => {
   const registry = useFieldRegistry();
 
@@ -65,25 +57,15 @@ const DynamicInputInner = <T extends FieldTypeKey>({
     return <div>Unknown field type: {type}</div>;
   }
 
+  // Spread rather than re-listing each prop: the set is fixed by core's
+  // FIELD_RENDERER_PROP_KEYS contract, and a hand-maintained list here is
+  // exactly how `placeholder`, `min`, `max`, `step`, `accept` and `multiple`
+  // came to be silently dropped on their way to the renderer.
   return React.createElement(Renderer, {
     ...extraProps,
-    value,
+    ...(rendererProps as FieldRendererProps),
     onValueChange: onChange,
     onBlur,
-    label,
-    options,
-    className,
-    description,
-    disabled,
-    readOnly,
-    required,
-    touched,
-    dirty,
-    error,
-    id,
-    ariaInvalid,
-    ariaDescribedBy,
-    ariaRequired,
   });
 };
 

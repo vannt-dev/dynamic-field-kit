@@ -24,6 +24,16 @@ export interface UseDynamicFormResult {
   setData: React.Dispatch<React.SetStateAction<Properties>>;
   setFieldValue: (name: string, value: unknown) => void;
   setFieldTouched: (name: string, isTouched?: boolean) => void;
+  /** Replaces the whole touched map. */
+  setTouched: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  /**
+   * Marks every field touched at once. `handleSubmit` calls this for you, so
+   * an invalid submit surfaces errors on fields the user never focused - pass
+   * `touched` into `MultiFieldInput` for it to take effect.
+   */
+  touchAll: () => void;
+  /** Clears the touched map without touching data, errors or dirty state. */
+  resetTouched: () => void;
   handleChange: (newData: Properties) => void;
   handleBlur: (fieldName: string) => void;
   reset: (newValues?: Properties) => void;
@@ -80,6 +90,12 @@ export function useDynamicForm({
     setTouched((prev) => ({ ...prev, [name]: isTouched }));
   }, []);
 
+  const touchAll = useCallback(() => {
+    setTouched(Object.fromEntries(fields.map((f) => [f.name, true] as const)));
+  }, [fields]);
+
+  const resetTouched = useCallback(() => setTouched({}), []);
+
   const handleBlur = useCallback(
     (fieldName: string) => {
       setFieldTouched(fieldName, true);
@@ -116,6 +132,11 @@ export function useDynamicForm({
         }
         setIsSubmitting(true);
         try {
+          // Touch everything before validating: a submit is the user asserting
+          // the form is finished, so a field they never focused should still
+          // show its error. Without this, submitting an untouched form appears
+          // to do nothing at all.
+          touchAll();
           const res = validateFields(fields, data);
           setErrors(res.errors);
           setIsSubmitted(true);
@@ -128,7 +149,7 @@ export function useDynamicForm({
           setIsSubmitting(false);
         }
       },
-    [fields, data],
+    [fields, data, touchAll],
   );
 
   const isValid = Object.keys(errors).length === 0;
@@ -144,6 +165,9 @@ export function useDynamicForm({
     setData,
     setFieldValue,
     setFieldTouched,
+    setTouched,
+    touchAll,
+    resetTouched,
     handleChange,
     handleBlur,
     reset,
