@@ -59,16 +59,28 @@ both packages:
   renderer contracts every adapter shares
 - `ValidationResult`
 
-`createDynamicFormStore` keeps live validation synchronous. Its `handleSubmit`
-runs one async-capable validation pass; call the exposed `validateAsync()` when
-you need that result before submit. See the
+`createDynamicFormStore` keeps live validation synchronous - a validator declared or
+detected as async is never invoked on that path. Its `handleSubmit` runs one
+async-capable pass, and `validateAsync()` is there when you need that answer
+before submit. Runs are latest-wins: typing aborts the live run in flight, so a
+stale result cannot overwrite a newer one, and a submit validates the snapshot
+it was given under a controller of its own, so editing mid-submit no longer
+cancels it. Declare a Promise-returning validator with
+`validationMode: 'async'` and read `context.signal` (the fourth argument) to
+cancel the request itself. See the
 [core README](https://github.com/vannt-dev/dynamic-field-kit/tree/develop/packages/core#sync-vs-async-validation)
 for the full rules.
 
 For a complete UI integration, see the
 [Angular Material recipe](../../docs/ui-kit-recipes.md#angular--angular-material).
 
-## Basic setup (Angular 19+)
+## Supported Angular versions
+
+The package declares `@angular/core` and `@angular/common` as
+`>=14 <22`. CI builds and tests it against Angular 21, which is also what the
+demo app runs; that is the version the setup below is written for.
+
+## Basic setup
 
 1. Import the component and register fields before bootstrap.
 
@@ -172,6 +184,9 @@ export class MyForm {
 | `data()`                            | Current form data, with `computeValue` fields applied                             |
 | `errors()`                          | `Record<string, string[]>`, keyed like `validateFields`                           |
 | `isValid()` / `isDirty()`           | Current synchronous validity / any value has changed                              |
+| `isValidating()`                    | An async validation pass is in flight                                             |
+| `isValidationComplete()`            | Every applicable validator finished and none is in flight                         |
+| `validationStatus()`                | `'valid'                                                                          | 'invalid' | 'pending'`— prefer it over`isValid`alone:`valid` cannot tell "nothing is wrong" from "nothing is wrong yet" |
 | `isSubmitting()` / `isSubmitted()`  | In-flight submit / at least one submit attempted                                  |
 | `touched()`                         | Fields that have been blurred                                                     |
 | `handleChange(data)`                | Replace the whole form data — bind to `(onChange)`                                |

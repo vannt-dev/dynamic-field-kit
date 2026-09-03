@@ -179,5 +179,32 @@ and [input](https://material.angular.dev/components/input/overview).
 
 All three form helpers expose `validateAsync()`. Their `handleSubmit()` methods
 run one async-capable validation pass before calling `onValid`. Live `isValid`
-reflects synchronous rules; call
-`validateAsync()` when UI must check an async rule before submit.
+reflects synchronous rules only; call `validateAsync()` when UI must check an
+async rule before submit.
+
+Declare a Promise-returning validator so the live pass skips it instead of
+firing a request per keystroke, and honour the signal it is handed:
+
+```ts
+{
+  name: 'username',
+  type: 'text',
+  validationMode: 'async',
+  validate: (value, _data, _rootData, context) =>
+    fetch(`/api/available?u=${value}`, { signal: context?.signal })
+      .then((r) => (r.ok ? undefined : 'Already taken')),
+}
+```
+
+For the UI, bind the three status members rather than `isValid` alone -
+`isValid` is `true` while an async rule is still unanswered:
+
+| Member                 | Use it for                                                  |
+| ---------------------- | ----------------------------------------------------------- |
+| `isValidating`         | A spinner on the field or a busy state on the submit button |
+| `validationStatus`     | `'valid'                                                    | 'invalid' | 'pending'` — what to actually render |
+| `isValidationComplete` | Enabling submit only once everything has been answered      |
+
+Typing cancels a live run in flight, so a stale result never overwrites a newer
+one. A submit is not cancelled by typing: it validates the snapshot it was
+given and always calls `onValid` or `onInvalid`.

@@ -45,9 +45,15 @@ both packages:
 - `validators` — the built-in validator helpers (`required`, `email`, `minLength`, `compose`, …)
 - `ValidationResult`
 
-`useDynamicForm` keeps live validation synchronous. Its `handleSubmit` runs one
-async-capable validation pass; call the
-exposed `validateAsync()` when you need that result before submit. See the
+`useDynamicForm` keeps live validation synchronous - a validator declared or
+detected as async is never invoked on that path. Its `handleSubmit` runs one
+async-capable pass, and `validateAsync()` is there when you need that answer
+before submit. Runs are latest-wins: typing aborts the live run in flight, so a
+stale result cannot overwrite a newer one, and a submit validates the snapshot
+it was given under a controller of its own, so editing mid-submit no longer
+cancels it. Declare a Promise-returning validator with
+`validationMode: 'async'` and read `context.signal` (the fourth argument) to
+cancel the request itself. See the
 [core README](https://github.com/vannt-dev/dynamic-field-kit/tree/develop/packages/core#sync-vs-async-validation)
 for the full rules.
 
@@ -167,6 +173,9 @@ derives, so you can pass `form` and still override one wire.
 | `data`                              | Current form data, with `computeValue` fields applied                             |
 | `errors`                            | `Record<string, string[]>`, keyed like `validateFields`                           |
 | `isValid` / `isDirty`               | Current synchronous validity / any value has changed                              |
+| `isValidating`                      | An async validation pass is in flight                                             |
+| `isValidationComplete`              | Every applicable validator finished and none is in flight                         |
+| `validationStatus`                  | `'valid'                                                                          | 'invalid' | 'pending'`— prefer it over`isValid`alone:`valid` cannot tell "nothing is wrong" from "nothing is wrong yet" |
 | `isSubmitting` / `isSubmitted`      | In-flight submit / at least one submit attempted                                  |
 | `touched`                           | Fields that have been blurred                                                     |
 | `handleChange(data)`                | Replace the whole form data — pass to `MultiFieldInput`'s `onChange`              |
