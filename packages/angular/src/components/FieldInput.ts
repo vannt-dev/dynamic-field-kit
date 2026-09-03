@@ -73,6 +73,8 @@ export class FieldInput implements OnChanges {
   @Input() disabled?: boolean;
   @Input() readOnly?: boolean;
   @Input() error?: string | string[];
+  /** Distinguishes a controlled empty error from an omitted error input. */
+  @Input() validationControlled = false;
   /** Whether the field has been blurred, or marked touched by a form store. */
   @Input() touched?: boolean;
   /** Whether the value differs from the one the form opened with. */
@@ -122,7 +124,9 @@ export class FieldInput implements OnChanges {
 
     // Explicitly bound inputs override what the field description resolves to,
     // so a host can still drive options/disabled/error itself.
-    const error = this.error ?? base.error;
+    const error = this.validationControlled
+      ? this.error
+      : (this.error ?? base.error);
     return {
       ...base,
       options: this.options ?? base.options,

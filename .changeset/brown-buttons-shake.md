@@ -60,3 +60,18 @@ resolves all of it through core. Keeping a second copy of that logic beside the
 shared one is how the adapters drifted apart to begin with; the equivalents are
 `resolveOptions`, `resolveDisabled`, `resolveReadOnly` and `validateField`,
 already re-exported from this package.
+
+Form validity now reflects current data immediately instead of merely checking
+the lazily populated `errors` map. The error map remains lazy for display, and
+passing a form binding (or the new controlled `errors` input) makes that same
+map the renderer's source of truth, removing the previous timing mismatch.
+
+Promise-based validators are no longer silently accepted on submit.
+`validateFields` reports unresolved field names in `pending`; every framework
+form helper uses one async-capable validation pass before dispatching submit
+callbacks. React, Vue and Angular also expose
+`validateAsync()` for explicit pre-submit checks. Live `isValid` remains a
+synchronous answer because a property/computed/signal cannot await.
+
+The new UI-kit recipes show complete touched/error wiring for Ant Design,
+Vuetify and Angular Material.

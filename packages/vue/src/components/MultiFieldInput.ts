@@ -29,6 +29,7 @@ import FieldInput from './FieldInput';
  */
 export interface DynamicFormBinding {
   data: Ref<Properties> | Properties;
+  errors: Ref<Record<string, string[]>> | Record<string, string[]>;
   touched: Ref<Record<string, boolean>> | Record<string, boolean>;
   handleChange: (data: Properties) => void;
   handleBlur: (fieldName: string) => void;
@@ -130,6 +131,12 @@ const MultiFieldInput = /* @__PURE__ */ defineComponent({
       type: Object as PropType<Record<string, boolean>>,
       default: undefined,
     },
+    // Controlled error map. When supplied (directly or through `form`), it is
+    // the renderer's source of truth instead of live per-field validation.
+    errors: {
+      type: Object as PropType<Record<string, string[]>>,
+      default: undefined,
+    },
     // Fires with the next touched map whenever a field is blurred.
     onTouchedChange: {
       type: Function as PropType<(touched: Record<string, boolean>) => void>,
@@ -177,6 +184,14 @@ const MultiFieldInput = /* @__PURE__ */ defineComponent({
     );
     const effectiveTouched = computed<Record<string, boolean>>(
       () => controlledTouched.value ?? touchedFields,
+    );
+    const effectiveErrors = computed<Record<string, string[]> | undefined>(
+      () =>
+        props.errors !== undefined
+          ? props.errors
+          : props.form
+            ? unref(props.form.errors)
+            : undefined,
     );
     const emitChange = (next: Properties) => {
       props.onChange?.(next);
@@ -324,6 +339,18 @@ const MultiFieldInput = /* @__PURE__ */ defineComponent({
         ? ((item[field.keyField] as string | number) ?? index)
         : index;
 
+    const errorsForItem = (fieldName: string, index: number) => {
+      if (effectiveErrors.value === undefined) {
+        return undefined;
+      }
+      const prefix = `${fieldName}[${index}].`;
+      return Object.fromEntries(
+        Object.entries(effectiveErrors.value)
+          .filter(([key]) => key.startsWith(prefix))
+          .map(([key, messages]) => [key.slice(prefix.length), messages]),
+      );
+    };
+
     const renderGroupField = (field: FieldDescription) => {
       const items = getItems(field);
       const fields = field.fields ?? [];
@@ -346,6 +373,7 @@ const MultiFieldInput = /* @__PURE__ */ defineComponent({
                   fieldDescriptions: fields,
                   properties: item,
                   rootData: props.rootData ?? data,
+                  errors: errorsForItem(field.name, index),
                   onChange: (next: Properties) =>
                     handleGroupItemChange(field, index, next),
                 }),
@@ -391,6 +419,7 @@ const MultiFieldInput = /* @__PURE__ */ defineComponent({
               rootData: props.rootData ?? data,
               idPrefix: effectiveIdPrefix.value,
               touched: Boolean(effectiveTouched.value[f.name]),
+              errors: effectiveErrors.value,
               dirty: data[f.name] !== initialProperties[f.name],
               onValueChangeField: handleValueChange,
               onBlurField: handleBlurField,

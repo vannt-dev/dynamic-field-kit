@@ -67,6 +67,8 @@ function nextInstanceId(): number {
           [idPrefix]="effectiveIdPrefix"
           [touched]="isTouched(field.name)"
           [dirty]="isFieldDirty(field.name)"
+          [error]="fieldErrors(field.name)"
+          [validationControlled]="errors !== undefined"
           (onValueChangeField)="onFieldChange($event)"
           (onBlurField)="handleBlurField($event)"
         ></dfk-field-input>
@@ -86,6 +88,7 @@ function nextInstanceId(): number {
                 [fieldDescriptions]="field.fields"
                 [properties]="item"
                 [rootData]="rootData ?? data"
+                [errors]="errorsForItem(field.name, i)"
                 (onChange)="onGroupItemChange(field, i, $event)"
               ></dfk-multi-field-input>
             </div>
@@ -139,6 +142,8 @@ export class MultiFieldInput implements OnInit, OnChanges {
    * internal, blur-only tracker.
    */
   @Input() touched?: Record<string, boolean>;
+  /** Controlled error map; bind the form store's `errors()` signal here. */
+  @Input() errors?: Record<string, string[]>;
   /** Emits the next touched map whenever a field is blurred. */
   @Output() touchedChange = new EventEmitter<Record<string, boolean>>();
   /**
@@ -183,6 +188,25 @@ export class MultiFieldInput implements OnInit, OnChanges {
   /** Whether this field's value differs from the one the form opened with. */
   isFieldDirty(fieldName: string): boolean {
     return this.data[fieldName] !== this.initialProperties[fieldName];
+  }
+
+  fieldErrors(fieldName: string): string[] | undefined {
+    return this.errors?.[fieldName];
+  }
+
+  errorsForItem(
+    fieldName: string,
+    index: number,
+  ): Record<string, string[]> | undefined {
+    if (this.errors === undefined) {
+      return undefined;
+    }
+    const prefix = `${fieldName}[${index}].`;
+    return Object.fromEntries(
+      Object.entries(this.errors)
+        .filter(([key]) => key.startsWith(prefix))
+        .map(([key, messages]) => [key.slice(prefix.length), messages]),
+    );
   }
 
   /**
