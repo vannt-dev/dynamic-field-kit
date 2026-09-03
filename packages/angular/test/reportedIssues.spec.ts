@@ -142,6 +142,7 @@ describe('reported issues (Angular)', () => {
       const fixture = mount({
         properties: store.data(),
         touched: store.touched(),
+        errors: store.errors(),
       });
       expect(errorText(fixture)).toBeNull();
 
@@ -150,10 +151,18 @@ describe('reported issues (Angular)', () => {
       fixture.componentRef.setInput('touched', store.touched());
       fixture.detectChanges();
 
+      // Controlled errors remain lazy until the store validates.
+      expect(errorText(fixture)).toBeNull();
+
+      store.validate();
+      fixture.componentRef.setInput('errors', store.errors());
+      fixture.detectChanges();
+
       expect(errorText(fixture)).toBe('Required');
 
       store.reset();
       fixture.componentRef.setInput('touched', store.touched());
+      fixture.componentRef.setInput('errors', store.errors());
       fixture.detectChanges();
 
       expect(errorText(fixture)).toBeNull();

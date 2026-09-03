@@ -133,14 +133,14 @@ describe('issue 2: submitting an untouched form surfaces errors', () => {
     );
   }
 
-  it('shows the error without the user ever focusing the field', () => {
+  it('shows the error without the user ever focusing the field', async () => {
     render(<Form />);
 
     expect(screen.queryByRole('alert')).toBeNull();
 
     fireEvent.click(screen.getByText('Submit'));
 
-    expect(screen.getByRole('alert')).toHaveTextContent('Required');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Required');
   });
 
   it('touchAll marks every field touched', () => {
@@ -204,6 +204,39 @@ describe('issue 3: resetting clears touched', () => {
 
     fireEvent.click(screen.getByText('reset'));
     expect(screen.queryByRole('alert')).toBeNull();
+  });
+});
+
+describe('issue 5: form errors are the renderer source of truth', () => {
+  const fields: FieldDescription[] = [
+    {
+      name: 'username',
+      type: 'text',
+      label: 'Username',
+      validate: () => 'Required',
+    },
+  ];
+
+  it('does not show a live error before the form store records it', () => {
+    function Form() {
+      const form = useDynamicForm({ fields });
+      return (
+        <>
+          <MultiFieldInput fieldDescriptions={fields} form={form} />
+          <button onClick={() => form.setFieldTouched('username')}>
+            touch
+          </button>
+          <button onClick={form.validate}>validate</button>
+        </>
+      );
+    }
+    render(<Form />);
+
+    fireEvent.click(screen.getByText('touch'));
+    expect(screen.queryByRole('alert')).toBeNull();
+
+    fireEvent.click(screen.getByText('validate'));
+    expect(screen.getByRole('alert')).toHaveTextContent('Required');
   });
 });
 

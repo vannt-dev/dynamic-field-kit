@@ -3,8 +3,9 @@ import {
   FieldDescription,
   Properties,
   validateFields,
+  validateFieldsAsync,
 } from '@dynamic-field-kit/core';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 
 export interface UseDynamicFormOptions {
   fields: FieldDescription[];
@@ -38,6 +39,8 @@ export interface UseDynamicFormResult {
   handleBlur: (fieldName: string) => void;
   reset: (newValues?: Properties) => void;
   validate: () => boolean;
+  /** Validate all fields and await Promise-based rules. */
+  validateAsync: () => Promise<boolean>;
   handleSubmit: (
     onValid: (data: Properties) => void | Promise<void>,
     onInvalid?: (errors: Record<string, string[]>) => void,
@@ -61,6 +64,12 @@ export function useDynamicForm({
 
   const validate = useCallback(() => {
     const res = validateFields(fields, data);
+    setErrors(res.errors);
+    return res.valid;
+  }, [fields, data]);
+
+  const validateAsync = useCallback(async () => {
+    const res = await validateFieldsAsync(fields, data);
     setErrors(res.errors);
     return res.valid;
   }, [fields, data]);
@@ -137,7 +146,10 @@ export function useDynamicForm({
           // show its error. Without this, submitting an untouched form appears
           // to do nothing at all.
           touchAll();
-          const res = validateFields(fields, data);
+          // A submit handler is already async, so use one async-capable pass.
+          // Sync hooks still run once; Promise-based hooks are awaited instead
+          // of being invoked once for detection and a second time for results.
+          const res = await validateFieldsAsync(fields, data);
           setErrors(res.errors);
           setIsSubmitted(true);
           if (res.valid) {
@@ -152,7 +164,16 @@ export function useDynamicForm({
     [fields, data, touchAll],
   );
 
-  const isValid = Object.keys(errors).length === 0;
+  // Derived from the current data, not from `errors`. `errors` is deliberately
+  // lazy - it fills in on validate/blur/submit so a pristine form does not show
+  // messages - but deriving `isValid` from it meant an empty required field
+  // reported `isValid: true` until one of those happened, which is precisely
+  // when a submit button wants to be disabled. Async validators still read as
+  // valid here; only submitting (or `validateAsync`) can await them.
+  const isValid = useMemo(
+    () => validateFields(fields, data).valid,
+    [fields, data],
+  );
 
   return {
     data,
@@ -172,6 +193,7 @@ export function useDynamicForm({
     handleBlur,
     reset,
     validate,
+    validateAsync,
     handleSubmit,
   };
 }

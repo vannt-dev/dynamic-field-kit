@@ -24,6 +24,7 @@ import FieldInput from './FieldInput';
  */
 export interface DynamicFormBinding {
   data: Properties;
+  errors: Record<string, string[]>;
   touched: Record<string, boolean>;
   handleChange: (data: Properties) => void;
   handleBlur: (fieldName: string) => void;
@@ -82,6 +83,8 @@ interface Props {
    * blur-only tracker.
    */
   touched?: Record<string, boolean>;
+  /** Controlled validation errors. Empty means no renderer error. */
+  errors?: Record<string, string[]>;
   /** Fires with the next touched map whenever a field is blurred. */
   onTouchedChange?: (touched: Record<string, boolean>) => void;
   /**
@@ -113,6 +116,7 @@ const MultiFieldInputInner = (
     onValidityChange,
     onBlurField,
     touched: touchedProp,
+    errors: errorsProp,
     onTouchedChange,
     form,
   }: Props,
@@ -124,6 +128,7 @@ const MultiFieldInputInner = (
   const effectiveOnChange = onChange ?? form?.handleChange;
   const effectiveOnBlurField = onBlurField ?? form?.handleBlur;
   const controlledTouched = touchedProp ?? form?.touched;
+  const effectiveErrors = errorsProp ?? form?.errors;
 
   const [data, setData] = useState<Properties>({});
   const [internalTouched, setInternalTouched] = useState<
@@ -261,6 +266,7 @@ const MultiFieldInputInner = (
           rootData={effectiveRoot}
           idPrefix={effectiveIdPrefix}
           touched={Boolean(effectiveTouched[f.name])}
+          errors={effectiveErrors}
           dirty={data[f.name] !== initialPropertiesRef.current[f.name]}
           onBlurField={handleBlurField}
           onValueChangeField={handleValueChangeField}

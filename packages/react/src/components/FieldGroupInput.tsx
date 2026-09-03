@@ -12,6 +12,7 @@ interface Props {
   fieldDescription: FieldDescription;
   items: Properties[];
   rootData?: Properties;
+  errors?: Record<string, string[]>;
   onChange: (items: Properties[]) => void;
 }
 
@@ -19,6 +20,7 @@ const FieldGroupInput = ({
   fieldDescription,
   items,
   rootData,
+  errors,
   onChange,
 }: Props) => {
   const {
@@ -35,6 +37,18 @@ const FieldGroupInput = ({
   const addText = addLabel ?? 'Add';
   const removeText = removeLabel ?? 'Remove';
   const groupName = label ?? fieldDescription.name;
+
+  const errorsForItem = (index: number) => {
+    if (errors === undefined) {
+      return undefined;
+    }
+    const prefix = `${fieldDescription.name}[${index}].`;
+    return Object.fromEntries(
+      Object.entries(errors)
+        .filter(([key]) => key.startsWith(prefix))
+        .map(([key, messages]) => [key.slice(prefix.length), messages]),
+    );
+  };
 
   const handleItemChange = useCallback(
     (index: number, next: Properties) => {
@@ -75,6 +89,7 @@ const FieldGroupInput = ({
               fieldDescriptions={fields}
               properties={item}
               rootData={rootData}
+              errors={errorsForItem(index)}
               onChange={(next) => handleItemChange(index, next)}
             />
           </div>

@@ -317,11 +317,10 @@ reactively.
 
 ### Sync vs async validation
 
-`validateField` and `validateFields` are synchronous, and that has a consequence
-worth knowing: **when a `validate` hook returns a Promise, the sync path treats
-the field as valid.** It cannot await, so it discards the pending result rather
-than blocking. Any field whose `validate` is `async` — or whose schema has async
-refinements — must go through the async pair:
+`validateField` and `validateFields` are synchronous. When a `validate` hook
+returns a Promise, `validateFields` lists the field in `result.pending`; its
+`valid` flag then means only that no synchronous rule failed. Async validators
+must go through the async pair for a final answer:
 
 ```ts
 import {
@@ -335,14 +334,14 @@ import {
 const errors = validateField(field, value, data, rootData); // string[]
 const errorsAsync = await validateFieldAsync(field, value, data, rootData);
 
-// A whole schema. Both return ValidationResult -> { valid, errors }.
+// A whole schema. The sync result may also include `pending` field names.
 const result = validateFields(fields, data); // sync hooks only
 const resultAsync = await validateFieldsAsync(fields, data); // awaits each hook
 ```
 
-The framework form hooks (`useDynamicForm`, `createDynamicFormStore`) validate
-synchronously, so wire async rules up through `validateFieldsAsync` yourself —
-for example on submit — rather than expecting them to surface on change.
+The framework form helpers keep live validation synchronous, but their submit
+handlers automatically run an async-capable validation pass. They also
+expose `validateAsync()` for checks that must finish before submit.
 
 `resolveOptions(field, data, rootData?)` returns `Properties[] | undefined`,
 calling `field.options` when it is a callback and passing it through when it is a

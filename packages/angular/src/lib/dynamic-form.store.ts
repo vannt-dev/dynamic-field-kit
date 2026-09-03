@@ -4,6 +4,7 @@ import {
   FieldDescription,
   Properties,
   validateFields,
+  validateFieldsAsync,
 } from '@dynamic-field-kit/core';
 
 export interface DynamicFormOptions {
@@ -26,10 +27,18 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
   const isSubmitting = signal<boolean>(false);
   const isSubmitted = signal<boolean>(false);
 
-  const isValid = computed(() => Object.keys(errors()).length === 0);
+  // Errors remain lazy for display, while validity always reflects current
+  // data. Promise-based rules are provisional until validateAsync/submit.
+  const isValid = computed(() => validateFields(fields, data()).valid);
 
   function validate(): boolean {
     const res = validateFields(fields, data());
+    errors.set(res.errors);
+    return res.valid;
+  }
+
+  async function validateAsync(): Promise<boolean> {
+    const res = await validateFieldsAsync(fields, data());
     errors.set(res.errors);
     return res.valid;
   }
@@ -106,7 +115,7 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
         // show its error. Without this, submitting an untouched form appears
         // to do nothing at all.
         touchAll();
-        const res = validateFields(fields, data());
+        const res = await validateFieldsAsync(fields, data());
         errors.set(res.errors);
         isSubmitted.set(true);
         if (res.valid) {
@@ -136,6 +145,7 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
     handleBlur,
     reset,
     validate,
+    validateAsync,
     handleSubmit,
   };
 }

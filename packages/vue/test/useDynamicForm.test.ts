@@ -86,6 +86,16 @@ describe('useDynamicForm submission state', () => {
 });
 
 describe('useDynamicForm behaviour', () => {
+  it('reports live validity before errors have been populated', () => {
+    const form = useDynamicForm({ fields });
+
+    expect(form.isValid.value).toBe(false);
+    expect(form.errors.value).toEqual({});
+
+    form.setFieldValue('name', 'Ada');
+    expect(form.isValid.value).toBe(true);
+  });
+
   it('tracks dirty state and touched fields', () => {
     const form = useDynamicForm({ fields });
 
@@ -138,6 +148,32 @@ describe('useDynamicForm behaviour', () => {
 
     expect(form.validate()).toBe(false);
     expect(form.errors.value.name).toEqual(['Name is required']);
+  });
+
+  it('awaits async validation explicitly and during submit', async () => {
+    const asyncFields: FieldDescription[] = [
+      {
+        name: 'username',
+        type: 'text',
+        validate: async (value) =>
+          value === 'taken' ? 'Already taken' : undefined,
+      },
+    ];
+    const form = useDynamicForm({
+      fields: asyncFields,
+      initialValues: { username: 'taken' },
+    });
+    const onValid = vi.fn();
+    const onInvalid = vi.fn();
+
+    await expect(form.validateAsync()).resolves.toBe(false);
+    expect(form.errors.value).toEqual({ username: ['Already taken'] });
+
+    await form.handleSubmit(onValid, onInvalid)();
+    expect(onValid).not.toHaveBeenCalled();
+    expect(onInvalid).toHaveBeenCalledWith({
+      username: ['Already taken'],
+    });
   });
 
   it('applies computed values to the initial data', () => {

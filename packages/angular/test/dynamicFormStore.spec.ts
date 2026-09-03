@@ -12,6 +12,16 @@ const fields: FieldDescription[] = [
 ];
 
 describe('Angular Signal DynamicFormStore', () => {
+  it('reports live validity before errors have been populated', () => {
+    const store = createDynamicFormStore({ fields });
+
+    expect(store.isValid()).toBe(false);
+    expect(store.errors()).toEqual({});
+
+    store.setFieldValue('username', 'ada');
+    expect(store.isValid()).toBe(true);
+  });
+
   it('initializes signal data and handles changes', () => {
     const store = createDynamicFormStore({
       fields,
@@ -128,6 +138,32 @@ describe('Angular Signal DynamicFormStore', () => {
 
     expect(store.validate()).toBe(false);
     expect(store.errors().username).toEqual(['Username is required']);
+  });
+
+  it('awaits async validation explicitly and during submit', async () => {
+    const asyncFields: FieldDescription[] = [
+      {
+        name: 'username',
+        type: 'text',
+        validate: async (value) =>
+          value === 'taken' ? 'Already taken' : undefined,
+      },
+    ];
+    const store = createDynamicFormStore({
+      fields: asyncFields,
+      initialValues: { username: 'taken' },
+    });
+    const onValid = vi.fn();
+    const onInvalid = vi.fn();
+
+    await expect(store.validateAsync()).resolves.toBe(false);
+    expect(store.errors()).toEqual({ username: ['Already taken'] });
+
+    await store.handleSubmit(onValid, onInvalid)();
+    expect(onValid).not.toHaveBeenCalled();
+    expect(onInvalid).toHaveBeenCalledWith({
+      username: ['Already taken'],
+    });
   });
 
   it('resets to explicitly supplied values', () => {

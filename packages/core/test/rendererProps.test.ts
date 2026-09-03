@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   buildFieldRendererProps,
   FIELD_RENDERER_PROP_KEYS,
@@ -71,6 +71,19 @@ describe('buildFieldRendererProps', () => {
     });
     expect(p.touched).toBe(true);
     expect(p.dirty).toBe(true);
+  });
+
+  it('uses controlled validation errors without running the field validator', () => {
+    const validate = vi.fn(() => 'live error');
+    const result = buildFieldRendererProps({
+      fieldDescription: { name: 'name', type: 'text', validate },
+      data: { name: '' },
+      id: 'field-name',
+      validationErrors: [],
+    });
+
+    expect(validate).not.toHaveBeenCalled();
+    expect(result.error).toBeUndefined();
   });
 
   it('validates and sets aria flags', () => {
