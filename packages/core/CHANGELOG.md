@@ -1,5 +1,171 @@
 # @dynamic-field-kit/core
 
+## 1.6.0
+
+### Minor Changes
+
+- Cancellable, status-aware async validation; touched state that reaches inside repeatable groups; Angular 21 and TypeScript 5.9 support; and peer ranges corrected to the versions that actually work, proven at both ends in CI.
+- 67e4eec: Give every adapter one renderer-prop contract, unique field ids, and a touched
+  state the form store can actually drive.
+
+  Five things went wrong at once for anyone building a real form on 1.5.1, and
+  four of them share a cause: `FieldRendererProps` was a type nobody enforced.
+  Each adapter hand-wrote the object it handed the registered renderer, and the
+  three lists drifted. React dropped `placeholder`, `min`, `max`, `step`,
+  `accept` and `multiple`. Vue dropped `required`, `id`, `dirty` and the aria
+  flags. Angular dropped `touched`, `dirty` and `id` — so an Angular renderer had
+  no way to know whether a field had been touched, and "only show the error once
+  the user leaves the field" had to be rebuilt by hand. Setting
+  `placeholder` on a `FieldDescription` therefore did nothing at all on React and
+  Vue: no error, no warning, the value simply vanished. Core now owns the list as
+  `FIELD_RENDERER_PROP_KEYS` and builds the bag once in
+  `buildFieldRendererProps`, which all three adapters call, and
+  `scripts/check-renderer-prop-parity.js` fails the build if an adapter stops
+  forwarding one. The single deliberate deviation is Vue's `class` in place of
+  `className`: forwarding `className` lets it fall through to a renderer's root
+  element, where Vue assigns `el.className` and wipes the class the renderer set
+  on itself.
+
+  Field ids were `dfk-field-${name}`, derived from the field name alone. Two
+  forms holding a field of the same name — a create form beside an edit form, the
+  most ordinary layout there is — emitted the same DOM id twice, which is invalid
+  HTML and leaves every `label[for]` pointing at two inputs. Ids are now
+  namespaced per `MultiFieldInput` instance (React `useId`, so it is SSR-safe;
+  Vue's instance uid; a counter on Angular). Set `idPrefix` to pin them —
+  `idPrefix="dfk-field"` reproduces the old ids exactly — or give a single field
+  its own id with the new `FieldDescription.id`.
+
+  Touched state had two independent trackers that never met: the one in
+  `useDynamicForm`, and a private one inside `MultiFieldInput` that only blur
+  could set and that was the one renderers actually saw. So
+  `setFieldTouched` in an `onInvalid` handler changed nothing visible, submitting
+  a form nobody had focused showed no errors at all (the button looked broken),
+  and `reset()` could not clear the touched state a previous submit had left
+  behind. `MultiFieldInput` now accepts `touched` as a controlled prop —
+  `useDynamicForm` becomes the single source of truth for it, exactly as
+  `properties`/`onChange` already were for data — plus `onTouchedChange`, and a
+  `form` shorthand (React and Vue) that wires data, change, blur and touched in
+  one prop. `handleSubmit` marks every field touched before validating, and the
+  new `touchAll()`/`resetTouched()` sit alongside it. Omit `touched` and the old
+  internal tracker still runs, so nothing breaks; for that mode a ref
+  (`resetTouched()` on React and Vue, a public method on Angular) can clear it
+  without remounting the component.
+
+  The only behaviour change to watch for is the generated ids. Anything pinned to
+  a literal `dfk-field-*` id in CSS or a test needs either `idPrefix="dfk-field"`
+  or a per-field `id`. Angular's `MultiFieldInput` also loses four undocumented
+  template helpers — `getResolvedOptions`, `getDisabled`, `getReadOnly` and
+  `getError` — which its own template no longer calls now that `FieldInput`
+  resolves all of it through core. Keeping a second copy of that logic beside the
+  shared one is how the adapters drifted apart to begin with; the equivalents are
+  `resolveOptions`, `resolveDisabled`, `resolveReadOnly` and `validateField`,
+  already re-exported from this package.
+
+  Form validity now reflects current data immediately instead of merely checking
+  the lazily populated `errors` map. The error map remains lazy for display, and
+  passing a form binding (or the new controlled `errors` input) makes that same
+  map the renderer's source of truth, removing the previous timing mismatch.
+
+  Promise-based validators are no longer silently accepted on submit.
+  `validateFields` reports unresolved field names in `pending`; every framework
+  form helper uses one async-capable validation pass before dispatching submit
+  callbacks. React, Vue and Angular also expose
+  `validateAsync()` for explicit pre-submit checks. Live `isValid` remains a
+  synchronous answer because a property/computed/signal cannot await.
+
+  The new UI-kit recipes show complete touched/error wiring for Ant Design,
+  Vuetify and Angular Material.
+
+- 5e0b08f: Make async validation answerable: a status you can act on, runs that cancel
+  cleanly, and touched state that reaches inside repeatable groups.
+
+  `ValidationResult` gains `complete` and `status` (`'valid' | 'invalid' |
+'pending'`). Combining `valid` with `pending` was the only way to tell "nothing
+  is wrong" from "nothing is wrong _yet_", and everyone got it wrong the same
+  way — a `valid: true` with async rules still in flight reads as a green light.
+  `status` is the single answer; `complete` says whether every applicable
+  validator finished. Both are always present on a result the library returns, so
+  reading them needs no fallback; code that constructs a `ValidationResult` by
+  hand (a mock, a wrapper typed to return one) has to supply them.
+
+  `FieldDescription.validationMode: 'async'` declares a validator that returns a
+  Promise without the `async` keyword, which detection cannot see. Declaring it
+  keeps the synchronous pass from invoking the validator at all — and, unlike
+  detection, it is an explicit opt-in, so the dev warning about a field the live
+  pass cannot check stays quiet for it.
+
+  `validateFieldsAsync` now takes a `ValidationContext` and forwards its
+  `AbortSignal` to every validator, runs independent validators in parallel
+  instead of awaiting them one after another, skips validators once the signal is
+  aborted, and reports an aborted run as `complete: false` / `status: 'pending'`.
+  A validator that honours the signal the conventional way — rejecting with an
+  `AbortError` — no longer rejects the caller's `handleSubmit`; an error that is
+  not an abort still propagates.
+
+  Each adapter's form helper exposes `isValidating`, `isValidationComplete` and
+  `validationStatus`, and applies latest-run-wins: typing cancels an in-flight
+  live validation so a stale result cannot overwrite a newer one. A submit is not
+  collateral damage of that — it validates the snapshot the user submitted under
+  a controller of its own, so editing a field mid-flight no longer leaves the
+  form with the submit silently dropped, no `onValid`/`onInvalid`, and a button
+  that just re-enables.
+
+  `touchAll()` now expands to the concrete leaf paths that exist in the data
+  (`contacts[0].email`, not `contacts`) via the new `collectFieldPaths`, skipping
+  fields validation itself skips — hidden by `appearCondition`, or disabled.
+  Repeatable group items receive `touched` and report blur with their full path,
+  so a UI kit that only shows an error once a field is touched now works inside a
+  group. An item with no touched keys still receives a map rather than
+  `undefined`, which previously flipped the nested input into tracking touched by
+  itself and left it stale after the owner cleared the map. The new
+  `indexGroupPathMap` is what indexes those maps by item, exported so a custom
+  renderer can do the same without filtering the whole map per item.
+
+  React's `isValid` is now seeded from the initial data instead of from an
+  effect. An effect never runs on the server, so a server-rendered form shipped
+  `isValid: true` for an empty required field and never corrected it — a submit
+  button rendered enabled and stayed that way.
+
+  `@dynamic-field-kit/angular`'s `types` entry pointed at `dist/index.d.ts`,
+  which is not where its type declarations are emitted any more; it and the
+  `exports` block now point at the file that actually ships, so TypeScript
+  consumers resolve the package's types again.
+
+- eec9386: Correct the peer ranges to the ones that actually work, and prove both ends of
+  each in CI.
+
+  `@dynamic-field-kit/angular` declared `@angular/core` and `@angular/common` as
+  `>=14 <22`, but the form store is built on `signal` and `computed`, which
+  Angular introduced in **16**. On 14 or 15 npm accepted the install and the
+  package then failed on import - the manifest promised something it could not
+  do. The range is now `>=16 <22`, so the same install is refused up front.
+
+  `@dynamic-field-kit/vue` moves from `vue ^3.0.0` to `^3.2.0`.
+  `useDynamicForm` now aborts an in-flight validation when the owning effect
+  scope is disposed, using `getCurrentScope` / `onScopeDispose` - both Vue 3.2.
+  Without this an unmounted form held its request open until the response came
+  back. If you are on Vue 3.0 or 3.1, stay on 1.5.x; nothing else in the package
+  ever required 3.2, but nothing tested below it either.
+
+  Both ranges are now verified rather than asserted:
+  `scripts/verify-vue-peer-range.js` server-renders the packed tarballs under Vue
+  3.2 and the newest 3.x, and `scripts/verify-angular-peer-range.js` installs
+  them against Angular 16 and 21 and checks the package imports, its components
+  evaluate and it shares one registry with core. Both run in the CI verify job,
+  next to the React one that has existed since 1.5.0. A render is out of reach
+  for Angular - the published fesm2022 needs the CLI's linker to instantiate a
+  component - but import-and-wire is the level that breaks across majors, which
+  is exactly how a floor of 14 survived years of `signal()`.
+
+  The three adapters now re-export `collectFieldPaths`, `indexGroupPathMap` and
+  the `ValidationContext` type from core, so typing a validator's `context`
+  argument no longer means importing `@dynamic-field-kit/core` alongside the
+  adapter.
+
+  `@angular/platform-browser-dynamic`, which Angular 21 deprecates, is gone from
+  the package's devDependencies and from the demo app, which never used it - the
+  test setup now initialises through `@angular/platform-browser/testing`.
+
 ## 1.5.1
 
 ### Patch Changes
