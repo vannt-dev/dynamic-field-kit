@@ -43,11 +43,14 @@ both packages:
 - `validators` — the built-in validator helpers (`required`, `email`, `minLength`, `compose`, …)
 - `ValidationResult`
 
-`useDynamicForm` validates **synchronously** via `validateFields`, including on
-submit. Fields whose `validate` hook returns a Promise are treated as valid on
-that path, so run async rules through `validateFieldsAsync` yourself. See the
+`useDynamicForm` keeps live validation synchronous. Its `handleSubmit` runs one
+async-capable validation pass; call the
+exposed `validateAsync()` when you need that result before submit. See the
 [core README](https://github.com/vannt-dev/dynamic-field-kit/tree/develop/packages/core#sync-vs-async-validation)
 for the full rules.
+
+For a complete UI integration, see the
+[Vuetify recipe](../../docs/ui-kit-recipes.md#vue--vuetify).
 
 Default layouts are registered automatically when you import the package root.
 
@@ -147,7 +150,7 @@ const onSubmit = form.handleSubmit((data) => save(data));
 </template>
 ```
 
-`:form` is shorthand for four props at once, and is the recommended wiring:
+`:form` is shorthand for five state/callback props, and is the recommended wiring:
 
 ```vue
 <MultiFieldInput
@@ -156,10 +159,12 @@ const onSubmit = form.handleSubmit((data) => save(data));
   :on-change="form.handleChange"
   :on-blur-field="form.handleBlur"
   :touched="form.touched.value"
+  :errors="form.errors.value"
 />
 ```
 
-Passing `touched` is what makes an invalid submit visible: `handleSubmit` marks
+Passing `touched` and `errors` makes the form store the renderer's source of
+truth. `handleSubmit` marks
 every field touched before validating, so a renderer that gates its error on
 `touched` shows it even for fields the user never focused. `reset()` clears
 touched the same way. Individually passed props win over the ones `form`
@@ -169,7 +174,7 @@ derives.
 | ----------------------------------- | --------------------------------------------------------------------------------- |
 | `data`                              | `Ref` of the form data, with `computeValue` fields applied                        |
 | `errors`                            | `Ref<Record<string, string[]>>`, keyed like `validateFields`                      |
-| `isValid` / `isDirty`               | `computed` / `Ref`                                                                |
+| `isValid` / `isDirty`               | Live synchronous validity (`computed`) / changed state (`Ref`)                    |
 | `isSubmitting` / `isSubmitted`      | In-flight submit / at least one submit attempted                                  |
 | `touched`                           | Fields that have been blurred                                                     |
 | `handleChange(data)`                | Replace the whole form data — pass to `MultiFieldInput`'s `onChange`              |
@@ -179,6 +184,7 @@ derives.
 | `touchAll()`                        | Mark every field touched — `handleSubmit` already calls it                        |
 | `resetTouched()`                    | Clear touched only, leaving data/errors/dirty alone                               |
 | `validate()`                        | Validate now, returns a boolean                                                   |
+| `validateAsync()`                   | Validate now, awaiting Promise-based rules                                        |
 | `reset(values?)`                    | Back to `initialValues` (or the values given), clearing errors/touched/submission |
 | `handleSubmit(onValid, onInvalid?)` | Returns a submit handler; calls `preventDefault`, validates, then dispatches      |
 

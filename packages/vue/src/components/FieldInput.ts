@@ -43,6 +43,10 @@ const FieldInput = /* @__PURE__ */ defineComponent({
       type: Boolean,
       default: undefined,
     },
+    errors: {
+      type: Object as PropType<Record<string, string[]>>,
+      default: undefined,
+    },
   },
   setup(props) {
     return () => {
@@ -55,6 +59,8 @@ const FieldInput = /* @__PURE__ */ defineComponent({
         id: makeFieldId(props.fieldDescription, props.idPrefix),
         touched: props.touched,
         dirty: props.dirty,
+        validationErrors:
+          props.errors === undefined ? undefined : (props.errors[name] ?? []),
       });
 
       return h(DynamicInput, {

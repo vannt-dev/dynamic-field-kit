@@ -5,7 +5,7 @@
  */
 import type { FieldDescription } from '@dynamic-field-kit/core';
 import { fieldRegistry } from '@dynamic-field-kit/core';
-import { mount } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { defineComponent, h, PropType } from 'vue';
 import MultiFieldInput from '../src/components/MultiFieldInput';
@@ -127,6 +127,7 @@ describe('issue 2/3: touched is controllable and resettable (Vue)', () => {
     expect(wrapper.find('[role="alert"]').exists()).toBe(false);
 
     await wrapper.find('form').trigger('submit');
+    await flushPromises();
 
     expect(wrapper.find('[role="alert"]').text()).toBe('Required');
   });
@@ -220,6 +221,40 @@ describe('issue 4: FieldDescription props reach the renderer (Vue)', () => {
       accept: '.png',
       multiple: true,
     });
+  });
+});
+
+describe('issue 5: form errors are the renderer source of truth (Vue)', () => {
+  it('does not show a live error before the form store records it', async () => {
+    const fields: FieldDescription[] = [
+      {
+        name: 'username',
+        type: 'text',
+        validate: () => 'Required',
+      },
+    ];
+    const Form = defineComponent({
+      setup() {
+        const form = useDynamicForm({ fields });
+        return () =>
+          h('div', [
+            h(MultiFieldInput, { fieldDescriptions: fields, form }),
+            h(
+              'button',
+              { onClick: () => form.setFieldTouched('username') },
+              'touch',
+            ),
+            h('button', { onClick: form.validate }, 'validate'),
+          ]);
+      },
+    });
+    const wrapper = mount(Form);
+
+    await wrapper.findAll('button')[0].trigger('click');
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false);
+
+    await wrapper.findAll('button')[1].trigger('click');
+    expect(wrapper.find('[role="alert"]').text()).toBe('Required');
   });
 });
 

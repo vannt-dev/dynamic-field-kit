@@ -63,6 +63,11 @@ export interface BuildFieldRendererPropsInput {
   id: string;
   touched?: boolean;
   dirty?: boolean;
+  /**
+   * Errors supplied by an owning form store. An empty array explicitly means
+   * valid; `undefined` keeps the legacy live-validation behaviour.
+   */
+  validationErrors?: string[];
 }
 
 /**
@@ -91,6 +96,7 @@ export function buildFieldRendererProps({
   id,
   touched,
   dirty,
+  validationErrors,
 }: BuildFieldRendererPropsInput): ResolvedFieldRendererProps {
   const {
     name,
@@ -116,7 +122,8 @@ export function buildFieldRendererProps({
   // the user cannot act on.
   const errors = disabled
     ? []
-    : validateField(fieldDescription, data[name], data, rootData);
+    : (validationErrors ??
+      validateField(fieldDescription, data[name], data, rootData));
   const error = errors.length > 0 ? errors : undefined;
 
   return {

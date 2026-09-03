@@ -16,6 +16,7 @@ interface Props {
   idPrefix?: string;
   touched?: boolean;
   dirty?: boolean;
+  errors?: Record<string, string[]>;
   onBlurField?: (key: string) => void;
   onValueChangeField: (value: unknown, key: string) => void;
 }
@@ -27,6 +28,7 @@ const FieldInputInner = ({
   idPrefix = 'dfk-field',
   touched,
   dirty,
+  errors,
   onBlurField,
   onValueChangeField,
 }: Props) => {
@@ -54,6 +56,7 @@ const FieldInputInner = ({
         fieldDescription={fieldDescription}
         items={items}
         rootData={rootData}
+        errors={errors}
         onChange={handleChange}
       />
     );
@@ -66,6 +69,7 @@ const FieldInputInner = ({
     id: makeFieldId(fieldDescription, idPrefix),
     touched,
     dirty,
+    validationErrors: errors === undefined ? undefined : (errors[name] ?? []),
   });
 
   return (
@@ -91,6 +95,7 @@ const FieldInput = /* @__PURE__ */ React.memo(FieldInputInner, (prev, next) => {
     prev.idPrefix === next.idPrefix &&
     prev.touched === next.touched &&
     prev.dirty === next.dirty &&
+    prev.errors === next.errors &&
     prev.renderInfos[name] === next.renderInfos[name]
   );
 });

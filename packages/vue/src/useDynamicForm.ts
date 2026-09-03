@@ -3,6 +3,7 @@ import {
   FieldDescription,
   Properties,
   validateFields,
+  validateFieldsAsync,
 } from '@dynamic-field-kit/core';
 import { computed, ref } from 'vue';
 
@@ -26,10 +27,18 @@ export function useDynamicForm({
   const isSubmitting = ref<boolean>(false);
   const isSubmitted = ref<boolean>(false);
 
-  const isValid = computed(() => Object.keys(errors.value).length === 0);
+  // Errors remain lazy for display, while validity always reflects current
+  // data. Promise-based rules are provisional until validateAsync/submit.
+  const isValid = computed(() => validateFields(fields, data.value).valid);
 
   function validate() {
     const res = validateFields(fields, data.value);
+    errors.value = res.errors;
+    return res.valid;
+  }
+
+  async function validateAsync() {
+    const res = await validateFieldsAsync(fields, data.value);
     errors.value = res.errors;
     return res.valid;
   }
@@ -103,7 +112,7 @@ export function useDynamicForm({
         // show its error. Without this, submitting an untouched form appears
         // to do nothing at all.
         touchAll();
-        const res = validateFields(fields, data.value);
+        const res = await validateFieldsAsync(fields, data.value);
         errors.value = res.errors;
         isSubmitted.value = true;
         if (res.valid) {
@@ -133,6 +142,7 @@ export function useDynamicForm({
     handleBlur,
     reset,
     validate,
+    validateAsync,
     handleSubmit,
   };
 }
