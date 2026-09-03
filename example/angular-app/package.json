@@ -12,7 +12,6 @@
     "@angular/common": "^21.2.0",
     "@angular/core": "^21.2.0",
     "@angular/platform-browser": "^21.2.0",
-    "@angular/platform-browser-dynamic": "^21.2.0",
     "@dynamic-field-kit/angular": "file:../../packages/angular/dist",
     "@dynamic-field-kit/core": "file:../../packages/core",
     "zone.js": "~0.16.0"
