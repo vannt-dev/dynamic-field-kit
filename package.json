@@ -13,6 +13,7 @@
     "test:scripts": "vitest run",
     "lint": "eslint packages scripts",
     "lint:cross-framework": "node scripts/check-cross-framework-imports.js",
+    "lint:renderer-parity": "node scripts/check-renderer-prop-parity.js",
     "verify-framework-deps": "node scripts/verify-framework-deps.js",
     "lint:fix": "eslint . --fix",
     "format-check": "prettier --check .",
