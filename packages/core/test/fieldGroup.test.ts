@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 import {
   canAddGroupItem,
   canRemoveGroupItem,
+  collectFieldPaths,
   createGroupItem,
   isFieldGroup,
 } from '../src';
@@ -60,5 +61,47 @@ describe('fieldGroup', () => {
   test('canRemoveGroupItem allows removing down to zero when minItems is unset', () => {
     const field: FieldDescription = { name: 'x', type: 'group', fields: [] };
     expect(canRemoveGroupItem(field, [{}])).toBe(true);
+  });
+
+  test('collectFieldPaths expands nested repeatable group leaf paths', () => {
+    expect(
+      collectFieldPaths([groupField, { name: 'title', type: 'text' }], {
+        contacts: [{ email: 'a' }, { email: 'b' }],
+        title: 'Team',
+      }),
+    ).toEqual(['contacts[0].email', 'contacts[1].email', 'title']);
+  });
+
+  test('collectFieldPaths skips disabled fields, like validation does', () => {
+    const fields: FieldDescription[] = [
+      { name: 'title', type: 'text' },
+      { name: 'locked', type: 'text', disabled: true },
+      {
+        name: 'derived',
+        type: 'text',
+        disabledCondition: (data) => data.title === 'Team',
+      },
+    ];
+    expect(collectFieldPaths(fields, { title: 'Team' })).toEqual(['title']);
+  });
+
+  test('collectFieldPaths skips fields disabled inside a group item', () => {
+    const group: FieldDescription = {
+      name: 'contacts',
+      type: 'group',
+      fields: [
+        { name: 'email', type: 'text' },
+        {
+          name: 'code',
+          type: 'text',
+          disabledCondition: (data) => data.email === 'a',
+        },
+      ],
+    };
+    expect(
+      collectFieldPaths([group], {
+        contacts: [{ email: 'a' }, { email: 'b' }],
+      }),
+    ).toEqual(['contacts[0].email', 'contacts[1].email', 'contacts[1].code']);
   });
 });

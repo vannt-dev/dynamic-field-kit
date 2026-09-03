@@ -3,16 +3,22 @@ import {
   canRemoveGroupItem,
   createGroupItem,
   FieldDescription,
+  indexGroupPathMap,
   Properties,
 } from '@dynamic-field-kit/core';
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import MultiFieldInput from './MultiFieldInput';
+
+/** Shared so an untouched item's `touched` prop keeps a stable identity. */
+const EMPTY_TOUCHED: Record<string, boolean> = Object.freeze({});
 
 interface Props {
   fieldDescription: FieldDescription;
   items: Properties[];
   rootData?: Properties;
   errors?: Record<string, string[]>;
+  touched?: Record<string, boolean>;
+  onBlurField?: (key: string) => void;
   onChange: (items: Properties[]) => void;
 }
 
@@ -21,6 +27,8 @@ const FieldGroupInput = ({
   items,
   rootData,
   errors,
+  touched,
+  onBlurField,
   onChange,
 }: Props) => {
   const {
@@ -38,17 +46,14 @@ const FieldGroupInput = ({
   const removeText = removeLabel ?? 'Remove';
   const groupName = label ?? fieldDescription.name;
 
-  const errorsForItem = (index: number) => {
-    if (errors === undefined) {
-      return undefined;
-    }
-    const prefix = `${fieldDescription.name}[${index}].`;
-    return Object.fromEntries(
-      Object.entries(errors)
-        .filter(([key]) => key.startsWith(prefix))
-        .map(([key, messages]) => [key.slice(prefix.length), messages]),
-    );
-  };
+  const errorsByItem = useMemo(
+    () => indexGroupPathMap(errors, fieldDescription.name),
+    [errors, fieldDescription.name],
+  );
+  const touchedByItem = useMemo(
+    () => indexGroupPathMap(touched, fieldDescription.name),
+    [touched, fieldDescription.name],
+  );
 
   const handleItemChange = useCallback(
     (index: number, next: Properties) => {
@@ -89,7 +94,19 @@ const FieldGroupInput = ({
               fieldDescriptions={fields}
               properties={item}
               rootData={rootData}
-              errors={errorsForItem(index)}
+              errors={errorsByItem?.[index]}
+              // An item with no touched keys still has to receive a map, or
+              // the nested input reads `undefined` as "uncontrolled" and starts
+              // tracking touched on its own - which then survives the owner
+              // clearing the map. The constant keeps the prop identity stable.
+              touched={
+                touched === undefined
+                  ? undefined
+                  : (touchedByItem?.[index] ?? EMPTY_TOUCHED)
+              }
+              onBlurField={(key) =>
+                onBlurField?.(`${fieldDescription.name}[${index}].${key}`)
+              }
               onChange={(next) => handleItemChange(index, next)}
             />
           </div>
