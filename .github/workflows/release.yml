@@ -131,6 +131,44 @@ jobs:
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # The tag alone is not what people look at. Tagging and publishing left
+      # the Releases page untouched, so v1.5.0 had to be written by hand, and
+      # v1.5.1 and v1.6.0 were missing from it entirely while being live on
+      # npm - the tags existed, the Releases did not.
+      #
+      # The notes are core's own CHANGELOG section for this version, so there
+      # is one source of truth and nothing to keep in sync by hand. An existing
+      # release is left alone, which makes re-running this workflow safe rather
+      # than a hard failure at the last step.
+      - name: Create the GitHub Release
+        if: ${{ !inputs.dry_run }}
+        run: |
+          version=$(node -p "require('./packages/core/package.json').version")
+
+          if gh release view "v$version" >/dev/null 2>&1; then
+            echo "Release v$version already exists - leaving it alone."
+            exit 0
+          fi
+
+          {
+            echo 'All four packages ship at this version with npm provenance:'
+            echo
+            for pkg in core react vue angular; do
+              echo "- \`@dynamic-field-kit/$pkg@$(node -p "require('./packages/$pkg/package.json').version")\`"
+            done
+            echo
+            awk -v heading="## $version" \
+              '$0 == heading { found = 1; next } /^## / { if (found) exit } found' \
+              packages/core/CHANGELOG.md
+          } > "$RUNNER_TEMP/release-notes.md"
+
+          gh release create "v$version" \
+            --title "v$version" \
+            --notes-file "$RUNNER_TEMP/release-notes.md" \
+            --verify-tag \
+            --latest
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Dry run summary
         if: ${{ inputs.dry_run }}
