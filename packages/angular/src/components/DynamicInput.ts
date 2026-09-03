@@ -22,6 +22,10 @@ import { BaseInputComponent } from './BaseInput';
 
 // Only the framework-agnostic FieldRendererProps keys. Domain-specific props
 // reach the renderer through `extraProps` (FieldDescription.props) instead.
+// Must stay in step with core's FIELD_RENDERER_PROP_KEYS - a key missing here
+// is a key no Angular renderer can ever receive, which is how `touched`,
+// `dirty`, `id` and the aria flags used to be unreachable on this adapter
+// alone. `packages/core/test/adapterParity.test.ts` asserts the two lists match.
 const KNOWN_PROPS = [
   'value',
   'label',
@@ -29,10 +33,21 @@ const KNOWN_PROPS = [
   'required',
   'disabled',
   'readOnly',
+  'touched',
+  'dirty',
   'error',
   'options',
   'className',
   'description',
+  'id',
+  'ariaInvalid',
+  'ariaDescribedBy',
+  'ariaRequired',
+  'min',
+  'max',
+  'step',
+  'accept',
+  'multiple',
 ] as const;
 
 @Component({
@@ -207,10 +222,21 @@ export class DynamicInput
       required: this.required ?? false,
       disabled: this.disabled ?? false,
       readOnly: this.readOnly ?? false,
+      touched: this.touched ?? false,
+      dirty: this.dirty ?? false,
       error: this.error,
       options: this.options ?? [],
       className: this.className ?? '',
       description: this.description ?? '',
+      id: this.id ?? '',
+      ariaInvalid: this.ariaInvalid ?? false,
+      ariaDescribedBy: this.ariaDescribedBy,
+      ariaRequired: this.ariaRequired ?? false,
+      min: this.min,
+      max: this.max,
+      step: this.step,
+      accept: this.accept,
+      multiple: this.multiple ?? false,
     };
   }
 
@@ -285,6 +311,9 @@ export class DynamicInput
     ) {
       const input = document.createElement('input');
       input.type = type;
+      if (this.id) {
+        input.id = this.id;
+      }
       if (this.className) {
         input.className = this.className;
       }
@@ -314,6 +343,9 @@ export class DynamicInput
 
     if (type === 'textarea') {
       const textarea = document.createElement('textarea');
+      if (this.id) {
+        textarea.id = this.id;
+      }
       if (this.className) {
         textarea.className = this.className;
       }
@@ -341,6 +373,9 @@ export class DynamicInput
     if (type === 'checkbox') {
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
+      if (this.id) {
+        checkbox.id = this.id;
+      }
       if (this.className) {
         checkbox.className = this.className;
       }
@@ -361,6 +396,9 @@ export class DynamicInput
 
     if (type === 'select') {
       const select = document.createElement('select');
+      if (this.id) {
+        select.id = this.id;
+      }
       if (this.className) {
         select.className = this.className;
       }
