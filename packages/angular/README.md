@@ -53,11 +53,13 @@ both packages:
 
 - `validateField` / `validateFieldAsync` — one field, returns `string[]`
 - `validateFields` / `validateFieldsAsync` — a whole schema, returns `ValidationResult`
+- `collectFieldPaths` — the leaf paths a schema actually has in the data (`contacts[0].email`)
+- `indexGroupPathMap` — index an error or touched map by repeatable-group item
 - `resolveDisabled` / `resolveReadOnly` / `resolveOptions` — resolve a field's dynamic conditions and options
 - `validators` — the built-in validator helpers (`required`, `email`, `minLength`, `compose`, …)
 - `FieldDescription` / `FieldTypeKey` / `FieldRendererProps` — the schema and
   renderer contracts every adapter shares
-- `ValidationResult`
+- `ValidationResult` / `ValidationContext`
 
 `createDynamicFormStore` keeps live validation synchronous - a validator declared or
 detected as async is never invoked on that path. Its `handleSubmit` runs one
@@ -76,9 +78,16 @@ For a complete UI integration, see the
 
 ## Supported Angular versions
 
-The package declares `@angular/core` and `@angular/common` as
-`>=14 <22`. CI builds and tests it against Angular 21, which is also what the
-demo app runs; that is the version the setup below is written for.
+The package declares `@angular/core` and `@angular/common` as `>=16 <22`,
+and `scripts/verify-angular-peer-range.js` proves both ends in CI by installing
+the packed tarballs against Angular 16 and 21 outside the workspace.
+
+The floor is 16 because the form store is built on `signal` and `computed`,
+which Angular introduced in 16. It read `>=14` until 1.6.0: npm accepted the
+install on 14 and 15 and the package then failed on import.
+
+The suite, the build and the demo app all run Angular 21, which is the version
+the setup below is written for.
 
 ## Basic setup
 

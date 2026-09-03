@@ -41,9 +41,11 @@ both packages:
 
 - `validateField` / `validateFieldAsync` — one field, returns `string[]`
 - `validateFields` / `validateFieldsAsync` — a whole schema, returns `ValidationResult`
+- `collectFieldPaths` — the leaf paths a schema actually has in the data (`contacts[0].email`)
+- `indexGroupPathMap` — index an error or touched map by repeatable-group item
 - `resolveDisabled` / `resolveReadOnly` / `resolveOptions` — resolve a field's dynamic conditions and options
 - `validators` — the built-in validator helpers (`required`, `email`, `minLength`, `compose`, …)
-- `ValidationResult`
+- `ValidationResult` / `ValidationContext`
 
 `useDynamicForm` keeps live validation synchronous - a validator declared or
 detected as async is never invoked on that path. Its `handleSubmit` runs one
