@@ -7,7 +7,7 @@ import {
   validateFields,
   validateFieldsAsync,
 } from '@dynamic-field-kit/core';
-import { computed, ref } from 'vue';
+import { computed, getCurrentScope, onScopeDispose, ref } from 'vue';
 
 export interface UseDynamicFormOptions {
   fields: FieldDescription[];
@@ -37,6 +37,17 @@ export function useDynamicForm({
   // validation run, and a submit must not be collateral damage of that.
   let submitRun = 0;
   let submitController: AbortController | undefined;
+
+  // Cancel whatever is still in flight when the owning component (or effect
+  // scope) goes away, so an unmounted form stops holding a request open. The
+  // guard is for calling this composable outside a scope, which the tests do
+  // and which onScopeDispose would otherwise warn about.
+  if (getCurrentScope()) {
+    onScopeDispose(() => {
+      validationController?.abort();
+      submitController?.abort();
+    });
+  }
 
   const isValid = computed(() => validationResult.value.valid);
   const isValidationComplete = computed(

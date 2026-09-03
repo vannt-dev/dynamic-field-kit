@@ -195,10 +195,21 @@ jobs:
           node scripts/verify-package-entrypoints.js
           node scripts/integration-cross-registry.js
 
-      # Packs the built packages and renders them under every React major the
-      # peerDependencies range claims, in a throwaway project outside the
-      # workspace. Separate from the step above because it installs from the
-      # network, so it is the one verification step that can fail for reasons
-      # unrelated to the code.
+      # Packs the built packages and exercises them under both ends of every
+      # framework range the peerDependencies claim, in throwaway projects
+      # outside the workspace. Separate from the step above because these
+      # install from the network, so they are the verification steps that can
+      # fail for reasons unrelated to the code.
+      #
+      # React and Vue render; Angular only imports and checks the registry -
+      # its published fesm2022 needs the CLI's linker to instantiate a
+      # component. That is still the level that breaks across majors, which is
+      # how a declared floor of 14 survived years of using signal() (16+).
       - name: Verify the declared React peer range
         run: node scripts/verify-react-peer-range.js
+
+      - name: Verify the declared Vue peer range
+        run: node scripts/verify-vue-peer-range.js
+
+      - name: Verify the declared Angular peer range
+        run: node scripts/verify-angular-peer-range.js

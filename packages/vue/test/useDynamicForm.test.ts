@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { effectScope } from 'vue';
 import type { FieldDescription } from '../src';
 import { useDynamicForm } from '../src';
 
@@ -292,5 +293,34 @@ describe('useDynamicForm behaviour', () => {
     expect(onValid).toHaveBeenCalledWith({ name: 'Ada', code: '1' });
     expect(form.isSubmitted.value).toBe(true);
     expect(form.isSubmitting.value).toBe(false);
+  });
+});
+
+describe('scope cleanup', () => {
+  it('aborts an in-flight validation when the owning scope is disposed', async () => {
+    let seen: AbortSignal | undefined;
+    const scope = effectScope();
+    const form = scope.run(() =>
+      useDynamicForm({
+        fields: [
+          {
+            name: 'code',
+            type: 'text',
+            validationMode: 'async',
+            validate: (_v, _d, _r, context) =>
+              new Promise<string | undefined>(() => {
+                seen = context?.signal;
+              }),
+          },
+        ],
+      }),
+    );
+
+    void form!.validateAsync();
+    await Promise.resolve();
+    expect(seen?.aborted).toBe(false);
+
+    scope.stop();
+    expect(seen?.aborted).toBe(true);
   });
 });
