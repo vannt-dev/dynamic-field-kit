@@ -8,11 +8,31 @@ import {
   Properties,
 } from '@dynamic-field-kit/core';
 import type { ValidationResult } from '@dynamic-field-kit/core';
-import type { Component } from 'vue';
-import { computed, defineComponent, h, PropType, reactive, watch } from 'vue';
+import type { Component, Ref } from 'vue';
+import {
+  computed,
+  defineComponent,
+  getCurrentInstance,
+  h,
+  PropType,
+  reactive,
+  unref,
+  watch,
+} from 'vue';
 import { layoutRegistry } from '../layout';
 import { LayoutConfig } from '../types/layout';
 import FieldInput from './FieldInput';
+
+/**
+ * The slice of `useDynamicForm`'s result `MultiFieldInput` needs to drive
+ * itself. Its members are refs, so they are unwrapped on read.
+ */
+export interface DynamicFormBinding {
+  data: Ref<Properties> | Properties;
+  touched: Ref<Record<string, boolean>> | Record<string, boolean>;
+  handleChange: (data: Properties) => void;
+  handleBlur: (fieldName: string) => void;
+}
 
 function resolveLayout(layout?: LayoutConfig) {
   if (!layout) {
@@ -58,9 +78,11 @@ const MultiFieldInput = /* @__PURE__ */ defineComponent({
       type: Array as PropType<FieldDescription[]>,
       required: true,
     },
+    // Left undefined rather than `{}` when unset so the `form` shorthand can
+    // tell "no properties passed" from "passed an empty object".
     properties: {
       type: Object as PropType<Properties>,
-      default: () => ({}),
+      default: undefined,
     },
     onChange: {
       type: Function as PropType<(data: Properties) => void>,
@@ -89,22 +111,124 @@ const MultiFieldInput = /* @__PURE__ */ defineComponent({
       type: Function as PropType<(fieldName: string) => void>,
       default: undefined,
     },
+    // Namespace for generated field ids: a field renders with
+    // `${idPrefix}-${name}`. Defaults to a value unique to this component
+    // instance, so two forms containing the same field name do not emit
+    // duplicate DOM ids. Pass a fixed string to pin ids
+    // (`idPrefix="dfk-field"` restores the pre-1.6 ids), or set
+    // `FieldDescription.id` per field.
+    idPrefix: {
+      type: String,
+      default: undefined,
+    },
+    // Controlled touched map. When provided it is the single source of truth
+    // and the internal tracker is bypassed, so `useDynamicForm().touched`
+    // (updated by setFieldTouched/touchAll/handleSubmit, cleared by reset) is
+    // what renderers actually see. Omit it to keep the internal, blur-only
+    // tracker.
+    touched: {
+      type: Object as PropType<Record<string, boolean>>,
+      default: undefined,
+    },
+    // Fires with the next touched map whenever a field is blurred.
+    onTouchedChange: {
+      type: Function as PropType<(touched: Record<string, boolean>) => void>,
+      default: undefined,
+    },
+    // Shorthand wiring `properties`, `onChange`, `onBlurField` and `touched`
+    // from a `useDynamicForm` result in one prop. Individually passed props
+    // win over the ones derived from here.
+    form: {
+      type: Object as PropType<DynamicFormBinding>,
+      default: undefined,
+    },
   },
 
-  setup(props) {
+  setup(props, { expose }) {
     // A single reactive object, mutated in place (never reassigned), so Vue's
     // per-property dependency tracking lets each FieldInput re-render only
     // when the specific key it reads actually changes.
     const data = reactive<Properties>({});
     const touchedFields = reactive<Record<string, boolean>>({});
 
+    // Unique per component instance, so two forms rendering the same field
+    // name no longer emit duplicate DOM ids.
+    const instanceUid = getCurrentInstance()?.uid ?? 0;
+    const effectiveIdPrefix = computed(
+      () => props.idPrefix ?? `dfk-${instanceUid}`,
+    );
+
+    // Explicit props take precedence over the `form` shorthand, so a caller
+    // can pass `form` and still override one wire.
+    const effectiveProperties = computed<Properties | undefined>(() =>
+      props.properties !== undefined
+        ? props.properties
+        : props.form
+          ? unref(props.form.data)
+          : undefined,
+    );
+    const controlledTouched = computed<Record<string, boolean> | undefined>(
+      () =>
+        props.touched !== undefined
+          ? props.touched
+          : props.form
+            ? unref(props.form.touched)
+            : undefined,
+    );
+    const effectiveTouched = computed<Record<string, boolean>>(
+      () => controlledTouched.value ?? touchedFields,
+    );
+    const emitChange = (next: Properties) => {
+      props.onChange?.(next);
+      if (!props.onChange) {
+        props.form?.handleChange(next);
+      }
+    };
+
+    // Snapshot of the values this form opened with, for the `dirty` flag.
+    const initialProperties: Properties = {
+      ...(effectiveProperties.value ?? {}),
+    };
+
     function handleBlurField(key: string) {
-      touchedFields[key] = true;
-      props.onBlurField?.(key);
+      if (controlledTouched.value === undefined) {
+        touchedFields[key] = true;
+      }
+      props.onTouchedChange?.({ ...effectiveTouched.value, [key]: true });
+      if (props.onBlurField) {
+        props.onBlurField(key);
+      } else {
+        props.form?.handleBlur(key);
+      }
     }
 
+    /**
+     * Clears the internally tracked touched state. Only meaningful in
+     * uncontrolled mode - when `touched` is passed, resetting the form store
+     * (e.g. `useDynamicForm().reset()`) already clears it.
+     */
+    function resetTouched() {
+      Object.keys(touchedFields).forEach((key) => delete touchedFields[key]);
+    }
+
+    function setFieldTouched(fieldName: string, isTouched = true) {
+      if (controlledTouched.value === undefined) {
+        touchedFields[fieldName] = isTouched;
+      }
+      props.onTouchedChange?.({
+        ...effectiveTouched.value,
+        [fieldName]: isTouched,
+      });
+    }
+
+    expose({
+      resetTouched,
+      setFieldTouched,
+      getTouched: () => effectiveTouched.value,
+    });
+
     watch(
-      () => props.properties,
+      () => effectiveProperties.value,
       (newProps) => {
         Object.keys(data).forEach((key) => delete data[key]);
         if (newProps) {
@@ -150,7 +274,7 @@ const MultiFieldInput = /* @__PURE__ */ defineComponent({
         data,
         applyComputedValues(props.fieldDescriptions, next, props.rootData),
       );
-      props.onChange?.({ ...data });
+      emitChange({ ...data });
     };
 
     const handleValueChange = (value: unknown, key: string) => {
@@ -265,7 +389,9 @@ const MultiFieldInput = /* @__PURE__ */ defineComponent({
               fieldDescription: f,
               renderInfos: data,
               rootData: props.rootData ?? data,
-              touched: Boolean(touchedFields[f.name]),
+              idPrefix: effectiveIdPrefix.value,
+              touched: Boolean(effectiveTouched.value[f.name]),
+              dirty: data[f.name] !== initialProperties[f.name],
               onValueChangeField: handleValueChange,
               onBlurField: handleBlurField,
             }),

@@ -43,7 +43,7 @@ describe('MultiFieldInput blur reporting (Vue)', () => {
   it('reports which field was blurred', async () => {
     const onBlurField = vi.fn();
     const wrapper = mount(MultiFieldInput, {
-      props: { fieldDescriptions: fields, onBlurField },
+      props: { fieldDescriptions: fields, idPrefix: 'dfk-field', onBlurField },
     });
 
     await wrapper.find('[data-testid="dfk-field-second"]').trigger('blur');
@@ -54,7 +54,7 @@ describe('MultiFieldInput blur reporting (Vue)', () => {
   it('reports each field separately', async () => {
     const onBlurField = vi.fn();
     const wrapper = mount(MultiFieldInput, {
-      props: { fieldDescriptions: fields, onBlurField },
+      props: { fieldDescriptions: fields, idPrefix: 'dfk-field', onBlurField },
     });
 
     await wrapper.find('[data-testid="dfk-field-first"]').trigger('blur');
@@ -68,7 +68,7 @@ describe('MultiFieldInput blur reporting (Vue)', () => {
 
   it('works without a handler', async () => {
     const wrapper = mount(MultiFieldInput, {
-      props: { fieldDescriptions: fields },
+      props: { fieldDescriptions: fields, idPrefix: 'dfk-field' },
     });
 
     await expect(

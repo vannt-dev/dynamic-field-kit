@@ -5,6 +5,7 @@ import './layout/responsiveLayout';
 export { default as DynamicInput } from './components/DynamicInput';
 export { default as FieldInput } from './components/FieldInput';
 export { default as MultiFieldInput } from './components/MultiFieldInput';
+export type { DynamicFormBinding } from './components/MultiFieldInput';
 export { defaultRenderersMap, getDefaultRenderer } from './defaultRenderers';
 
 export {
@@ -33,6 +34,9 @@ export {
   type FieldTypeMap,
   type Properties,
   type ValidationResult,
+  buildFieldRendererProps,
+  makeFieldId,
+  FIELD_RENDERER_PROP_KEYS,
 } from '@dynamic-field-kit/core';
 
 export type { LayoutConfig } from './types/layout';

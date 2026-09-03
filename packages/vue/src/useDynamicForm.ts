@@ -53,6 +53,22 @@ export function useDynamicForm({
     touched.value = { ...touched.value, [name]: isTouched };
   }
 
+  /**
+   * Marks every field touched at once. `handleSubmit` calls this for you, so
+   * an invalid submit surfaces errors on fields the user never focused - bind
+   * `touched` on `MultiFieldInput` for it to take effect.
+   */
+  function touchAll() {
+    touched.value = Object.fromEntries(
+      fields.map((f) => [f.name, true] as const),
+    );
+  }
+
+  /** Clears the touched map without touching data, errors or dirty state. */
+  function resetTouched() {
+    touched.value = {};
+  }
+
   function handleBlur(fieldName: string) {
     setFieldTouched(fieldName, true);
     if (validateOnBlur) {
@@ -82,6 +98,11 @@ export function useDynamicForm({
       }
       isSubmitting.value = true;
       try {
+        // Touch everything before validating: a submit is the user asserting
+        // the form is finished, so a field they never focused should still
+        // show its error. Without this, submitting an untouched form appears
+        // to do nothing at all.
+        touchAll();
         const res = validateFields(fields, data.value);
         errors.value = res.errors;
         isSubmitted.value = true;
@@ -106,6 +127,8 @@ export function useDynamicForm({
     isSubmitted,
     setFieldValue,
     setFieldTouched,
+    touchAll,
+    resetTouched,
     handleChange,
     handleBlur,
     reset,
