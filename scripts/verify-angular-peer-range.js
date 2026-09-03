@@ -15,6 +15,12 @@
  * classes evaluate, and it shares one registry with core. That is the same
  * depth as scripts/integration-cross-registry.js, run once per range end.
  *
+ * It then runs the floor's own Angular linker over the published fesm2022
+ * bundle. That is the check that would catch the real cross-major hazard: the
+ * bundle ships partial declarations, and if building on a newer Angular raised
+ * their `minVersion`, every consumer below that version would fail in the
+ * linker while installing and importing perfectly well.
+ *
  * Run from the repo root, after `npm run build`:
  *   node scripts/verify-angular-peer-range.js
  */
@@ -137,6 +143,83 @@ function verify(major, tarballs, tmpRoot) {
   return installed;
 }
 
+const LINK = `
+const fs = require('fs');
+const babel = require('@babel/core');
+const { createEs2015LinkerPlugin } = require('@angular/compiler-cli/linker/babel');
+const { NodeJSFileSystem, ConsoleLogger, LogLevel } = require('@angular/compiler-cli');
+
+const file = process.argv[2];
+const out = babel.transformSync(fs.readFileSync(file, 'utf8'), {
+  filename: file,
+  configFile: false,
+  babelrc: false,
+  compact: false,
+  plugins: [
+    createEs2015LinkerPlugin({
+      fileSystem: new NodeJSFileSystem(),
+      logger: new ConsoleLogger(LogLevel.warn),
+      linkerJitMode: false,
+    }),
+  ],
+});
+
+const leftover = (out.code.match(/ɵɵngDeclare/g) || []).length;
+if (leftover > 0) {
+  throw new Error(leftover + ' partial declarations were left unlinked');
+}
+console.log(
+  'linker ' +
+    require('@angular/compiler-cli/package.json').version +
+    ' linked the published bundle, 0 partial declarations left',
+);
+`;
+
+/**
+ * Links the published bundle with the *floor* Angular's linker. A consumer app
+ * runs this as part of its own build, and it is the step that fails when a
+ * library was compiled by a compiler too new for it.
+ */
+function verifyLinker(major, tmpRoot) {
+  const dir = fs.mkdtempSync(path.join(tmpRoot, `link-${major}-`));
+  fs.writeFileSync(
+    path.join(dir, 'package.json'),
+    JSON.stringify(
+      { name: 'linker', version: '0.0.0', private: true },
+      null,
+      2,
+    ),
+  );
+  fs.writeFileSync(path.join(dir, 'link.cjs'), LINK);
+
+  npm(
+    [
+      'install',
+      '--no-audit',
+      '--no-fund',
+      '--no-package-lock',
+      `@angular/compiler-cli@^${major}`,
+      `@angular/compiler@^${major}`,
+      '@babel/core',
+    ],
+    dir,
+  );
+
+  // The bundle straight off disk, not through an install: the linker only
+  // reads the file, and installing the tarball here would drag in the whole
+  // peer set for no benefit.
+  const bundle = path.join(
+    REPO,
+    'packages',
+    'angular',
+    'dist',
+    'fesm2022',
+    'dynamic-field-kit-angular.mjs',
+  );
+  const out = node(['link.cjs', bundle], dir).trim();
+  console.log(`  ${out}`);
+}
+
 function main() {
   for (const p of ['core', 'angular']) {
     const dist = path.join(REPO, 'packages', p, 'dist');
@@ -159,6 +242,11 @@ function main() {
       console.log(`@angular/core ^${major}:`);
       verify(major, tarballs, tmpRoot);
     }
+
+    // Only the floor: a newer linker accepting an older declaration is the
+    // direction that has never been in doubt.
+    console.log(`@angular/compiler-cli ^${MAJORS[0]} linking the bundle:`);
+    verifyLinker(MAJORS[0], tmpRoot);
 
     console.log(
       `OK: @dynamic-field-kit/angular loads at both ends of its declared Angular range (${MAJORS.join(', ')}).`,
