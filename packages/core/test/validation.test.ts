@@ -100,6 +100,8 @@ describe('validateFields', () => {
     expect(validateFields(fields, { name: 'Ada' })).toEqual({
       valid: true,
       errors: {},
+      complete: true,
+      status: 'valid',
     });
   });
 

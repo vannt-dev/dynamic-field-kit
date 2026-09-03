@@ -1,11 +1,13 @@
 import {
   applyComputedValues,
+  collectFieldPaths,
   FieldDescription,
   Properties,
+  type ValidationResult,
   validateFields,
   validateFieldsAsync,
 } from '@dynamic-field-kit/core';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 export interface UseDynamicFormOptions {
   fields: FieldDescription[];
@@ -18,6 +20,9 @@ export interface UseDynamicFormResult {
   data: Properties;
   errors: Record<string, string[]>;
   isValid: boolean;
+  isValidating: boolean;
+  isValidationComplete: boolean;
+  validationStatus: ValidationResult['status'];
   isDirty: boolean;
   isSubmitting: boolean;
   isSubmitted: boolean;
@@ -47,6 +52,34 @@ export interface UseDynamicFormResult {
   ) => (e?: React.FormEvent) => Promise<void>;
 }
 
+function sameStringMap(
+  left: Record<string, string[]>,
+  right: Record<string, string[]>,
+): boolean {
+  const keys = Object.keys(left);
+  return (
+    keys.length === Object.keys(right).length &&
+    keys.every(
+      (key) =>
+        left[key]?.length === right[key]?.length &&
+        left[key]?.every((value, index) => value === right[key]?.[index]),
+    )
+  );
+}
+
+function sameValidationResult(
+  left: ValidationResult,
+  right: ValidationResult,
+): boolean {
+  return (
+    left.valid === right.valid &&
+    left.complete === right.complete &&
+    left.status === right.status &&
+    (left.pending ?? []).join('\0') === (right.pending ?? []).join('\0') &&
+    sameStringMap(left.errors, right.errors)
+  );
+}
+
 export function useDynamicForm({
   fields,
   initialValues = {},
@@ -61,31 +94,93 @@ export function useDynamicForm({
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  // Seeded from the initial data rather than from an effect: an effect never
+  // runs on the server, so a server-rendered form would ship `isValid: true`
+  // for an empty required field and never correct it. The initialiser runs
+  // once, unlike the useMemo this replaced, which ran on every render.
+  const [validationResult, setValidationResult] = useState<ValidationResult>(
+    () => validateFields(fields, data),
+  );
+  const [isValidating, setIsValidating] = useState(false);
+  const validationRunRef = useRef(0);
+  const validationAbortRef = useRef<AbortController | undefined>(undefined);
+  // A submit gets its own run counter and controller. Typing aborts the live
+  // validation run, and a submit must not be collateral damage of that.
+  const submitRunRef = useRef(0);
+  const submitAbortRef = useRef<AbortController | undefined>(undefined);
+  const dataRef = useRef(data);
+  dataRef.current = data;
+
+  const commitSyncResult = useCallback((res: ValidationResult) => {
+    setValidationResult((previous) =>
+      sameValidationResult(previous, res) ? previous : res,
+    );
+    return res.valid;
+  }, []);
+
+  // Keeps the result in step with later data changes. The seed above covers
+  // the first render (including the server's); from here on validators run
+  // after commit, never from a useMemo that re-runs on every render.
+  useEffect(() => {
+    commitSyncResult(validateFields(fields, data));
+  }, [fields, data, commitSyncResult]);
+
+  useEffect(
+    () => () => {
+      validationAbortRef.current?.abort();
+      submitAbortRef.current?.abort();
+    },
+    [],
+  );
 
   const validate = useCallback(() => {
     const res = validateFields(fields, data);
     setErrors(res.errors);
-    return res.valid;
-  }, [fields, data]);
+    return commitSyncResult(res);
+  }, [fields, data, commitSyncResult]);
 
   const validateAsync = useCallback(async () => {
-    const res = await validateFieldsAsync(fields, data);
-    setErrors(res.errors);
-    return res.valid;
+    const run = ++validationRunRef.current;
+    validationAbortRef.current?.abort();
+    const controller = new AbortController();
+    validationAbortRef.current = controller;
+    const snapshot = data;
+    setIsValidating(true);
+    try {
+      const res = await validateFieldsAsync(fields, snapshot, snapshot, {
+        signal: controller.signal,
+      });
+      if (run !== validationRunRef.current || dataRef.current !== snapshot) {
+        return res.valid;
+      }
+      setErrors(res.errors);
+      setValidationResult(res);
+      return res.valid;
+    } finally {
+      if (run === validationRunRef.current) {
+        setIsValidating(false);
+      }
+    }
   }, [fields, data]);
 
   const handleChange = useCallback(
     (newData: Properties) => {
       const next = applyComputedValues(fields, newData);
       setData(next);
+      dataRef.current = next;
       setIsDirty(true);
+      validationAbortRef.current?.abort();
+      validationRunRef.current += 1;
+      setIsValidating(false);
+
+      const res = validateFields(fields, next);
+      commitSyncResult(res);
 
       if (validateOnChange) {
-        const res = validateFields(fields, next);
         setErrors(res.errors);
       }
     },
-    [fields, validateOnChange],
+    [fields, validateOnChange, commitSyncResult],
   );
 
   const setFieldValue = useCallback(
@@ -100,8 +195,12 @@ export function useDynamicForm({
   }, []);
 
   const touchAll = useCallback(() => {
-    setTouched(Object.fromEntries(fields.map((f) => [f.name, true] as const)));
-  }, [fields]);
+    setTouched(
+      Object.fromEntries(
+        collectFieldPaths(fields, data).map((path) => [path, true] as const),
+      ),
+    );
+  }, [fields, data]);
 
   const resetTouched = useCallback(() => setTouched({}), []);
 
@@ -111,9 +210,10 @@ export function useDynamicForm({
       if (validateOnBlur) {
         const res = validateFields(fields, data);
         setErrors(res.errors);
+        commitSyncResult(res);
       }
     },
-    [fields, data, validateOnBlur, setFieldTouched],
+    [fields, data, validateOnBlur, setFieldTouched, commitSyncResult],
   );
 
   const reset = useCallback(
@@ -121,11 +221,15 @@ export function useDynamicForm({
       const seed = newValues ?? initialValues;
       const next = applyComputedValues(fields, seed);
       setData(next);
+      dataRef.current = next;
       setErrors({});
       setIsDirty(false);
       setTouched({});
       setIsSubmitting(false);
       setIsSubmitted(false);
+      validationAbortRef.current?.abort();
+      validationRunRef.current += 1;
+      setIsValidating(false);
     },
     [fields, initialValues],
   );
@@ -140,6 +244,7 @@ export function useDynamicForm({
           e.preventDefault();
         }
         setIsSubmitting(true);
+        const submitRun = ++submitRunRef.current;
         try {
           // Touch everything before validating: a submit is the user asserting
           // the form is finished, so a field they never focused should still
@@ -149,36 +254,61 @@ export function useDynamicForm({
           // A submit handler is already async, so use one async-capable pass.
           // Sync hooks still run once; Promise-based hooks are awaited instead
           // of being invoked once for detection and a second time for results.
-          const res = await validateFieldsAsync(fields, data);
-          setErrors(res.errors);
+          const run = ++validationRunRef.current;
+          // Cancel any live run so its (older) result cannot land on top of
+          // this one, but validate under a controller of the submit's own.
+          validationAbortRef.current?.abort();
+          submitAbortRef.current?.abort();
+          const controller = new AbortController();
+          submitAbortRef.current = controller;
+          const snapshot = data;
+          setIsValidating(true);
+          const res = await validateFieldsAsync(fields, snapshot, snapshot, {
+            signal: controller.signal,
+          });
+          if (submitRun !== submitRunRef.current) {
+            return;
+          }
+          // Editing during the submit does not cancel it - the user submitted
+          // this snapshot and is owed an answer for it. What the form *shows*
+          // still has to describe the data on screen, so when it moved on, the
+          // displayed state is re-derived instead of showing the old pass.
+          if (
+            dataRef.current === snapshot &&
+            run === validationRunRef.current
+          ) {
+            setErrors(res.errors);
+            setValidationResult(res);
+          } else {
+            const live = validateFields(fields, dataRef.current);
+            setErrors(live.errors);
+            commitSyncResult(live);
+          }
           setIsSubmitted(true);
           if (res.valid) {
-            await onValid(data);
+            await onValid(snapshot);
           } else if (onInvalid) {
             onInvalid(res.errors);
           }
         } finally {
+          if (submitRun === submitRunRef.current) {
+            setIsValidating(false);
+          }
           setIsSubmitting(false);
         }
       },
-    [fields, data, touchAll],
-  );
-
-  // Derived from the current data, not from `errors`. `errors` is deliberately
-  // lazy - it fills in on validate/blur/submit so a pristine form does not show
-  // messages - but deriving `isValid` from it meant an empty required field
-  // reported `isValid: true` until one of those happened, which is precisely
-  // when a submit button wants to be disabled. Async validators still read as
-  // valid here; only submitting (or `validateAsync`) can await them.
-  const isValid = useMemo(
-    () => validateFields(fields, data).valid,
-    [fields, data],
+    [fields, data, touchAll, commitSyncResult],
   );
 
   return {
     data,
     errors,
-    isValid,
+    isValid: validationResult.valid,
+    isValidating,
+    // Matches Vue and Angular: a run still in flight is not complete, whatever
+    // the last finished pass concluded.
+    isValidationComplete: validationResult.complete && !isValidating,
+    validationStatus: isValidating ? 'pending' : validationResult.status,
     isDirty,
     isSubmitting,
     isSubmitted,

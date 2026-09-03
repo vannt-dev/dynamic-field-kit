@@ -1,5 +1,5 @@
 import { isFieldGroup } from './fieldGroup';
-import type { FieldDescription, Properties } from './types';
+import type { FieldDescription, Properties, ValidationContext } from './types';
 
 export interface ValidationResult {
   valid: boolean;
@@ -16,7 +16,18 @@ export interface ValidationResult {
    * everything, so nothing is left pending.
    */
   pending?: string[];
+  /** True only when every applicable validator completed in this pass. */
+  complete: boolean;
+  /** Unambiguous summary; prefer this over combining `valid` and `pending`. */
+  status: 'valid' | 'invalid' | 'pending';
 }
+
+/**
+ * Options accepted by `validateFieldsAsync`. Today that is just the
+ * validation context (the abort signal); the alias keeps the exported name
+ * stable if the option bag grows.
+ */
+export type AsyncValidationOptions = ValidationContext;
 
 function isDev(): boolean {
   return (
@@ -37,7 +48,7 @@ function warnAsyncValidator(key: string): void {
   }
   warnedAsyncFields.add(key);
   console.warn(
-    `[dynamic-field-kit] the validate hook for "${key}" returned a Promise. ` +
+    `[dynamic-field-kit] the validate hook for "${key}" is asynchronous. ` +
       `Submitting awaits it (handleSubmit uses validateFieldsAsync), but the ` +
       `live passes cannot: this field contributes nothing ` +
       `to the inline error shown while typing, nor to isValid/errors, so it ` +
@@ -51,6 +62,17 @@ function isPromiseLike<T>(value: unknown): value is PromiseLike<T> {
     (typeof value === 'object' || typeof value === 'function') &&
     value !== null &&
     typeof (value as PromiseLike<T>).then === 'function'
+  );
+}
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof Error && error.name === 'AbortError';
+}
+
+function isDeclaredAsync(field: FieldDescription): boolean {
+  return (
+    field.validationMode === 'async' ||
+    field.validate?.constructor?.name === 'AsyncFunction'
   );
 }
 
@@ -106,6 +128,14 @@ function runSyncValidate(
   if (!field.validate) {
     return { errors: [], isPending: false };
   }
+  if (isDeclaredAsync(field)) {
+    // `validationMode: 'async'` is the developer saying they already know the
+    // live pass cannot check this field, so there is nothing to warn about.
+    if (field.validationMode !== 'async') {
+      warnAsyncValidator(reportKey);
+    }
+    return { errors: [], isPending: true };
+  }
   const result = field.validate(value, data, rootData);
   if (isPromiseLike<string | string[] | undefined>(result)) {
     // A rejected async result has no observer on the synchronous path. Attach
@@ -140,11 +170,12 @@ export async function validateFieldAsync(
   value: unknown,
   data: Properties,
   rootData?: Properties,
+  context?: ValidationContext,
 ): Promise<string[]> {
   if (!field.validate) {
     return [];
   }
-  const result = await field.validate(value, data, rootData);
+  const result = await field.validate(value, data, rootData, context);
   if (!result) {
     return [];
   }
@@ -203,12 +234,16 @@ export function validateFields(
     }
   }
 
+  const valid = Object.keys(errors).length === 0;
+  const complete = pending.length === 0;
   return {
-    valid: Object.keys(errors).length === 0,
+    valid,
     errors,
     // Omitted rather than empty so the common all-sync case keeps the shape it
     // has always had, and `pending` reads as "something needs awaiting".
     ...(pending.length > 0 ? { pending } : {}),
+    complete,
+    status: !valid ? 'invalid' : complete ? 'valid' : 'pending',
   };
 }
 
@@ -219,44 +254,110 @@ export async function validateFieldsAsync(
   fields: FieldDescription[],
   data: Properties,
   rootData: Properties = data,
+  options: AsyncValidationOptions = {},
 ): Promise<ValidationResult> {
-  const errors: Record<string, string[]> = {};
+  const entries = await Promise.all(
+    fields.map(async (field) => {
+      if (field.appearCondition && !field.appearCondition(data, rootData)) {
+        return [] as Array<[string, string[]]>;
+      }
+      if (resolveDisabled(field, data, rootData)) {
+        return [] as Array<[string, string[]]>;
+      }
 
-  for (const field of fields) {
+      if (isFieldGroup(field)) {
+        const items = Array.isArray(data[field.name])
+          ? (data[field.name] as Properties[])
+          : [];
+        const itemEntries = await Promise.all(
+          items.map(async (item, index) => {
+            const sub = await validateFieldsAsync(
+              field.fields,
+              item,
+              rootData,
+              options,
+            );
+            return Object.entries(sub.errors).map(
+              ([key, messages]) =>
+                [`${field.name}[${index}].${key}`, messages] as [
+                  string,
+                  string[],
+                ],
+            );
+          }),
+        );
+        return itemEntries.flat();
+      }
+
+      if (options.signal?.aborted) {
+        return [] as Array<[string, string[]]>;
+      }
+
+      let fieldErrors: string[];
+      try {
+        fieldErrors = await validateFieldAsync(
+          field,
+          data[field.name],
+          data,
+          rootData,
+          options,
+        );
+      } catch (error) {
+        // A validator that honours the signal rejects with an AbortError. That
+        // is this run being superseded, not a failure to report to the user -
+        // rethrowing it here would reject the caller's handleSubmit.
+        if (isAbortError(error)) {
+          return [] as Array<[string, string[]]>;
+        }
+        throw error;
+      }
+      return fieldErrors.length > 0
+        ? ([[field.name, fieldErrors]] as Array<[string, string[]]>)
+        : [];
+    }),
+  );
+
+  const errors = Object.fromEntries(entries.flat());
+  const valid = Object.keys(errors).length === 0;
+  // An aborted run checked only some of the fields, so it can never claim to
+  // be complete - `valid: true` there means "nothing found before we stopped".
+  const complete = options.signal?.aborted !== true;
+  return {
+    valid,
+    errors,
+    complete,
+    status: !complete ? 'pending' : valid ? 'valid' : 'invalid',
+  };
+}
+
+/**
+ * Return the concrete leaf paths that currently exist in a form. Skips the
+ * same fields validation skips (hidden by `appearCondition`, disabled), so a
+ * caller marking every path touched cannot touch a field that can never hold
+ * an error.
+ */
+export function collectFieldPaths(
+  fields: FieldDescription[],
+  data: Properties,
+  rootData: Properties = data,
+): string[] {
+  return fields.flatMap((field) => {
     if (field.appearCondition && !field.appearCondition(data, rootData)) {
-      continue;
+      return [];
     }
     if (resolveDisabled(field, data, rootData)) {
-      continue;
+      return [];
     }
-
     if (isFieldGroup(field)) {
       const items = Array.isArray(data[field.name])
         ? (data[field.name] as Properties[])
         : [];
-      for (let index = 0; index < items.length; index++) {
-        const sub = await validateFieldsAsync(
-          field.fields,
-          items[index],
-          rootData,
-        );
-        for (const [key, messages] of Object.entries(sub.errors)) {
-          errors[`${field.name}[${index}].${key}`] = messages;
-        }
-      }
-      continue;
+      return items.flatMap((item, index) =>
+        collectFieldPaths(field.fields, item, rootData).map(
+          (key) => `${field.name}[${index}].${key}`,
+        ),
+      );
     }
-
-    const fieldErrors = await validateFieldAsync(
-      field,
-      data[field.name],
-      data,
-      rootData,
-    );
-    if (fieldErrors.length > 0) {
-      errors[field.name] = fieldErrors;
-    }
-  }
-
-  return { valid: Object.keys(errors).length === 0, errors };
+    return [field.name];
+  });
 }

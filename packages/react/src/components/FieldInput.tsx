@@ -15,6 +15,7 @@ interface Props {
   /** Per-form-instance id namespace; see core's `makeFieldId`. */
   idPrefix?: string;
   touched?: boolean;
+  touchedMap?: Record<string, boolean>;
   dirty?: boolean;
   errors?: Record<string, string[]>;
   onBlurField?: (key: string) => void;
@@ -27,6 +28,7 @@ const FieldInputInner = ({
   rootData,
   idPrefix = 'dfk-field',
   touched,
+  touchedMap,
   dirty,
   errors,
   onBlurField,
@@ -57,6 +59,8 @@ const FieldInputInner = ({
         items={items}
         rootData={rootData}
         errors={errors}
+        touched={touchedMap}
+        onBlurField={onBlurField}
         onChange={handleChange}
       />
     );
@@ -94,6 +98,7 @@ const FieldInput = /* @__PURE__ */ React.memo(FieldInputInner, (prev, next) => {
     prev.rootData === next.rootData &&
     prev.idPrefix === next.idPrefix &&
     prev.touched === next.touched &&
+    prev.touchedMap === next.touchedMap &&
     prev.dirty === next.dirty &&
     prev.errors === next.errors &&
     prev.renderInfos[name] === next.renderInfos[name]

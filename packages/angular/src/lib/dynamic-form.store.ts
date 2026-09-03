@@ -1,8 +1,10 @@
 import { computed, signal } from '@angular/core';
 import {
   applyComputedValues,
+  collectFieldPaths,
   FieldDescription,
   Properties,
+  type ValidationResult,
   validateFields,
   validateFieldsAsync,
 } from '@dynamic-field-kit/core';
@@ -26,30 +28,72 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
   const touched = signal<Record<string, boolean>>({});
   const isSubmitting = signal<boolean>(false);
   const isSubmitted = signal<boolean>(false);
+  const validationResult = signal<ValidationResult>(
+    validateFields(fields, data()),
+  );
+  const isValidating = signal(false);
+  let validationRun = 0;
+  let validationController: AbortController | undefined;
+  // A submit gets its own run counter and controller. Typing aborts the live
+  // validation run, and a submit must not be collateral damage of that.
+  let submitRun = 0;
+  let submitController: AbortController | undefined;
 
-  // Errors remain lazy for display, while validity always reflects current
-  // data. Promise-based rules are provisional until validateAsync/submit.
-  const isValid = computed(() => validateFields(fields, data()).valid);
+  const isValid = computed(() => validationResult().valid);
+  const isValidationComplete = computed(
+    () => validationResult().complete && !isValidating(),
+  );
+  const validationStatus = computed<ValidationResult['status']>(() =>
+    isValidating() ? 'pending' : validationResult().status,
+  );
+
+  function commitSyncResult(res: ValidationResult): boolean {
+    validationResult.set(res);
+    return res.valid;
+  }
 
   function validate(): boolean {
     const res = validateFields(fields, data());
     errors.set(res.errors);
-    return res.valid;
+    return commitSyncResult(res);
   }
 
   async function validateAsync(): Promise<boolean> {
-    const res = await validateFieldsAsync(fields, data());
-    errors.set(res.errors);
-    return res.valid;
+    const run = ++validationRun;
+    validationController?.abort();
+    const controller = new AbortController();
+    validationController = controller;
+    const snapshot = data();
+    isValidating.set(true);
+    try {
+      const res = await validateFieldsAsync(fields, snapshot, snapshot, {
+        signal: controller.signal,
+      });
+      if (run !== validationRun || data() !== snapshot) {
+        return res.valid;
+      }
+      errors.set(res.errors);
+      validationResult.set(res);
+      return res.valid;
+    } finally {
+      if (run === validationRun) {
+        isValidating.set(false);
+      }
+    }
   }
 
   function handleChange(newData: Properties) {
     const next = applyComputedValues(fields, newData);
     data.set(next);
     isDirty.set(true);
+    validationController?.abort();
+    validationRun += 1;
+    isValidating.set(false);
+
+    const res = validateFields(fields, next);
+    commitSyncResult(res);
 
     if (validateOnChange) {
-      const res = validateFields(fields, next);
       errors.set(res.errors);
     }
   }
@@ -68,7 +112,11 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
    * `[touched]` on `<dfk-multi-field-input>` for it to take effect.
    */
   function touchAll() {
-    touched.set(Object.fromEntries(fields.map((f) => [f.name, true] as const)));
+    touched.set(
+      Object.fromEntries(
+        collectFieldPaths(fields, data()).map((path) => [path, true] as const),
+      ),
+    );
   }
 
   /** Clears the touched map without touching data, errors or dirty state. */
@@ -81,6 +129,7 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
     if (validateOnBlur) {
       const res = validateFields(fields, data());
       errors.set(res.errors);
+      commitSyncResult(res);
     }
   }
 
@@ -93,6 +142,10 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
     touched.set({});
     isSubmitting.set(false);
     isSubmitted.set(false);
+    validationController?.abort();
+    validationRun += 1;
+    isValidating.set(false);
+    commitSyncResult(validateFields(fields, next));
   }
 
   /**
@@ -109,21 +162,50 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
         e.preventDefault();
       }
       isSubmitting.set(true);
+      const thisSubmit = ++submitRun;
       try {
         // Touch everything before validating: a submit is the user asserting
         // the form is finished, so a field they never focused should still
         // show its error. Without this, submitting an untouched form appears
         // to do nothing at all.
         touchAll();
-        const res = await validateFieldsAsync(fields, data());
-        errors.set(res.errors);
+        const run = ++validationRun;
+        // Cancel any live run so its (older) result cannot land on top of this
+        // one, but validate under a controller of the submit's own.
+        validationController?.abort();
+        submitController?.abort();
+        const controller = new AbortController();
+        submitController = controller;
+        const snapshot = data();
+        isValidating.set(true);
+        const res = await validateFieldsAsync(fields, snapshot, snapshot, {
+          signal: controller.signal,
+        });
+        if (thisSubmit !== submitRun) {
+          return;
+        }
+        // Editing during the submit does not cancel it - the user submitted
+        // this snapshot and is owed an answer for it. What the form *shows*
+        // still has to describe the data on screen, so when it moved on, the
+        // displayed state is re-derived instead of showing the old pass.
+        if (data() === snapshot && run === validationRun) {
+          errors.set(res.errors);
+          validationResult.set(res);
+        } else {
+          const live = validateFields(fields, data());
+          errors.set(live.errors);
+          validationResult.set(live);
+        }
         isSubmitted.set(true);
         if (res.valid) {
-          await onValid(data());
+          await onValid(snapshot);
         } else if (onInvalid) {
           onInvalid(res.errors);
         }
       } finally {
+        if (thisSubmit === submitRun) {
+          isValidating.set(false);
+        }
         isSubmitting.set(false);
       }
     };
@@ -133,6 +215,9 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
     data,
     errors,
     isValid,
+    isValidating,
+    isValidationComplete,
+    validationStatus,
     isDirty,
     touched,
     isSubmitting,
