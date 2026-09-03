@@ -9,6 +9,8 @@
  */
 import type { FieldDescription } from '@dynamic-field-kit/core';
 import { act, renderHook, waitFor } from '@testing-library/react';
+import React from 'react';
+import { renderToString } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useDynamicForm } from '../src/useDynamicForm';
 
@@ -26,6 +28,21 @@ beforeEach(() => {
 });
 
 describe('isValid reflects the data, not the last validation run', () => {
+  it('is already false on a server render, where effects never run', () => {
+    // renderHook flushes effects before the assertion, so an effect-seeded
+    // result looks correct there. Server rendering is where it shows: the
+    // markup ships with a submit button that never disables.
+    const Probe = () => {
+      const { isValid } = useDynamicForm({
+        fields: required,
+        initialValues: { username: '' },
+      });
+      return <span>{String(isValid)}</span>;
+    };
+
+    expect(renderToString(<Probe />)).toContain('>false<');
+  });
+
   it('is false at first render for an empty required field', () => {
     const { result } = renderHook(() =>
       useDynamicForm({ fields: required, initialValues: { username: '' } }),
@@ -153,6 +170,54 @@ describe('handleSubmit awaits async validators instead of ignoring them', () => 
   });
 });
 
+describe('a submit already in flight', () => {
+  it('still completes when the user edits a field while it runs', async () => {
+    // The remote check is slow, the user tabs into another field meanwhile.
+    // The submit must still resolve against the data that was submitted -
+    // otherwise the button just re-enables and nothing tells the user why.
+    let release: ((value: string | undefined) => void) | undefined;
+    const slow: FieldDescription[] = [
+      { name: 'username', type: 'text' },
+      {
+        name: 'code',
+        type: 'text',
+        // Declared async so only the submit's async pass invokes it - the live
+        // sync pass skips it, which keeps `release` pointing at this one run.
+        validationMode: 'async',
+        validate: () =>
+          new Promise<string | undefined>((resolve) => {
+            release = resolve;
+          }),
+      },
+    ];
+    const onValid = vi.fn();
+    const { result } = renderHook(() =>
+      useDynamicForm({
+        fields: slow,
+        initialValues: { username: 'a', code: '1' },
+      }),
+    );
+
+    let submitted: Promise<void> | undefined;
+    act(() => {
+      submitted = result.current.handleSubmit(onValid)();
+    });
+    act(() => {
+      result.current.handleChange({ username: 'ab', code: '1' });
+    });
+
+    await act(async () => {
+      release?.(undefined);
+      await submitted;
+    });
+
+    expect(onValid).toHaveBeenCalledTimes(1);
+    expect(onValid).toHaveBeenCalledWith({ username: 'a', code: '1' });
+    expect(result.current.isSubmitted).toBe(true);
+    expect(result.current.isSubmitting).toBe(false);
+  });
+});
+
 describe('validateAsync', () => {
   it('resolves async rules that validate() cannot', async () => {
     const asyncFields: FieldDescription[] = [
@@ -180,5 +245,67 @@ describe('validateAsync', () => {
 
     expect(asyncValid).toBe(false);
     expect(result.current.errors).toEqual({ username: ['Always fails'] });
+  });
+
+  it('ignores a stale result when a newer validation finishes first', async () => {
+    const releases = new Map<string, (message?: string) => void>();
+    const fields: FieldDescription[] = [
+      {
+        name: 'username',
+        type: 'text',
+        validationMode: 'async',
+        validate: (value) =>
+          new Promise<string | undefined>((resolve) => {
+            releases.set(String(value), resolve);
+          }),
+      },
+    ];
+    const { result } = renderHook(() =>
+      useDynamicForm({ fields, initialValues: { username: 'old' } }),
+    );
+
+    let oldRun!: Promise<boolean>;
+    let newRun!: Promise<boolean>;
+    act(() => {
+      oldRun = result.current.validateAsync();
+    });
+    act(() => result.current.setFieldValue('username', 'new'));
+    act(() => {
+      newRun = result.current.validateAsync();
+    });
+    expect(result.current.isValidating).toBe(true);
+
+    await act(async () => {
+      releases.get('new')?.();
+      await newRun;
+      releases.get('old')?.('Stale error');
+      await oldRun;
+    });
+
+    expect(result.current.errors).toEqual({});
+    expect(result.current.isValidating).toBe(false);
+  });
+});
+
+describe('nested touched paths', () => {
+  it('touchAll expands every existing repeatable group item', () => {
+    const { result } = renderHook(() =>
+      useDynamicForm({
+        fields: [
+          {
+            name: 'contacts',
+            type: 'text',
+            fields: [{ name: 'email', type: 'text' }],
+          },
+        ],
+        initialValues: { contacts: [{ email: '' }, { email: '' }] },
+      }),
+    );
+
+    act(() => result.current.touchAll());
+    expect(result.current.touched).toEqual({
+      'contacts[0].email': true,
+      'contacts[1].email': true,
+    });
   });
 });

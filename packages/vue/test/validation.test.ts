@@ -97,6 +97,8 @@ describe('Vue validation wiring', () => {
     expect(onValidityChange).toHaveBeenLastCalledWith({
       valid: false,
       errors: { name: ['Required'] },
+      complete: true,
+      status: 'invalid',
     });
   });
 });

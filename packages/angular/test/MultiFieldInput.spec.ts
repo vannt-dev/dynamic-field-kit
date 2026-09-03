@@ -176,6 +176,8 @@ describe('MultiFieldInput', () => {
     expect(seen[seen.length - 1]).toEqual({
       valid: false,
       errors: { email: ['Invalid email'] },
+      complete: true,
+      status: 'invalid',
     });
 
     const input: HTMLInputElement =
@@ -183,7 +185,12 @@ describe('MultiFieldInput', () => {
     input.value = 'ada@example.com';
     input.dispatchEvent(new Event('input'));
 
-    expect(seen[seen.length - 1]).toEqual({ valid: true, errors: {} });
+    expect(seen[seen.length - 1]).toEqual({
+      valid: true,
+      errors: {},
+      complete: true,
+      status: 'valid',
+    });
   });
 
   it('renders a repeatable group item per entry and adds one on Add', () => {

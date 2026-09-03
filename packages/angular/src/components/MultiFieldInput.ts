@@ -16,6 +16,7 @@ import {
   canAddGroupItem,
   canRemoveGroupItem,
   createGroupItem,
+  indexGroupPathMap,
   validateFields,
   FieldDescription,
   Properties,
@@ -28,6 +29,14 @@ const DEFAULT_BREAKPOINT = 768;
 
 // Per-instance id counter, so two forms rendering the same field name emit
 // different DOM ids.
+/**
+ * Shared empty maps. A fresh object literal in a template binding is a new
+ * identity on every change detection pass, which defeats the per-item caching
+ * below and trips dev-mode checkNoChanges (NG0100).
+ */
+const EMPTY_ERRORS: Record<string, string[]> = Object.freeze({});
+const EMPTY_TOUCHED: Record<string, boolean> = Object.freeze({});
+
 let instanceCounter = 0;
 function nextInstanceId(): number {
   instanceCounter += 1;
@@ -89,6 +98,8 @@ function nextInstanceId(): number {
                 [properties]="item"
                 [rootData]="rootData ?? data"
                 [errors]="errorsForItem(field.name, i)"
+                [touched]="touchedForItem(field.name, i)"
+                (onBlurField)="handleGroupBlur(field.name, i, $event)"
                 (onChange)="onGroupItemChange(field, i, $event)"
               ></dfk-multi-field-input>
             </div>
@@ -161,6 +172,16 @@ export class MultiFieldInput implements OnInit, OnChanges {
   // is enough.
   private readonly instanceId = nextInstanceId();
   private initialProperties: Properties = {};
+  private indexedErrorsSource?: Record<string, string[]>;
+  private indexedErrors = new Map<
+    string,
+    Record<number, Record<string, string[]>> | undefined
+  >();
+  private indexedTouchedSource?: Record<string, boolean>;
+  private indexedTouched = new Map<
+    string,
+    Record<number, Record<string, boolean>> | undefined
+  >();
 
   get effectiveIdPrefix(): string {
     return this.idPrefix ?? `dfk-${this.instanceId}`;
@@ -198,15 +219,40 @@ export class MultiFieldInput implements OnInit, OnChanges {
     fieldName: string,
     index: number,
   ): Record<string, string[]> | undefined {
-    if (this.errors === undefined) {
-      return undefined;
+    if (this.indexedErrorsSource !== this.errors) {
+      this.indexedErrorsSource = this.errors;
+      this.indexedErrors.clear();
     }
-    const prefix = `${fieldName}[${index}].`;
-    return Object.fromEntries(
-      Object.entries(this.errors)
-        .filter(([key]) => key.startsWith(prefix))
-        .map(([key, messages]) => [key.slice(prefix.length), messages]),
-    );
+    if (!this.indexedErrors.has(fieldName)) {
+      this.indexedErrors.set(
+        fieldName,
+        indexGroupPathMap(this.errors, fieldName),
+      );
+    }
+    // An item with no errors still gets a map when the parent has one, so a
+    // nested input is never handed `undefined` for a controlled error map.
+    return this.errors === undefined
+      ? undefined
+      : (this.indexedErrors.get(fieldName)?.[index] ?? EMPTY_ERRORS);
+  }
+
+  touchedForItem(fieldName: string, index: number): Record<string, boolean> {
+    const current = this.effectiveTouched;
+    if (this.indexedTouchedSource !== current) {
+      this.indexedTouchedSource = current;
+      this.indexedTouched.clear();
+    }
+    if (!this.indexedTouched.has(fieldName)) {
+      this.indexedTouched.set(fieldName, indexGroupPathMap(current, fieldName));
+    }
+    // A fresh {} here would be a new binding identity on every change
+    // detection pass, re-running the nested input's ngOnChanges each time and
+    // risking NG0100 in dev mode.
+    return this.indexedTouched.get(fieldName)?.[index] ?? EMPTY_TOUCHED;
+  }
+
+  handleGroupBlur(fieldName: string, index: number, key: string): void {
+    this.handleBlurField(`${fieldName}[${index}].${key}`);
   }
 
   /**

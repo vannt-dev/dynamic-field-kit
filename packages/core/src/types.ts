@@ -20,6 +20,11 @@ export interface FieldTypeMap {
 
 export type Properties = Record<string, unknown>;
 
+export interface ValidationContext {
+  /** Aborted when a newer validation run supersedes this one. */
+  signal?: AbortSignal;
+}
+
 export interface FieldRendererProps<T = unknown> {
   value?: T;
   onValueChange?: (value: T) => void;
@@ -68,7 +73,15 @@ export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {
     value: unknown,
     data: Properties,
     rootData?: Properties,
+    context?: ValidationContext,
   ) => string | string[] | undefined | Promise<string | string[] | undefined>;
+  /**
+   * Declare Promise-returning validators so synchronous/live validation can
+   * mark them pending without invoking them. Native `async` functions are
+   * detected automatically; use this for functions that return a Promise
+   * without the `async` keyword.
+   */
+  validationMode?: 'sync' | 'async';
   /**
    * Runtime visibility condition. `data` is the data at this field's own level
    * (the group item, when the field lives inside a repeatable group); `rootData`
