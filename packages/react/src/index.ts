@@ -45,9 +45,12 @@ export {
   validateFieldAsync,
   validateFields,
   validateFieldsAsync,
+  collectFieldPaths,
+  indexGroupPathMap,
   resolveDisabled,
   resolveReadOnly,
   resolveOptions,
   validators,
   type ValidationResult,
+  type ValidationContext,
 } from '@dynamic-field-kit/core';
