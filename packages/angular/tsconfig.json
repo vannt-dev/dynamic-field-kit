@@ -11,7 +11,12 @@
     // tsconfig.spec.json had to override the target to test what really ships.
     "target": "ES2022",
     "useDefineForClassFields": true,
-    "module": "ES2020",
+    "module": "ES2022",
+    // Angular 21 ships every entry point through `exports` only (no `main`/
+    // `types`), which node10 resolution cannot read - `@angular/core/testing`
+    // and friends stop resolving. Bundler resolution is what the Angular CLI
+    // uses for the same reason.
+    "moduleResolution": "Bundler",
     "experimentalDecorators": true
   },
   "include": ["src/**/*"]
