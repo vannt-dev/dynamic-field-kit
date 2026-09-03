@@ -204,19 +204,35 @@ describe('FieldInput option resolution', () => {
     expect(renderedOptions(fixture)).toEqual(['Hanoi', 'HCM']);
   });
 
-  it('withholds a dynamic options callback instead of passing the function down', () => {
-    // A callback needs the form data to resolve, which FieldInput does not
-    // have -- only MultiFieldInput does, and it passes the result via the
-    // `options` input. Handing the raw function to a renderer would make it
-    // try to iterate a function.
-    const resolve = vi.fn(() => [{ label: 'never called here' }]);
+  it('resolves a dynamic options callback against the data it was given', () => {
+    // FieldInput now builds its renderer props through core's shared
+    // buildFieldRendererProps, which resolves the callback rather than
+    // withholding it (React and Vue always did). MultiFieldInput binds the
+    // real form data via `[data]`; mounted on its own, the callback still sees
+    // an object holding this field's own value.
+    const resolve = vi.fn(() => [{ label: 'resolved' }]);
 
     const fixture = mount({
       fieldDescription: { name: 'city', type: 'select', options: resolve },
     });
 
-    expect(renderedOptions(fixture)).toEqual([]);
-    expect(resolve).not.toHaveBeenCalled();
+    expect(renderedOptions(fixture)).toEqual(['resolved']);
+    expect(resolve).toHaveBeenCalled();
+  });
+
+  it('resolves a dynamic options callback against bound form data', () => {
+    const fixture = mount({
+      fieldDescription: {
+        name: 'city',
+        type: 'select',
+        options: (data: Record<string, unknown>) => [
+          { label: `in ${data['country']}` },
+        ],
+      },
+      data: { country: 'VN', city: undefined },
+    });
+
+    expect(renderedOptions(fixture)).toEqual(['in VN']);
   });
 
   it('passes nothing when the field declares no options at all', () => {
