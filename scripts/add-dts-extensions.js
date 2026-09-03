@@ -25,6 +25,14 @@
  * rewrite to a path that does not exist would trade one resolution error for
  * a harder-to-read one.
  *
+ * Since ng-packagr 21 this rewrites nothing: it emits one rolled-up
+ * `dist/types/<name>.d.ts` with no relative specifiers left to fix, so the
+ * step reports "0 relative specifiers" and `arethetypeswrong` is green on
+ * node16 without it. It stays as the guard it was written to be - the emit
+ * shape is ng-packagr's to change back, and TS2834 is silent until a consumer
+ * on node16 resolution hits it. `scripts/verify-package-entrypoints.js` and
+ * the attw check before a release are what would catch a regression.
+ *
  * Usage: node scripts/add-dts-extensions.js <dir> [...more dirs]
  * Paths are resolved against the caller's cwd, so a package can pass `dist`.
  */

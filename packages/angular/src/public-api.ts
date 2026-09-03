@@ -30,12 +30,17 @@ export {
   validateFieldAsync,
   validateFields,
   validateFieldsAsync,
+  collectFieldPaths,
+  indexGroupPathMap,
   resolveDisabled,
   resolveReadOnly,
   resolveOptions,
   validators,
 } from '@dynamic-field-kit/core';
-export type { ValidationResult } from '@dynamic-field-kit/core';
+export type {
+  ValidationResult,
+  ValidationContext,
+} from '@dynamic-field-kit/core';
 
 // Scoped registry: provide FIELD_REGISTRY on a component/route to give that
 // subtree an isolated set of renderers.
