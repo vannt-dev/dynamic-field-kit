@@ -193,6 +193,7 @@ jobs:
           node scripts/check-cross-framework-imports.js
           node scripts/check-renderer-prop-parity.js
           node scripts/verify-package-entrypoints.js
+          node scripts/check-docs-api-references.js
           node scripts/integration-cross-registry.js
 
       # Packs the built packages and exercises them under both ends of every
