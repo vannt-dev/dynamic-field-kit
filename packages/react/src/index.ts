@@ -6,8 +6,16 @@ export { layoutRegistry } from './layout';
 export { default as DynamicInput } from './components/DynamicInput';
 export { default as FieldInput } from './components/FieldInput';
 export { default as MultiFieldInput } from './components/MultiFieldInput';
+export type {
+  MultiFieldInputHandle,
+  DynamicFormBinding,
+} from './components/MultiFieldInput';
 export { DynamicFormDevTools } from './components/DynamicFormDevTools';
 export { useDynamicForm } from './useDynamicForm';
+export type {
+  UseDynamicFormOptions,
+  UseDynamicFormResult,
+} from './useDynamicForm';
 export { defaultRenderersMap, getDefaultRenderer } from './defaultRenderers';
 
 export {
@@ -28,6 +36,9 @@ export {
   type FieldTypeKey,
   type FieldDescription,
   type FieldRendererProps,
+  buildFieldRendererProps,
+  makeFieldId,
+  FIELD_RENDERER_PROP_KEYS,
 } from '@dynamic-field-kit/core';
 export {
   validateField,
