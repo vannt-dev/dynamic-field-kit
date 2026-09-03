@@ -37,7 +37,9 @@ npm install @dynamic-field-kit/core@^1.5.0 @dynamic-field-kit/angular@^1.5.0
 - `ColumnLayout` / `RowLayout` / `GridLayout` (the standalone layout components, registered for you)
 - `BaseInputComponent` — the abstract base your custom renderers extend
 - `FieldInputProps` — the inputs `BaseInputComponent` declares; the Angular
-  mirror of core's `FieldRendererProps`
+  mirror of core's `FieldRendererProps`, and complete as of 1.6 — `touched`,
+  `dirty`, `id` and the aria flags used to be missing here, which left an
+  Angular renderer no way to tell whether a field had been touched
 - `DynamicFormOptions` — what `createDynamicFormStore` takes: `fields`,
   `initialValues`, `validateOnBlur`, `validateOnChange`
 - `LayoutConfig` / `ColumnLayoutConfig` / `RowLayoutConfig` /
@@ -141,6 +143,7 @@ import {
       <dfk-multi-field-input
         [fieldDescriptions]="fields"
         [properties]="store.data()"
+        [touched]="store.touched()"
         (onChange)="store.handleChange($event)"
         (onBlurField)="store.handleBlur($event)"
       ></dfk-multi-field-input>
@@ -172,6 +175,8 @@ export class MyForm {
 | `setFieldValue(name, value)`        | Change one field                                                                  |
 | `handleBlur(name)`                  | Mark touched, and validate when `validateOnBlur`                                  |
 | `setFieldTouched(name, value?)`     | Set touched explicitly                                                            |
+| `touchAll()`                        | Mark every field touched — `handleSubmit` already calls it                        |
+| `resetTouched()`                    | Clear touched only, leaving data/errors/dirty alone                               |
 | `validate()`                        | Validate now, returns a boolean                                                   |
 | `reset(values?)`                    | Back to `initialValues` (or the values given), clearing errors/touched/submission |
 | `handleSubmit(onValid, onInvalid?)` | Returns an async handler; calls `preventDefault`, validates, then dispatches      |
@@ -179,6 +184,30 @@ export class MyForm {
 `MultiFieldInput` emits `(onBlurField)` with the field's name, driven by a
 `focusout` listener — so it works with any renderer, without the renderer
 needing a blur output of its own.
+
+Binding `[touched]="store.touched()"` makes the store the single source of
+truth, and is what makes an invalid submit visible: `handleSubmit` marks every
+field touched before validating, so a renderer that gates its error on the
+`touched` input shows it even for fields the user never focused. `reset()`
+clears touched the same way. Leave `[touched]` unbound and `MultiFieldInput`
+falls back to tracking it internally from blur alone; in that mode call its
+public `resetTouched()` / `setFieldTouched(name, value?)` (via a `@ViewChild`)
+to clear it, and listen to `(touchedChange)` for the next map.
+
+## Field ids
+
+Each field renders with ``id={`${idPrefix}-${name}`}``, where `idPrefix`
+defaults to a value unique to the `dfk-multi-field-input` instance. Two forms
+containing a field of the same name therefore no longer emit the same DOM id
+twice, and the id now reaches renderers as the `id` input.
+
+```html
+<!-- pinned ids — reproduces the pre-1.6 `dfk-field-title` -->
+<dfk-multi-field-input [fieldDescriptions]="fields" idPrefix="dfk-field">
+</dfk-multi-field-input>
+```
+
+For one field, set `id` on its `FieldDescription`; it wins over the prefix.
 
 ## Default renderers
 
