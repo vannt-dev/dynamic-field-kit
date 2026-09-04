@@ -1,3 +1,4 @@
+import { makeErrorId } from '@dynamic-field-kit/core';
 import { mount } from '@vue/test-utils';
 import { describe, expect, it, vi } from 'vitest';
 import DynamicInput from '../src/components/DynamicInput';
@@ -139,5 +140,46 @@ describe('Vue Default Built-in Renderers', () => {
     expect(pass.exists()).toBe(true);
     expect(mail.exists()).toBe(true);
     expect(area.exists()).toBe(true);
+  });
+});
+
+describe('default renderer error node', () => {
+  it('renders the message with the id ariaDescribedBy points at', () => {
+    const wrapper = mount(DynamicInput, {
+      props: {
+        type: 'text',
+        id: 'f-title',
+        value: '',
+        error: ['Title is required'],
+        ariaInvalid: true,
+        ariaDescribedBy: makeErrorId('f-title'),
+      },
+    });
+
+    const node = wrapper.find('#f-title-error');
+    expect(node.exists()).toBe(true);
+    expect(node.text()).toContain('Title is required');
+  });
+
+  it('renders nothing extra when the field is valid', () => {
+    const wrapper = mount(DynamicInput, {
+      props: { type: 'text', id: 'f-ok', value: 'x' },
+    });
+    expect(wrapper.find('#f-ok-error').exists()).toBe(false);
+  });
+});
+
+describe('default renderer error node accepts a bare string', () => {
+  it('renders the whole string, not its first character', () => {
+    const wrapper = mount(DynamicInput, {
+      props: {
+        type: 'text',
+        id: 'f-str',
+        value: '',
+        error: 'Title is required',
+      },
+    });
+
+    expect(wrapper.find('#f-str-error').text()).toBe('Title is required');
   });
 });
