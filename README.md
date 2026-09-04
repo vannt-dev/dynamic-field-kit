@@ -308,14 +308,14 @@ const fields: FieldDescription[] = [
 ];
 ```
 
-| Property          | Description                                                                                         |
-| ----------------- | --------------------------------------------------------------------------------------------------- |
-| validate          | `(value, data, rootData?, context?) => string                                                       | string[]                                                                                                                            | undefined | Promise<...>`. Falsy means valid. `context.signal` aborts when a newer run supersedes this one. |
-| validationMode    | `'sync'                                                                                             | 'async'`. Declares a validator that returns a Promise without the `async` keyword, so the live pass skips it instead of calling it. |
-| validators        | Built-in helpers: `required`, `email`, `minLength`, `maxLength`, `min`, `max`, `pattern`, `compose` |
-| options           | Array of option objects or dynamic callback function `(data, rootData?) => Option[]`                |
-| disabledCondition | `(data, rootData?) => boolean`. OR-ed with the static `disabled` flag.                              |
-| readOnlyCondition | `(data, rootData?) => boolean`.                                                                     |
+| Property          | Description                                                                                                    |
+| ----------------- | -------------------------------------------------------------------------------------------------------------- |
+| validate          | `(value, data, rootData?, context?) => string                                                                  | string[]                                                                                                                            | undefined | Promise<...>`. Falsy means valid. `context.signal` aborts when a newer run supersedes this one. |
+| validationMode    | `'sync'                                                                                                        | 'async'`. Declares a validator that returns a Promise without the `async` keyword, so the live pass skips it instead of calling it. |
+| validators        | Built-in helpers: `required`, `email`, `minLength`, `maxLength`, `min`, `max`, `pattern`, `matches`, `compose` |
+| options           | Array of option objects or dynamic callback function `(data, rootData?) => Option[]`                           |
+| disabledCondition | `(data, rootData?) => boolean`. OR-ed with the static `disabled` flag.                                         |
+| readOnlyCondition | `(data, rootData?) => boolean`.                                                                                |
 
 `MultiFieldInput` passes each field's current `error` and effective
 `disabled`/`readOnly` to its renderer (via `FieldRendererProps`), and emits an
@@ -722,3 +722,42 @@ MIT © [vannt-dev](https://github.com/vannt-dev)
 ## 🤝 Contributing
 
 Contributions welcome! Please see individual package READMEs for setup and development instructions.
+
+### Validation messages
+
+Set the built-in validators' messages once for a whole form instead of passing a
+string to every validator on every field:
+
+```ts
+const form = useDynamicForm({
+  fields,
+  messages: {
+    required: 'Bắt buộc',
+    minLength: 'Tối thiểu {min} ký tự',
+    matches: 'Phải khớp {other}',
+  },
+});
+```
+
+A message passed directly to a validator still wins, and any key you omit falls
+back to the English default. For code that calls `validateFields` directly and
+has no form to hang a catalog on, `setDefaultMessages(catalog)` sets a
+process-wide one; a per-form catalog takes precedence over it.
+
+| Key         | Params    | English default         |
+| ----------- | --------- | ----------------------- |
+| `required`  | —         | Field is required       |
+| `email`     | —         | Invalid email address   |
+| `minLength` | `{min}`   | Minimum length is {min} |
+| `maxLength` | `{max}`   | Maximum length is {max} |
+| `min`       | `{min}`   | Minimum value is {min}  |
+| `max`       | `{max}`   | Maximum value is {max}  |
+| `pattern`   | —         | Invalid format          |
+| `matches`   | `{other}` | Must match {other}      |
+
+**No locale bundles ship with this library.** Supply your own catalog — the
+mechanism is here, the translations are yours.
+
+A placeholder with no matching param is left in the string verbatim rather than
+replaced with `undefined`, so a typo shows up as a visible `{unit}` instead of
+a mystery.
