@@ -2,8 +2,12 @@
 
 These recipes keep `dynamic-field-kit` in charge of values, touched state and
 validation while a UI kit owns presentation. The rule is the same everywhere:
-display `error` only when `touched`, forward `id`, and call the supplied value
-and blur callbacks.
+display `error` only when `touched`, forward `id` **and the three aria props**,
+put `makeErrorId(id)` on the element showing the message, and call the supplied
+value and blur callbacks.
+
+See [Forward the aria props](#forward-the-aria-props) for why the aria half is
+not optional polish.
 
 ## React + Ant Design
 
@@ -11,6 +15,7 @@ and blur callbacks.
 import { Form, Input } from 'antd';
 import {
   fieldRegistry,
+  makeErrorId,
   type FieldRendererProps,
 } from '@dynamic-field-kit/react';
 
@@ -24,7 +29,11 @@ function AntText(props: FieldRendererProps<string>) {
       label={props.label}
       required={props.required}
       validateStatus={message ? 'error' : undefined}
-      help={message}
+      // The id is what `ariaDescribedBy` points at. Without it the reference
+      // dangles and a screen reader has nothing to read out.
+      help={
+        message ? <span id={makeErrorId(props.id!)}>{message}</span> : undefined
+      }
     >
       <Input
         id={props.id}
@@ -33,6 +42,9 @@ function AntText(props: FieldRendererProps<string>) {
         disabled={props.disabled}
         readOnly={props.readOnly}
         status={message ? 'error' : undefined}
+        aria-invalid={props.ariaInvalid}
+        aria-required={props.ariaRequired}
+        aria-describedby={props.ariaDescribedBy}
         onChange={(event) => props.onValueChange?.(event.target.value)}
         onBlur={props.onBlur}
       />
@@ -208,3 +220,37 @@ For the UI, bind the three status members rather than `isValid` alone -
 Typing cancels a live run in flight, so a stale result never overwrites a newer
 one. A submit is not cancelled by typing: it validates the snapshot it was
 given and always calls `onValid` or `onInvalid`.
+
+## Forward the aria props
+
+`buildFieldRendererProps` computes `ariaInvalid`, `ariaRequired` and
+`ariaDescribedBy` for every field, on every adapter. A custom renderer that
+drops them throws that work away.
+
+This is not optional polish. `focusFirstInvalidField` — the helper for moving
+focus to the first problem after a failed submit — selects
+
+```js
+'[aria-invalid="true"], input:invalid, select:invalid, textarea:invalid';
+```
+
+A renderer that never sets `aria-invalid` makes that helper **silently do
+nothing**. It does not throw and it does not warn; the form simply fails to
+submit and focus stays where it was. This was the single most common gap found
+in real consumer renderers, in part because earlier versions of this page did
+not mention the aria props at all.
+
+Three things to wire, in every renderer:
+
+| Prop              | Where it goes                                                                                                 |
+| ----------------- | ------------------------------------------------------------------------------------------------------------- |
+| `ariaInvalid`     | `aria-invalid` on the focusable control                                                                       |
+| `ariaRequired`    | `aria-required` on the focusable control                                                                      |
+| `ariaDescribedBy` | `aria-describedby` on the control, **and** `makeErrorId(id)` as the `id` of the element rendering the message |
+
+`ariaDescribedBy` is `undefined` while the field is valid and
+`` `${id}-error` `` once it has an error, so binding it unconditionally is
+correct — there is nothing to clear.
+
+If you use the built-in renderers you get all of this already; they render the
+message node themselves.
