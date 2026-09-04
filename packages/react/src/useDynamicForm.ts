@@ -142,7 +142,23 @@ export function useDynamicForm({
   // Keeps the result in step with later data changes. The seed above covers
   // the first render (including the server's); from here on validators run
   // after commit, never from a useMemo that re-runs on every render.
+  // Identity of the data the synchronous pass last ran against. `handleChange`
+  // validates eagerly so `errors` is correct in the same tick; without this
+  // the effect below would then validate the identical object a second time.
+  const lastValidatedRef = useRef<Properties | undefined>(undefined);
+  // A `fields` change must re-validate even when `data` is untouched, so
+  // re-arm the guard rather than letting the identity match short-circuit it.
+  const fieldsRef = useRef(fields);
+  if (fieldsRef.current !== fields) {
+    fieldsRef.current = fields;
+    lastValidatedRef.current = undefined;
+  }
+
   useEffect(() => {
+    if (lastValidatedRef.current === data) {
+      return;
+    }
+    lastValidatedRef.current = data;
     commitSyncResult(validateFields(fields, data));
   }, [fields, data, commitSyncResult]);
 
@@ -194,6 +210,7 @@ export function useDynamicForm({
       validationRunRef.current += 1;
       setIsValidating(false);
 
+      lastValidatedRef.current = next;
       const res = validateFields(fields, next);
       commitSyncResult(res);
 
