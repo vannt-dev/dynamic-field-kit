@@ -1,3 +1,4 @@
+import { validators } from '@dynamic-field-kit/core';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { FieldDescription } from '../src';
@@ -273,5 +274,37 @@ describe('baselineValues and getDirtyValues', () => {
     );
     act(() => result.current.setFieldValue('note', 'added'));
     expect(result.current.getDirtyValues()).toEqual({ note: 'added' });
+  });
+});
+
+describe('messages', () => {
+  const msgFields: FieldDescription[] = [
+    { name: 'title', type: 'text', validate: validators.required() },
+  ];
+
+  it('resolves validator messages through the supplied catalog', () => {
+    const { result } = renderHook(() =>
+      useDynamicForm({
+        fields: msgFields,
+        initialValues: { title: '' },
+        messages: { required: 'Bắt buộc' },
+      }),
+    );
+
+    act(() => {
+      result.current.validate();
+    });
+    expect(result.current.errors.title).toEqual(['Bắt buộc']);
+  });
+
+  it('keeps the English default with no catalog', () => {
+    const { result } = renderHook(() =>
+      useDynamicForm({ fields: msgFields, initialValues: { title: '' } }),
+    );
+
+    act(() => {
+      result.current.validate();
+    });
+    expect(result.current.errors.title).toEqual(['Field is required']);
   });
 });
