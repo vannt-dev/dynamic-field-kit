@@ -261,3 +261,49 @@ describe('MultiFieldInput', () => {
     expect(container.style.gridTemplateColumns).toBe('repeat(3, 1fr)');
   });
 });
+
+describe('MultiFieldInput dirty baseline', () => {
+  let registry: ReturnType<typeof makeRegistry>;
+
+  beforeEach(() => {
+    registry = makeRegistry();
+    registry.register('text', TextRendererComponent as never);
+    TestBed.configureTestingModule({
+      imports: [MultiFieldInput],
+      providers: [{ provide: FIELD_REGISTRY, useValue: registry }],
+    });
+  });
+
+  const dirtyFields: FieldDescription[] = [{ name: 'title', type: 'text' }];
+
+  it('is not dirty when properties arrive after mount', () => {
+    const fixture = TestBed.createComponent(MultiFieldInput);
+    fixture.componentRef.setInput('fieldDescriptions', dirtyFields);
+    fixture.componentRef.setInput('properties', undefined);
+    fixture.detectChanges();
+
+    fixture.componentRef.setInput('properties', { title: 'loaded' });
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.isFieldDirty('title')).toBe(false);
+  });
+
+  it('honours an explicit initialProperties baseline', () => {
+    const fixture = TestBed.createComponent(MultiFieldInput);
+    fixture.componentRef.setInput('fieldDescriptions', dirtyFields);
+    fixture.componentRef.setInput('properties', { title: 'edited' });
+    fixture.componentRef.setInput('initialProperties', { title: 'original' });
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.isFieldDirty('title')).toBe(true);
+  });
+
+  it('is not dirty against its own opening values', () => {
+    const fixture = TestBed.createComponent(MultiFieldInput);
+    fixture.componentRef.setInput('fieldDescriptions', dirtyFields);
+    fixture.componentRef.setInput('properties', { title: 'original' });
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.isFieldDirty('title')).toBe(false);
+  });
+});
