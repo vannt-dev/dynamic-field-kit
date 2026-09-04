@@ -258,3 +258,50 @@ describe('Angular Signal DynamicFormStore', () => {
     expect(store.isSubmitted()).toBe(false);
   });
 });
+
+describe('baselineValues and getDirtyValues', () => {
+  const baselineFields: FieldDescription[] = [
+    { name: 'title', type: 'text', label: 'Title' },
+    { name: 'note', type: 'text', label: 'Note' },
+  ];
+
+  it('exposes the initial values as the baseline', () => {
+    const store = createDynamicFormStore({
+      fields: baselineFields,
+      initialValues: { title: 'a', note: 'n' },
+    });
+    expect(store.baselineValues()).toEqual({ title: 'a', note: 'n' });
+    expect(store.getDirtyValues()).toEqual({});
+  });
+
+  it('reports only the changed entries as dirty', () => {
+    const store = createDynamicFormStore({
+      fields: baselineFields,
+      initialValues: { title: 'a', note: 'n' },
+    });
+    store.setFieldValue('title', 'b');
+    expect(store.getDirtyValues()).toEqual({ title: 'b' });
+  });
+
+  it('re-bases the baseline on reset(newValues)', () => {
+    const store = createDynamicFormStore({
+      fields: baselineFields,
+      initialValues: { title: 'a', note: 'n' },
+    });
+    store.setFieldValue('title', 'b');
+    store.reset({ title: 'c', note: 'n' });
+
+    expect(store.baselineValues()).toEqual({ title: 'c', note: 'n' });
+    expect(store.getDirtyValues()).toEqual({});
+  });
+
+  it('restores the original baseline on a bare reset()', () => {
+    const store = createDynamicFormStore({
+      fields: baselineFields,
+      initialValues: { title: 'a', note: 'n' },
+    });
+    store.reset({ title: 'c', note: 'n' });
+    store.reset();
+    expect(store.baselineValues()).toEqual({ title: 'a', note: 'n' });
+  });
+});
