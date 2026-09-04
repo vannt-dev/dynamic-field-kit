@@ -1,3 +1,4 @@
+import type { OptionsState } from './optionsLoader';
 import type { FieldDescription, FieldRendererProps, Properties } from './types';
 import {
   resolveDisabled,
@@ -28,6 +29,8 @@ export const FIELD_RENDERER_PROP_KEYS = [
   'dirty',
   'error',
   'options',
+  'optionsStatus',
+  'optionsError',
   'className',
   'description',
   'id',
@@ -114,6 +117,12 @@ export interface BuildFieldRendererPropsInput {
   rootData?: Properties;
   /** Resolved DOM id for this field - see `makeFieldId`. */
   id: string;
+  /**
+   * Current state of an async options load, from `createOptionsLoader`.
+   * Omitted for static or synchronous options, where there is nothing to wait
+   * for and `resolveOptions` already has the answer.
+   */
+  optionsState?: OptionsState;
   touched?: boolean;
   dirty?: boolean;
   /**
@@ -161,6 +170,7 @@ export function buildFieldRendererProps({
   touched,
   dirty,
   validationErrors,
+  optionsState,
 }: BuildFieldRendererPropsInput): ResolvedFieldRendererProps {
   const {
     name,
@@ -182,7 +192,10 @@ export function buildFieldRendererProps({
 
   const disabled = resolveDisabled(fieldDescription, data, rootData);
   const readOnly = resolveReadOnly(fieldDescription, data, rootData);
-  const options = resolveOptions(fieldDescription, data, rootData);
+  // An async loader owns the list; resolveOptions returns undefined for those.
+  const options = optionsState
+    ? optionsState.options
+    : resolveOptions(fieldDescription, data, rootData);
 
   // A disabled field is not submitted, so validating it would surface an error
   // the user cannot act on.
@@ -204,6 +217,8 @@ export function buildFieldRendererProps({
     dirty,
     error,
     options,
+    optionsStatus: optionsState?.status,
+    optionsError: optionsState?.error,
     className,
     description,
     id,

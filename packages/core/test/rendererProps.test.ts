@@ -273,3 +273,57 @@ describe('reserved props warning', () => {
     process.env.NODE_ENV = previous;
   });
 });
+
+describe('options loading state', () => {
+  const asyncField: FieldDescription = {
+    name: 'city',
+    type: 'text',
+    options: async () => [{ value: 'hn' }],
+  };
+
+  it('takes options and status from the supplied loader state', () => {
+    const props = buildFieldRendererProps({
+      fieldDescription: asyncField,
+      data: {},
+      id: 'f-city',
+      optionsState: { status: 'ready', options: [{ value: 'hn' }] },
+    });
+
+    expect(props.options).toEqual([{ value: 'hn' }]);
+    expect(props.optionsStatus).toBe('ready');
+    expect(props.optionsError).toBeUndefined();
+  });
+
+  it('surfaces a load failure', () => {
+    const boom = new Error('down');
+    const props = buildFieldRendererProps({
+      fieldDescription: asyncField,
+      data: {},
+      id: 'f-city',
+      optionsState: { status: 'error', error: boom },
+    });
+
+    expect(props.optionsStatus).toBe('error');
+    expect(props.optionsError).toBe(boom);
+  });
+
+  it('leaves a synchronous field untouched', () => {
+    const props = buildFieldRendererProps({
+      fieldDescription: {
+        name: 'city',
+        type: 'text',
+        options: [{ value: 'hn' }],
+      },
+      data: {},
+      id: 'f-city',
+    });
+
+    expect(props.options).toEqual([{ value: 'hn' }]);
+    expect(props.optionsStatus).toBeUndefined();
+  });
+
+  it('declares both new keys in the contract', () => {
+    expect(FIELD_RENDERER_PROP_KEYS).toContain('optionsStatus');
+    expect(FIELD_RENDERER_PROP_KEYS).toContain('optionsError');
+  });
+});
