@@ -15,7 +15,7 @@ import {
   ViewChild,
   ViewContainerRef,
 } from '@angular/core';
-import { FieldTypeKey, Properties } from '@dynamic-field-kit/core';
+import { FieldTypeKey, makeErrorId, Properties } from '@dynamic-field-kit/core';
 import { Subscription } from 'rxjs';
 import { FIELD_REGISTRY } from '../fieldRegistryToken';
 import { BaseInputComponent } from './BaseInput';
@@ -55,7 +55,17 @@ const KNOWN_PROPS = [
   standalone: true,
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `<div #host style="display: contents;"></div>`,
+  // *ngIf rather than @if: the peer range starts at Angular 16, and the
+  // built-in control flow block syntax is 17+.
+  template: `<div #host style="display: contents;"></div>
+    <div
+      *ngIf="showDefaultError()"
+      [id]="errorNodeId()"
+      class="dfk-field-error"
+      role="alert"
+    >
+      {{ firstError() }}
+    </div>`,
 })
 export class DynamicInput
   extends BaseInputComponent
@@ -138,6 +148,31 @@ export class DynamicInput
     this.compRef?.destroy();
     this.compRef = undefined;
     this.inputInstance = undefined;
+  }
+
+  /** The id `ariaDescribedBy` points at. See core's `makeErrorId`. */
+  errorNodeId(): string {
+    return makeErrorId(this.id ?? '');
+  }
+
+  /** `error` may arrive as a bare string, so index 0 would be a character. */
+  firstError(): string | undefined {
+    return Array.isArray(this.error) ? this.error[0] : this.error;
+  }
+
+  /**
+   * Whether the adapter should render the validation message itself.
+   *
+   * Asks the registry directly rather than reading a flag set by `render()`:
+   * `render()` runs in `ngAfterViewInit`, by which point this template's
+   * bindings have already been checked for the pass, and under `OnPush`
+   * nothing would mark them dirty again. A registered renderer owns its own
+   * error presentation, so only the built-in fallback gets a message here.
+   */
+  showDefaultError(): boolean {
+    return Boolean(
+      !this.registry.get(this.type) && this.firstError() && this.id,
+    );
   }
 
   private render(): void {

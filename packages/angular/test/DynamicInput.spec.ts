@@ -341,3 +341,62 @@ describe('DynamicInput', () => {
     expect(seen).toEqual([]);
   });
 });
+
+describe('DynamicInput default renderer error node', () => {
+  let registry: ReturnType<typeof makeRegistry>;
+
+  beforeEach(() => {
+    // Deliberately empty: nothing registered for 'text', so DynamicInput falls
+    // back to its built-in HTML5 rendering.
+    registry = makeRegistry();
+    TestBed.configureTestingModule({
+      imports: [DynamicInput],
+      providers: [{ provide: FIELD_REGISTRY, useValue: registry }],
+    });
+  });
+
+  it('renders the message with the id ariaDescribedBy points at', () => {
+    const fixture = TestBed.createComponent(DynamicInput);
+    fixture.componentRef.setInput('type', 'text');
+    fixture.componentRef.setInput('id', 'f-title');
+    fixture.componentRef.setInput('error', ['Title is required']);
+    fixture.detectChanges();
+
+    const node: HTMLElement | null =
+      fixture.nativeElement.querySelector('#f-title-error');
+    expect(node).not.toBeNull();
+    expect(node!.textContent).toContain('Title is required');
+  });
+
+  it('renders nothing extra when the field is valid', () => {
+    const fixture = TestBed.createComponent(DynamicInput);
+    fixture.componentRef.setInput('type', 'text');
+    fixture.componentRef.setInput('id', 'f-ok');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('#f-ok-error')).toBeNull();
+  });
+
+  it('leaves a custom renderer to render its own message', () => {
+    registry.register('text', TextRendererComponent as never);
+    const fixture = TestBed.createComponent(DynamicInput);
+    fixture.componentRef.setInput('type', 'text');
+    fixture.componentRef.setInput('id', 'f-custom');
+    fixture.componentRef.setInput('error', ['Boom']);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('#f-custom-error')).toBeNull();
+  });
+
+  it('renders a bare string error whole, not its first character', () => {
+    const fixture = TestBed.createComponent(DynamicInput);
+    fixture.componentRef.setInput('type', 'text');
+    fixture.componentRef.setInput('id', 'f-str');
+    fixture.componentRef.setInput('error', 'Title is required');
+    fixture.detectChanges();
+
+    const node: HTMLElement | null =
+      fixture.nativeElement.querySelector('#f-str-error');
+    expect(node!.textContent?.trim()).toBe('Title is required');
+  });
+});
