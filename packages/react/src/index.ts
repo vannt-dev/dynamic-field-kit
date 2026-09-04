@@ -38,6 +38,7 @@ export {
   type FieldRendererProps,
   buildFieldRendererProps,
   makeFieldId,
+  makeErrorId,
   FIELD_RENDERER_PROP_KEYS,
 } from '@dynamic-field-kit/core';
 export {

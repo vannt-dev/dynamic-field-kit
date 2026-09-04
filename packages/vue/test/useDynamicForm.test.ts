@@ -1,3 +1,4 @@
+import { validators } from '@dynamic-field-kit/core';
 import { describe, expect, it, vi } from 'vitest';
 import { effectScope } from 'vue';
 import type { FieldDescription } from '../src';
@@ -322,5 +323,77 @@ describe('scope cleanup', () => {
 
     scope.stop();
     expect(seen?.aborted).toBe(true);
+  });
+});
+
+describe('baselineValues and getDirtyValues', () => {
+  const baselineFields: FieldDescription[] = [
+    { name: 'title', type: 'text', label: 'Title' },
+    { name: 'note', type: 'text', label: 'Note' },
+  ];
+
+  it('exposes the initial values as the baseline', () => {
+    const form = useDynamicForm({
+      fields: baselineFields,
+      initialValues: { title: 'a', note: 'n' },
+    });
+    expect(form.baselineValues.value).toEqual({ title: 'a', note: 'n' });
+    expect(form.getDirtyValues()).toEqual({});
+  });
+
+  it('reports only the changed entries as dirty', () => {
+    const form = useDynamicForm({
+      fields: baselineFields,
+      initialValues: { title: 'a', note: 'n' },
+    });
+    form.setFieldValue('title', 'b');
+    expect(form.getDirtyValues()).toEqual({ title: 'b' });
+  });
+
+  it('re-bases the baseline on reset(newValues)', () => {
+    const form = useDynamicForm({
+      fields: baselineFields,
+      initialValues: { title: 'a', note: 'n' },
+    });
+    form.setFieldValue('title', 'b');
+    form.reset({ title: 'c', note: 'n' });
+
+    expect(form.baselineValues.value).toEqual({ title: 'c', note: 'n' });
+    expect(form.getDirtyValues()).toEqual({});
+  });
+
+  it('restores the original baseline on a bare reset()', () => {
+    const form = useDynamicForm({
+      fields: baselineFields,
+      initialValues: { title: 'a', note: 'n' },
+    });
+    form.reset({ title: 'c', note: 'n' });
+    form.reset();
+    expect(form.baselineValues.value).toEqual({ title: 'a', note: 'n' });
+  });
+});
+
+describe('messages', () => {
+  const msgFields: FieldDescription[] = [
+    { name: 'title', type: 'text', validate: validators.required() },
+  ];
+
+  it('resolves validator messages through the supplied catalog', () => {
+    const form = useDynamicForm({
+      fields: msgFields,
+      initialValues: { title: '' },
+      messages: { required: 'Bắt buộc' },
+    });
+    form.validate();
+    expect(form.errors.value.title).toEqual(['Bắt buộc']);
+  });
+
+  it('keeps the English default with no catalog', () => {
+    const form = useDynamicForm({
+      fields: msgFields,
+      initialValues: { title: '' },
+    });
+    form.validate();
+    expect(form.errors.value.title).toEqual(['Field is required']);
   });
 });

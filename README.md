@@ -308,14 +308,14 @@ const fields: FieldDescription[] = [
 ];
 ```
 
-| Property          | Description                                                                                         |
-| ----------------- | --------------------------------------------------------------------------------------------------- |
-| validate          | `(value, data, rootData?, context?) => string                                                       | string[]                                                                                                                            | undefined | Promise<...>`. Falsy means valid. `context.signal` aborts when a newer run supersedes this one. |
-| validationMode    | `'sync'                                                                                             | 'async'`. Declares a validator that returns a Promise without the `async` keyword, so the live pass skips it instead of calling it. |
-| validators        | Built-in helpers: `required`, `email`, `minLength`, `maxLength`, `min`, `max`, `pattern`, `compose` |
-| options           | Array of option objects or dynamic callback function `(data, rootData?) => Option[]`                |
-| disabledCondition | `(data, rootData?) => boolean`. OR-ed with the static `disabled` flag.                              |
-| readOnlyCondition | `(data, rootData?) => boolean`.                                                                     |
+| Property          | Description                                                                                                    |
+| ----------------- | -------------------------------------------------------------------------------------------------------------- |
+| validate          | `(value, data, rootData?, context?) => string                                                                  | string[]                                                                                                                            | undefined | Promise<...>`. Falsy means valid. `context.signal` aborts when a newer run supersedes this one. |
+| validationMode    | `'sync'                                                                                                        | 'async'`. Declares a validator that returns a Promise without the `async` keyword, so the live pass skips it instead of calling it. |
+| validators        | Built-in helpers: `required`, `email`, `minLength`, `maxLength`, `min`, `max`, `pattern`, `matches`, `compose` |
+| options           | Array of option objects or dynamic callback function `(data, rootData?) => Option[]`                           |
+| disabledCondition | `(data, rootData?) => boolean`. OR-ed with the static `disabled` flag.                                         |
+| readOnlyCondition | `(data, rootData?) => boolean`.                                                                                |
 
 `MultiFieldInput` passes each field's current `error` and effective
 `disabled`/`readOnly` to its renderer (via `FieldRendererProps`), and emits an
@@ -722,3 +722,104 @@ MIT © [vannt-dev](https://github.com/vannt-dev)
 ## 🤝 Contributing
 
 Contributions welcome! Please see individual package READMEs for setup and development instructions.
+
+### Validation messages
+
+Set the built-in validators' messages once for a whole form instead of passing a
+string to every validator on every field:
+
+```ts
+const form = useDynamicForm({
+  fields,
+  messages: {
+    required: 'Bắt buộc',
+    minLength: 'Tối thiểu {min} ký tự',
+    matches: 'Phải khớp {other}',
+  },
+});
+```
+
+A message passed directly to a validator still wins, and any key you omit falls
+back to the English default. For code that calls `validateFields` directly and
+has no form to hang a catalog on, `setDefaultMessages(catalog)` sets a
+process-wide one; a per-form catalog takes precedence over it.
+
+| Key         | Params    | English default         |
+| ----------- | --------- | ----------------------- |
+| `required`  | —         | Field is required       |
+| `email`     | —         | Invalid email address   |
+| `minLength` | `{min}`   | Minimum length is {min} |
+| `maxLength` | `{max}`   | Maximum length is {max} |
+| `min`       | `{min}`   | Minimum value is {min}  |
+| `max`       | `{max}`   | Maximum value is {max}  |
+| `pattern`   | —         | Invalid format          |
+| `matches`   | `{other}` | Must match {other}      |
+
+**No locale bundles ship with this library.** Supply your own catalog — the
+mechanism is here, the translations are yours.
+
+A placeholder with no matching param is left in the string verbatim rather than
+replaced with `undefined`, so a typo shows up as a visible `{unit}` instead of
+a mystery.
+
+### Async options
+
+`options` can return a promise. Two shapes are covered, and the difference is
+what triggers a reload.
+
+**Dependent options** — the reload is driven by form data:
+
+```ts
+{
+  name: 'city',
+  type: 'select',
+  options: async (data, _rootData, ctx) =>
+    fetch(`/api/cities?country=${data.country}`, { signal: ctx?.signal })
+      .then((r) => r.json()),
+  optionsDeps: (data) => [data.country],
+  debounceMs: 200,
+}
+```
+
+**Search-remote** — the reload is driven by the renderer's own search box,
+which the form data never sees. The renderer calls `onOptionsQuery`:
+
+```ts
+{
+  name: 'assignee',
+  type: 'userPicker',
+  options: async (_data, _rootData, ctx) =>
+    fetch(`/api/users?q=${ctx?.query ?? ''}`, { signal: ctx?.signal })
+      .then((r) => r.json()),
+  debounceMs: 300,
+}
+```
+
+The renderer receives `optionsStatus` (`'idle' | 'loading' | 'ready' | 'error'`),
+`optionsError`, and `onOptionsQuery`.
+
+| Field property | Effect                                                                         |
+| -------------- | ------------------------------------------------------------------------------ |
+| `optionsDeps`  | Values a reload depends on, compared shallowly. Defaults to `[]` — fetch once. |
+| `optionsMode`  | `'async'` for a loader that returns a promise without the `async` keyword.     |
+| `debounceMs`   | Collapses rapid reloads into one fetch. Applies to async options only.         |
+
+Superseded requests are aborted through `ctx.signal`, and a slow response that
+lands after a newer one is discarded, so the option list always reflects the
+most recent request rather than the last one to arrive.
+
+Native `async` functions are detected automatically. A loader wrapped in a
+memoiser, a spy or a transpiler helper is **not** — `constructor.name` is no
+longer `'AsyncFunction'`. Declare `optionsMode: 'async'` for those; without it
+the promise is dropped and a development warning says so.
+
+Note that a form whose `properties` arrive after mount sees its data change
+twice (empty, then loaded), which is two loads without a `debounceMs`. Setting
+one collapses them.
+
+The loader is bound to the field description it first saw. Changing a field's
+`name` swaps it — every adapter keys each field by name, so that remounts —
+but changing only the `options` closure on a same-named field does not. That is
+deliberate: a `fields` array built inline in a component body gets a fresh
+closure on every render, and rebuilding on closure identity would refetch in a
+loop.

@@ -27,6 +27,8 @@ export interface DynamicFormBinding {
   data: Properties;
   errors: Record<string, string[]>;
   touched: Record<string, boolean>;
+  /** The values per-field `dirty` is measured against. See `useDynamicForm`. */
+  baselineValues?: Properties;
   handleChange: (data: Properties) => void;
   handleBlur: (fieldName: string) => void;
 }
@@ -57,6 +59,14 @@ interface Props {
    * restores the pre-1.6 ids), or set `FieldDescription.id` per field.
    */
   idPrefix?: string;
+  /**
+   * The values per-field `dirty` is measured against. Defaults to the first
+   * non-`undefined` `properties` this component sees - which is what an edit
+   * form wants when its values arrive from a fetch after mount. Supplied
+   * automatically by the `form` shorthand; pass it explicitly to re-base
+   * `dirty` without going through a form store.
+   */
+  initialProperties?: Properties;
   /**
    * Top-level form data, threaded down through repeatable groups so a nested
    * field's `appearCondition`/`computeValue` can read the root form. Omitted at
@@ -113,6 +123,7 @@ const MultiFieldInputInner = (
     onChange,
     layout,
     idPrefix,
+    initialProperties,
     rootData,
     onValidityChange,
     onBlurField,
@@ -135,7 +146,23 @@ const MultiFieldInputInner = (
   const [internalTouched, setInternalTouched] = useState<
     Record<string, boolean>
   >({});
-  const initialPropertiesRef = useRef<Properties>(effectiveProperties ?? {});
+  // Falls back to the first non-`undefined` properties rather than `{}` at
+  // mount: an edit form whose values arrive from a fetch would otherwise
+  // measure `dirty` against an empty object and report every field dirty
+  // forever. Re-basing on every `properties` change is not an option - in
+  // controlled mode `form.data` gets a new identity on every keystroke, which
+  // would pin `dirty` to false instead.
+  const fallbackBaselineRef = useRef<Properties | undefined>(
+    effectiveProperties,
+  );
+  if (fallbackBaselineRef.current === undefined) {
+    fallbackBaselineRef.current = effectiveProperties;
+  }
+  const baseline =
+    initialProperties ??
+    form?.baselineValues ??
+    fallbackBaselineRef.current ??
+    {};
 
   // Unique per component instance. `useId` is SSR-safe (server and client
   // agree), unlike a module-level counter. Its delimiters vary by React version
@@ -272,7 +299,7 @@ const MultiFieldInputInner = (
           // gets a new identity on every touch.
           touchedMap={isFieldGroup(f) ? effectiveTouched : undefined}
           errors={effectiveErrors}
-          dirty={data[f.name] !== initialPropertiesRef.current[f.name]}
+          dirty={!Object.is(data[f.name], baseline[f.name])}
           onBlurField={handleBlurField}
           onValueChangeField={handleValueChangeField}
         />

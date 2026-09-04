@@ -1,3 +1,4 @@
+import type { OptionsState } from './optionsLoader';
 import type { FieldDescription, FieldRendererProps, Properties } from './types';
 import {
   resolveDisabled,
@@ -28,6 +29,8 @@ export const FIELD_RENDERER_PROP_KEYS = [
   'dirty',
   'error',
   'options',
+  'optionsStatus',
+  'optionsError',
   'className',
   'description',
   'id',
@@ -42,6 +45,59 @@ export const FIELD_RENDERER_PROP_KEYS = [
 ] as const;
 
 export type FieldRendererPropKey = (typeof FIELD_RENDERER_PROP_KEYS)[number];
+
+function isDev(): boolean {
+  return (
+    typeof process !== 'undefined' &&
+    !!process.env &&
+    process.env.NODE_ENV !== 'production'
+  );
+}
+
+const RESERVED_PROP_KEYS: ReadonlySet<string> = new Set(
+  FIELD_RENDERER_PROP_KEYS,
+);
+const warnedReservedProps = new Set<string>();
+
+/** Test-only. Clears the warn-once memo so each case starts from silence. */
+export function __resetReservedPropWarnings(): void {
+  warnedReservedProps.clear();
+}
+
+/**
+ * `props` is spread *before* the resolved contract in every adapter, so a key
+ * the contract owns is silently overwritten - usually by `undefined`, which is
+ * indistinguishable from the value simply vanishing. Nothing throws, so this
+ * warning is the only signal a consumer gets.
+ *
+ * Fires once per field+key: a form re-renders constantly, and a console filled
+ * with the same line is a console nobody reads.
+ */
+function warnOnReservedProps(
+  fieldName: string,
+  extraProps: Properties | undefined,
+): void {
+  if (!isDev() || !extraProps) {
+    return;
+  }
+  for (const key of Object.keys(extraProps)) {
+    if (!RESERVED_PROP_KEYS.has(key)) {
+      continue;
+    }
+    const memo = `${fieldName}.${key}`;
+    if (warnedReservedProps.has(memo)) {
+      continue;
+    }
+    warnedReservedProps.add(memo);
+    console.warn(
+      `[dynamic-field-kit] field "${fieldName}" passes "${key}" through ` +
+        `\`props\`, but "${key}" is part of the renderer prop contract and is ` +
+        `resolved from the field description itself, so the value in \`props\` ` +
+        `is discarded. Move it to the top level: ` +
+        `{ name: "${fieldName}", ${key}: ... }.`,
+    );
+  }
+}
 
 /**
  * A fully resolved renderer prop bag, plus the two keys the adapter layer needs
@@ -61,6 +117,12 @@ export interface BuildFieldRendererPropsInput {
   rootData?: Properties;
   /** Resolved DOM id for this field - see `makeFieldId`. */
   id: string;
+  /**
+   * Current state of an async options load, from `createOptionsLoader`.
+   * Omitted for static or synchronous options, where there is nothing to wait
+   * for and `resolveOptions` already has the answer.
+   */
+  optionsState?: OptionsState;
   touched?: boolean;
   dirty?: boolean;
   /**
@@ -86,6 +148,17 @@ export function makeFieldId(
 }
 
 /**
+ * The id of the node that renders a field's validation message.
+ *
+ * `ariaDescribedBy` points here, so a renderer that forwards it must put this
+ * id on whatever element shows the error - otherwise the reference dangles and
+ * assistive technology has nothing to read.
+ */
+export function makeErrorId(id: string): string {
+  return `${id}-error`;
+}
+
+/**
  * Builds the complete renderer prop bag for one field. Shared by the React,
  * Vue and Angular adapters so all three forward an identical set.
  */
@@ -97,6 +170,7 @@ export function buildFieldRendererProps({
   touched,
   dirty,
   validationErrors,
+  optionsState,
 }: BuildFieldRendererPropsInput): ResolvedFieldRendererProps {
   const {
     name,
@@ -114,9 +188,14 @@ export function buildFieldRendererProps({
     props: extraProps,
   } = fieldDescription;
 
+  warnOnReservedProps(name, extraProps);
+
   const disabled = resolveDisabled(fieldDescription, data, rootData);
   const readOnly = resolveReadOnly(fieldDescription, data, rootData);
-  const options = resolveOptions(fieldDescription, data, rootData);
+  // An async loader owns the list; resolveOptions returns undefined for those.
+  const options = optionsState
+    ? optionsState.options
+    : resolveOptions(fieldDescription, data, rootData);
 
   // A disabled field is not submitted, so validating it would surface an error
   // the user cannot act on.
@@ -138,15 +217,17 @@ export function buildFieldRendererProps({
     dirty,
     error,
     options,
+    optionsStatus: optionsState?.status,
+    optionsError: optionsState?.error,
     className,
     description,
     id,
     ariaInvalid: Boolean(error),
-    // Left undefined on purpose: the adapters do not render the description or
-    // error node themselves, so pointing aria-describedby at an id that may not
-    // exist would be worse than omitting it. A renderer that does render those
-    // nodes can set it from `id`.
-    ariaDescribedBy: undefined,
+    // Points at the error node, but only when there is an error to point at.
+    // The adapters render that node for default renderers; a custom renderer
+    // that forwards this prop must put `makeErrorId(id)` on its own message
+    // element, or the reference dangles.
+    ariaDescribedBy: error ? makeErrorId(id) : undefined,
     ariaRequired: Boolean(required),
     min,
     max,

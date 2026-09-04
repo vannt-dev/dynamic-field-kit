@@ -1,10 +1,11 @@
 import type { FieldDescription } from '@dynamic-field-kit/core';
 import { FieldRegistry } from '@dynamic-field-kit/core';
-import { render, screen } from '@testing-library/react';
+import { act, render, renderHook, screen } from '@testing-library/react';
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import MultiFieldInput from '../src/components/MultiFieldInput';
 import { FieldRegistryProvider } from '../src/FieldRegistryContext';
+import { useDynamicForm } from '../src/useDynamicForm';
 import '../src/layout/defaultLayouts';
 
 declare module '@dynamic-field-kit/core' {
@@ -109,5 +110,22 @@ describe('React validation wiring', () => {
       complete: true,
       status: 'valid',
     });
+  });
+});
+
+describe('validation is not run twice per change', () => {
+  it('validates once per handleChange call', async () => {
+    const validate = vi.fn(() => undefined);
+    const countedFields: FieldDescription[] = [
+      { name: 'title', type: 'text', label: 'Title', validate },
+    ];
+    const { result } = renderHook(() =>
+      useDynamicForm({ fields: countedFields, initialValues: { title: '' } }),
+    );
+
+    validate.mockClear();
+    await act(async () => result.current.handleChange({ title: 'a' }));
+
+    expect(validate).toHaveBeenCalledTimes(1);
   });
 });
