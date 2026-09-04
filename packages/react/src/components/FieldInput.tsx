@@ -1,10 +1,14 @@
 import {
   buildFieldRendererProps,
+  createOptionsLoader,
+  isAsyncOptions,
   makeFieldId,
   FieldDescription,
+  type OptionsLoader,
+  type OptionsState,
   Properties,
 } from '@dynamic-field-kit/core';
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import DynamicInput from './DynamicInput';
 import FieldGroupInput from './FieldGroupInput';
 
@@ -35,6 +39,27 @@ const FieldInputInner = ({
   onValueChangeField,
 }: Props) => {
   const { name, fields } = fieldDescription;
+
+  // Async options only. A field with a static or synchronous list allocates
+  // nothing here and takes the same path it always has.
+  const isAsync = isAsyncOptions(fieldDescription);
+  const [optionsState, setOptionsState] = useState<OptionsState | undefined>(
+    isAsync ? { status: 'idle' } : undefined,
+  );
+  const loaderRef = useRef<OptionsLoader | undefined>(undefined);
+  if (isAsync && !loaderRef.current) {
+    loaderRef.current = createOptionsLoader(fieldDescription, setOptionsState);
+  }
+  useEffect(() => () => loaderRef.current?.dispose(), []);
+  useEffect(() => {
+    // The loader decides whether `optionsDeps` actually changed, so calling it
+    // on every data change is cheap and keeps that decision in one place.
+    loaderRef.current?.update(renderInfos, rootData);
+  });
+
+  const handleOptionsQuery = useCallback((query: string) => {
+    loaderRef.current?.setQuery(query);
+  }, []);
 
   // Stable per-field handler so DynamicInput's memoization isn't defeated
   // by a freshly-allocated closure on every parent render.
@@ -74,6 +99,7 @@ const FieldInputInner = ({
     touched,
     dirty,
     validationErrors: errors === undefined ? undefined : (errors[name] ?? []),
+    optionsState,
   });
 
   return (
@@ -82,6 +108,7 @@ const FieldInputInner = ({
       description={rendererProps.description as React.ReactNode}
       onChange={handleChange}
       onBlur={handleBlur}
+      onOptionsQuery={isAsync ? handleOptionsQuery : undefined}
     />
   );
 };
@@ -91,6 +118,16 @@ const FieldInputInner = ({
 // slice this field actually reads instead.
 const FieldInput = /* @__PURE__ */ React.memo(FieldInputInner, (prev, next) => {
   const name = prev.fieldDescription.name;
+  // A field whose options load from `optionsDeps` reads values belonging to
+  // *other* fields, so the per-field slice check below would skip the render
+  // that tells its loader anything changed - a country/city pair would never
+  // reload. Compare the whole data object for those.
+  if (
+    isAsyncOptions(prev.fieldDescription) &&
+    prev.renderInfos !== next.renderInfos
+  ) {
+    return false;
+  }
   return (
     prev.fieldDescription === next.fieldDescription &&
     prev.onValueChangeField === next.onValueChangeField &&

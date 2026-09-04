@@ -35,6 +35,8 @@ interface Props<T extends FieldTypeKey> {
   multiple?: boolean;
   /** Extra, framework-agnostic props forwarded verbatim to the renderer. */
   extraProps?: Properties;
+  /** Renderer-driven refetch for a search-remote field. */
+  onOptionsQuery?: (query: string) => void;
 }
 
 const DynamicInputInner = <T extends FieldTypeKey>({
@@ -42,6 +44,7 @@ const DynamicInputInner = <T extends FieldTypeKey>({
   onChange,
   onBlur,
   extraProps,
+  onOptionsQuery,
   ...rendererProps
 }: Props<T>) => {
   const registry = useFieldRegistry();
@@ -74,6 +77,7 @@ const DynamicInputInner = <T extends FieldTypeKey>({
     ...(rendererProps as FieldRendererProps),
     onValueChange: onChange,
     onBlur,
+    onOptionsQuery,
   });
 
   if (!isDefault || !error?.length || !id) {
