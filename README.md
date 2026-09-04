@@ -761,3 +761,58 @@ mechanism is here, the translations are yours.
 A placeholder with no matching param is left in the string verbatim rather than
 replaced with `undefined`, so a typo shows up as a visible `{unit}` instead of
 a mystery.
+
+### Async options
+
+`options` can return a promise. Two shapes are covered, and the difference is
+what triggers a reload.
+
+**Dependent options** — the reload is driven by form data:
+
+```ts
+{
+  name: 'city',
+  type: 'select',
+  options: async (data, _rootData, ctx) =>
+    fetch(`/api/cities?country=${data.country}`, { signal: ctx?.signal })
+      .then((r) => r.json()),
+  optionsDeps: (data) => [data.country],
+  debounceMs: 200,
+}
+```
+
+**Search-remote** — the reload is driven by the renderer's own search box,
+which the form data never sees. The renderer calls `onOptionsQuery`:
+
+```ts
+{
+  name: 'assignee',
+  type: 'userPicker',
+  options: async (_data, _rootData, ctx) =>
+    fetch(`/api/users?q=${ctx?.query ?? ''}`, { signal: ctx?.signal })
+      .then((r) => r.json()),
+  debounceMs: 300,
+}
+```
+
+The renderer receives `optionsStatus` (`'idle' | 'loading' | 'ready' | 'error'`),
+`optionsError`, and `onOptionsQuery`.
+
+| Field property | Effect                                                                         |
+| -------------- | ------------------------------------------------------------------------------ |
+| `optionsDeps`  | Values a reload depends on, compared shallowly. Defaults to `[]` — fetch once. |
+| `optionsMode`  | `'async'` for a loader that returns a promise without the `async` keyword.     |
+| `debounceMs`   | Collapses rapid reloads into one fetch. Applies to async options only.         |
+
+Superseded requests are aborted through `ctx.signal`, and a slow response that
+lands after a newer one is discarded, so the option list always reflects the
+most recent request rather than the last one to arrive.
+
+Native `async` functions are detected automatically. A loader wrapped in a
+memoiser, a spy or a transpiler helper is **not** — `constructor.name` is no
+longer `'AsyncFunction'`. Declare `optionsMode: 'async'` for those; without it
+the promise is dropped and a development warning says so.
+
+Note that a form whose `properties` arrive after mount sees its data change
+twice (empty, then loaded), which is two loads without a `debounceMs`. Setting
+one collapses them.

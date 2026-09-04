@@ -254,3 +254,54 @@ correct — there is nothing to clear.
 
 If you use the built-in renderers you get all of this already; they render the
 message node themselves.
+
+## Async options in a renderer
+
+A field with an async loader hands the renderer three extra props. A minimal
+search-remote picker uses all three:
+
+```tsx
+import { type FieldRendererProps } from '@dynamic-field-kit/react';
+
+function UserPicker({
+  id,
+  options,
+  optionsStatus,
+  optionsError,
+  onOptionsQuery,
+  value,
+  onValueChange,
+  onBlur,
+}: FieldRendererProps<string>) {
+  return (
+    <div>
+      <input
+        id={id}
+        placeholder="Search users…"
+        onChange={(e) => onOptionsQuery?.(e.target.value)}
+        onBlur={onBlur}
+      />
+      {optionsStatus === 'loading' && <Spinner />}
+      {optionsStatus === 'error' && (
+        <span role="alert">{String((optionsError as Error)?.message)}</span>
+      )}
+      <ul>
+        {(options ?? []).map((o) => (
+          <li key={String(o.value)}>
+            <button onClick={() => onValueChange?.(o.value as string)}>
+              {String(o.label)}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+`optionsStatus` is `undefined` for a field with static or synchronous options,
+so `optionsStatus === 'loading'` is safely `false` there — one renderer works
+for both.
+
+Do not debounce inside the renderer. `debounceMs` on the field already collapses
+rapid `onOptionsQuery` calls, and a second layer would only add latency.

@@ -152,3 +152,34 @@ translate its own messages. Nothing is required of existing validators.
 
 Skips empty values so `required` owns that case rather than both firing at once,
 and compares with `Object.is` so two `NaN`s match.
+
+### `debounceMs` finally does something
+
+Before 1.7.0 `debounceMs` was declared on `FieldDescription` and published in
+the `.d.ts`, but no implementation read it anywhere. Setting it did nothing at
+all.
+
+It now debounces async options loading. **Nobody's behaviour changes**, because
+there was no behaviour — but if you set it hoping it would debounce
+_validation_, it still does not. Async validation is debounced by not running on
+the live pass at all; see `validationMode`.
+
+### Async options
+
+`options` may now return a promise, and the renderer gets `optionsStatus`,
+`optionsError` and `onOptionsQuery` alongside it.
+
+| Before                                                          | After                                    |
+| --------------------------------------------------------------- | ---------------------------------------- |
+| renderer manages its own `loading`/`options` state and debounce | `options: async (data, _root, ctx) => …` |
+| no way to express "reload when country changes"                 | `optionsDeps: (data) => [data.country]`  |
+| search box wired by hand inside the renderer                    | `onOptionsQuery(query)`                  |
+
+Fully additive. A static array or a synchronous `(data, rootData) => Options[]`
+behaves exactly as before and never enters a loading state.
+
+One detail worth knowing: `options` keeps a **single** signature,
+`(data, rootData?, ctx?)`, rather than becoming a union of a sync and an async
+shape. A union of two function types defeats TypeScript's contextual inference,
+which would have made every existing `options: (data) => …` an implicit-`any`
+error. Returning a promise is what makes a loader async.
