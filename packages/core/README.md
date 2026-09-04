@@ -96,6 +96,10 @@ export interface FieldRendererProps<T = any> {
   dirty?: boolean;
   error?: string | string[];
   options?: Record<string, any>[];
+  optionsStatus?: 'idle' | 'loading' | 'ready' | 'error';
+  optionsError?: unknown;
+  /** Not in FIELD_RENDERER_PROP_KEYS - a callback, like onValueChange. */
+  onOptionsQuery?: (query: string) => void;
   className?: string;
   description?: any;
   id?: string;
@@ -133,11 +137,18 @@ let it fall through to a renderer's root element, where Vue assigns
 `el.className` — an undefined value becomes `''` and wipes whatever class the
 renderer set on itself.
 
-`ariaDescribedBy` is the one prop no adapter fills in: none of them render the
-description or error node, so pointing `aria-describedby` at an id that may not
-exist would be worse than leaving it unset. It is plumbed through all three so a
-renderer that _does_ render those nodes can set it from `id` (via
-`FieldDescription.props`) and have it arrive the same way everywhere.
+`ariaDescribedBy` used to be the one prop no adapter filled in — it was
+hard-coded `undefined`, on the reasoning that pointing `aria-describedby` at an
+id that might not exist was worse than leaving it unset. That reasoning held,
+but it made `focusFirstInvalidField` (which selects `[aria-invalid="true"]`)
+silently do nothing for every consumer following the renderer recipe, since the
+recipe never mentioned forwarding the aria props either.
+
+Since 1.7.0 it is `makeErrorId(id)` — `` `${id}-error` `` — whenever the field
+has an error, and `undefined` while it is valid. The default renderers render a
+node carrying that id, so the reference resolves for them. A custom renderer
+that forwards `aria-describedby` must put `makeErrorId(id)` on whatever element
+shows its message, or the reference dangles again.
 
 ```ts
 import { buildFieldRendererProps, makeFieldId } from '@dynamic-field-kit/core';
@@ -307,14 +318,102 @@ const fields: FieldDescription[] = [
 - `validators.min(minVal, message?)` - Enforces minimum numeric value
 - `validators.max(maxVal, message?)` - Enforces maximum numeric value
 - `validators.pattern(regex, message?)` - Enforces regex pattern match
+- `validators.matches(otherFieldName, message?)` - Enforces equality with
+  another field, for confirm-password / confirm-email. Skips empty values so
+  `required` owns that message, and compares with `Object.is` so two `NaN`s match
 - `validators.compose(...fns)` - Combines multiple validator functions into one
 
-`validateFields(fields, data, rootData?)` returns `{ valid, errors, complete,
-status }`, recursing into repeatable groups (keys like `contacts[0].email`) and
+`validateFields(fields, data, rootData?, context?)` returns `{ valid, errors,
+complete, status }`, recursing into repeatable groups (keys like `contacts[0].email`) and
 skipping fields that are hidden by `appearCondition` or disabled. Adapters call `validateField` /
 `resolveDisabled` / `resolveReadOnly` / `resolveOptions` per field to surface
 `error`, `disabled`, `readOnly` and the resolved `options` to renderers
 reactively.
+
+### Validation messages
+
+Built-in validators resolve their message when they **run**, not when the field
+description is built, so a catalog set once for a form reaches all of them:
+
+```ts
+import {
+  createMessageResolver,
+  setDefaultMessages,
+} from '@dynamic-field-kit/core';
+
+// Per form, through an adapter:
+useDynamicForm({ fields, messages: { required: 'Bắt buộc' } });
+
+// Or process-wide, for direct validateFields callers:
+setDefaultMessages({ required: 'Bắt buộc' });
+
+// Or built by hand and passed as the validation context:
+validateFields(fields, data, undefined, {
+  t: createMessageResolver({ required: 'Bắt buộc' }),
+});
+```
+
+Precedence is: a message passed straight to the validator, then the form's
+catalog, then the process-wide one, then the validator's English default.
+
+| Key         | Params    | English default         |
+| ----------- | --------- | ----------------------- |
+| `required`  | —         | Field is required       |
+| `email`     | —         | Invalid email address   |
+| `minLength` | `{min}`   | Minimum length is {min} |
+| `maxLength` | `{max}`   | Maximum length is {max} |
+| `min`       | `{min}`   | Minimum value is {min}  |
+| `max`       | `{max}`   | Maximum value is {max}  |
+| `pattern`   | —         | Invalid format          |
+| `matches`   | `{other}` | Must match {other}      |
+
+**No locale bundles ship with this package.** Supply your own catalog. A
+placeholder with no matching param is left verbatim rather than replaced with
+`undefined`, so a typo surfaces as a visible `{unit}`.
+
+`ValidationContext` — already `validate`'s fourth argument, carrying `signal` —
+gains an optional `t`, so a hand-written validator can translate its own
+messages the same way.
+
+### Async options
+
+`options` takes a static array, a synchronous `(data, rootData) => Options[]`,
+or a loader returning a promise. It is one signature, not a union: a union of
+two function types defeats TypeScript's contextual inference, which would make
+every existing `options: (data) => …` an implicit-`any` error.
+
+```ts
+{
+  name: 'city',
+  type: 'select',
+  options: async (data, _rootData, ctx) =>
+    fetch(`/api/cities?country=${data.country}`, { signal: ctx?.signal })
+      .then((r) => r.json()),
+  optionsDeps: (data) => [data.country],
+  debounceMs: 200,
+}
+```
+
+| Property      | Effect                                                                                     |
+| ------------- | ------------------------------------------------------------------------------------------ |
+| `optionsDeps` | Values a reload depends on, compared shallowly with `Object.is`. Default `[]` — fetch once |
+| `optionsMode` | `'async'` for a loader returning a promise without the `async` keyword                     |
+| `debounceMs`  | Collapses rapid reloads into one fetch. Async options only                                 |
+
+Renderers receive `optionsStatus` (`'idle' | 'loading' | 'ready' | 'error'`),
+`optionsError`, and `onOptionsQuery(query)` for search-remote fields whose query
+the form data never sees.
+
+`createOptionsLoader(field, onChange)` is the framework-agnostic engine the
+adapters wrap: it debounces, aborts a superseded request through `ctx.signal`,
+and discards a response that lands out of order, so the list always reflects the
+newest request rather than the last to arrive.
+
+Native `async` functions are detected automatically. A loader wrapped in a
+memoiser, a spy or a transpiler helper is **not** — `constructor.name` stops
+being `'AsyncFunction'`. Declare `optionsMode: 'async'` for those; without it the
+promise is dropped and a development warning says so, rather than the renderer
+receiving a pending promise as its option list.
 
 ### Reading a ValidationResult
 
