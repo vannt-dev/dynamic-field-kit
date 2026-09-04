@@ -136,6 +136,13 @@ function nextInstanceId(): number {
 export class MultiFieldInput implements OnInit, OnChanges {
   @Input() fieldDescriptions: FieldDescription[] = [];
   @Input() properties?: Properties;
+  /**
+   * The values per-field `dirty` is measured against. Defaults to the first
+   * non-`undefined` `properties` this component sees. This adapter has no
+   * `form` shorthand, so pass `store.baselineValues()` here to keep `dirty`
+   * correct across `store.reset(newValues)`.
+   */
+  @Input() initialProperties?: Properties;
   @Output() onChange = new EventEmitter<Properties>();
   @Output() validityChange = new EventEmitter<ValidationResult>();
   /**
@@ -171,7 +178,7 @@ export class MultiFieldInput implements OnInit, OnChanges {
   // component is client-rendered by the time ids matter, so a module counter
   // is enough.
   private readonly instanceId = nextInstanceId();
-  private initialProperties: Properties = {};
+  private firstSeenProperties: Properties = {};
   private indexedErrorsSource?: Record<string, string[]>;
   private indexedErrors = new Map<
     string,
@@ -208,7 +215,8 @@ export class MultiFieldInput implements OnInit, OnChanges {
 
   /** Whether this field's value differs from the one the form opened with. */
   isFieldDirty(fieldName: string): boolean {
-    return this.data[fieldName] !== this.initialProperties[fieldName];
+    const baseline = this.initialProperties ?? this.firstSeenProperties;
+    return !Object.is(this.data[fieldName], baseline[fieldName]);
   }
 
   fieldErrors(fieldName: string): string[] | undefined {
@@ -391,7 +399,7 @@ export class MultiFieldInput implements OnInit, OnChanges {
       // Baseline for the `dirty` flag: the values the form opened with, not
       // whatever `properties` happens to hold after later edits.
       if (!this.initialised) {
-        this.initialProperties = { ...this.properties };
+        this.firstSeenProperties = { ...this.properties };
         this.initialised = true;
       }
     }
