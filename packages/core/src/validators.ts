@@ -1,36 +1,52 @@
-import type { Properties } from './types';
+import { resolveMessage } from './messages';
+import type { Properties, ValidationContext } from './types';
 
 export type ValidatorFn = (
   value: unknown,
   data?: Properties,
   rootData?: Properties,
+  ctx?: ValidationContext,
 ) => string | undefined;
+
+function isEmpty(value: unknown): boolean {
+  return value === undefined || value === null || value === '';
+}
 
 export const validators = {
   /** Enforces that a value is non-empty (not undefined, null, empty string, or empty array). */
-  required(message = 'Field is required'): ValidatorFn {
-    return (value: unknown) => {
-      if (
-        value === undefined ||
-        value === null ||
-        value === '' ||
-        (Array.isArray(value) && value.length === 0)
-      ) {
-        return message;
+  required(message?: string): ValidatorFn {
+    return (value, _data, _rootData, ctx) => {
+      if (isEmpty(value) || (Array.isArray(value) && value.length === 0)) {
+        // Resolved here, inside the closure, rather than when the field
+        // description is built: a catalog supplied to the form could never
+        // reach a message baked in at definition time.
+        return resolveMessage(
+          ctx,
+          'required',
+          undefined,
+          'Field is required',
+          message,
+        );
       }
       return undefined;
     };
   },
 
   /** Enforces a valid email format. */
-  email(message = 'Invalid email address'): ValidatorFn {
+  email(message?: string): ValidatorFn {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return (value: unknown) => {
-      if (value === undefined || value === null || value === '') {
+    return (value, _data, _rootData, ctx) => {
+      if (isEmpty(value)) {
         return undefined;
       }
       if (typeof value !== 'string' || !emailRegex.test(value)) {
-        return message;
+        return resolveMessage(
+          ctx,
+          'email',
+          undefined,
+          'Invalid email address',
+          message,
+        );
       }
       return undefined;
     };
@@ -38,14 +54,19 @@ export const validators = {
 
   /** Enforces minimum string length or array length. */
   minLength(min: number, message?: string): ValidatorFn {
-    const msg = message ?? `Minimum length is ${min}`;
-    return (value: unknown) => {
-      if (value === undefined || value === null || value === '') {
+    return (value, _data, _rootData, ctx) => {
+      if (isEmpty(value)) {
         return undefined;
       }
       if (typeof value === 'string' || Array.isArray(value)) {
         if (value.length < min) {
-          return msg;
+          return resolveMessage(
+            ctx,
+            'minLength',
+            { min },
+            `Minimum length is ${min}`,
+            message,
+          );
         }
       }
       return undefined;
@@ -54,14 +75,19 @@ export const validators = {
 
   /** Enforces maximum string length or array length. */
   maxLength(max: number, message?: string): ValidatorFn {
-    const msg = message ?? `Maximum length is ${max}`;
-    return (value: unknown) => {
-      if (value === undefined || value === null || value === '') {
+    return (value, _data, _rootData, ctx) => {
+      if (isEmpty(value)) {
         return undefined;
       }
       if (typeof value === 'string' || Array.isArray(value)) {
         if (value.length > max) {
-          return msg;
+          return resolveMessage(
+            ctx,
+            'maxLength',
+            { max },
+            `Maximum length is ${max}`,
+            message,
+          );
         }
       }
       return undefined;
@@ -70,14 +96,19 @@ export const validators = {
 
   /** Enforces minimum numerical value. */
   min(minVal: number, message?: string): ValidatorFn {
-    const msg = message ?? `Minimum value is ${minVal}`;
-    return (value: unknown) => {
-      if (value === undefined || value === null || value === '') {
+    return (value, _data, _rootData, ctx) => {
+      if (isEmpty(value)) {
         return undefined;
       }
       const num = Number(value);
       if (Number.isNaN(num) || num < minVal) {
-        return msg;
+        return resolveMessage(
+          ctx,
+          'min',
+          { min: minVal },
+          `Minimum value is ${minVal}`,
+          message,
+        );
       }
       return undefined;
     };
@@ -85,29 +116,64 @@ export const validators = {
 
   /** Enforces maximum numerical value. */
   max(maxVal: number, message?: string): ValidatorFn {
-    const msg = message ?? `Maximum value is ${maxVal}`;
-    return (value: unknown) => {
-      if (value === undefined || value === null || value === '') {
+    return (value, _data, _rootData, ctx) => {
+      if (isEmpty(value)) {
         return undefined;
       }
       const num = Number(value);
       if (Number.isNaN(num) || num > maxVal) {
-        return msg;
+        return resolveMessage(
+          ctx,
+          'max',
+          { max: maxVal },
+          `Maximum value is ${maxVal}`,
+          message,
+        );
       }
       return undefined;
     };
   },
 
   /** Enforces a regex pattern. */
-  pattern(regex: RegExp, message = 'Invalid format'): ValidatorFn {
-    return (value: unknown) => {
-      if (value === undefined || value === null || value === '') {
+  pattern(regex: RegExp, message?: string): ValidatorFn {
+    return (value, _data, _rootData, ctx) => {
+      if (isEmpty(value)) {
         return undefined;
       }
       if (typeof value !== 'string' || !regex.test(value)) {
-        return message;
+        return resolveMessage(
+          ctx,
+          'pattern',
+          undefined,
+          'Invalid format',
+          message,
+        );
       }
       return undefined;
+    };
+  },
+
+  /**
+   * Enforces that this field equals another field's value - confirm-password,
+   * confirm-email. Skips empty values so `required` owns that message rather
+   * than both firing at once.
+   */
+  matches(otherFieldName: string, message?: string): ValidatorFn {
+    return (value, data, _rootData, ctx) => {
+      if (isEmpty(value)) {
+        return undefined;
+      }
+      // Object.is, not !==: two NaNs are the same value for this purpose.
+      if (Object.is(value, data?.[otherFieldName])) {
+        return undefined;
+      }
+      return resolveMessage(
+        ctx,
+        'matches',
+        { other: otherFieldName },
+        `Must match ${otherFieldName}`,
+        message,
+      );
     };
   },
 
@@ -118,11 +184,17 @@ export const validators = {
     value: unknown,
     data: Properties,
     rootData?: Properties,
+    ctx?: ValidationContext,
   ) => string[] | undefined {
-    return (value: unknown, data: Properties, rootData?: Properties) => {
+    return (
+      value: unknown,
+      data: Properties,
+      rootData?: Properties,
+      ctx?: ValidationContext,
+    ) => {
       const errors: string[] = [];
       for (const fn of fns) {
-        const err = fn(value, data, rootData);
+        const err = fn(value, data, rootData, ctx);
         if (err) {
           errors.push(err);
         }
