@@ -125,3 +125,30 @@ silently — no throw, no warning, the value just vanished.
 
 A development-only `console.warn` now names the field and the key, once per
 pair. Production builds are unchanged and emit nothing.
+
+### Validation messages can be set per form
+
+Previously the only way to change a built-in validator's message was to pass a
+string on every field of every form. The validator baked that string in when the
+field description was built, so nothing set later could reach it.
+
+| Before                                                       | After                                                            |
+| ------------------------------------------------------------ | ---------------------------------------------------------------- |
+| `validators.required('Bắt buộc')` on every field             | `useDynamicForm({ fields, messages: { required: 'Bắt buộc' } })` |
+| no way to change messages for a direct `validateFields` call | `setDefaultMessages(catalog)`                                    |
+
+Fully backward compatible: a message passed to a validator still wins over any
+catalog, and with no catalog the English defaults are unchanged.
+
+`ValidationContext` — already the fourth argument to `validate`, carrying
+`signal` — gains an optional `t`. A hand-written validator can use it to
+translate its own messages. Nothing is required of existing validators.
+
+### `validators.matches`
+
+| Before                                                                            | After                                      |
+| --------------------------------------------------------------------------------- | ------------------------------------------ |
+| `validate: (value, data) => (value !== data.password ? 'Must match' : undefined)` | `validate: validators.matches('password')` |
+
+Skips empty values so `required` owns that case rather than both firing at once,
+and compares with `Object.is` so two `NaN`s match.
