@@ -1,4 +1,4 @@
-import { FieldDescription, validators  } from '@dynamic-field-kit/core';
+import { FieldDescription, validators } from '@dynamic-field-kit/core';
 import { describe, expect, it, vi } from 'vitest';
 import { createDynamicFormStore } from '../src/lib/dynamic-form.store';
 
