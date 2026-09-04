@@ -1,8 +1,11 @@
 import {
   applyComputedValues,
   collectFieldPaths,
+  createMessageResolver,
   FieldDescription,
+  type MessageCatalog,
   Properties,
+  type ValidationContext,
   type ValidationResult,
   validateFields,
   validateFieldsAsync,
@@ -14,6 +17,13 @@ export interface UseDynamicFormOptions {
   initialValues?: Properties;
   validateOnBlur?: boolean;
   validateOnChange?: boolean;
+  /**
+   * Messages for the built-in validators, set once for the whole form instead
+   * of per field. A message passed directly to a validator still wins, and any
+   * key omitted here falls back to the validator's English default. See core's
+   * `MessageCatalog`.
+   */
+  messages?: MessageCatalog;
 }
 
 export function useDynamicForm({
@@ -21,7 +31,11 @@ export function useDynamicForm({
   initialValues = {},
   validateOnBlur = true,
   validateOnChange = false,
+  messages,
 }: UseDynamicFormOptions) {
+  const validationContext: ValidationContext = {
+    t: createMessageResolver(messages),
+  };
   const data = ref<Properties>(applyComputedValues(fields, initialValues));
   // The baseline `dirty` is measured against: the initialValues option until
   // reset(newValues) replaces it. Distinct from that option, which never
@@ -32,7 +46,12 @@ export function useDynamicForm({
   const touched = ref<Record<string, boolean>>({});
   const isSubmitting = ref<boolean>(false);
   const isSubmitted = ref<boolean>(false);
-  const initialValidation = validateFields(fields, data.value);
+  const initialValidation = validateFields(
+    fields,
+    data.value,
+    undefined,
+    validationContext,
+  );
   const validationResult = ref<ValidationResult>(initialValidation);
   const isValidating = ref(false);
   let validationRun = 0;
@@ -67,7 +86,12 @@ export function useDynamicForm({
   }
 
   function validate() {
-    const res = validateFields(fields, data.value);
+    const res = validateFields(
+      fields,
+      data.value,
+      undefined,
+      validationContext,
+    );
     errors.value = res.errors;
     return commitSyncResult(res);
   }
@@ -81,6 +105,7 @@ export function useDynamicForm({
     isValidating.value = true;
     try {
       const res = await validateFieldsAsync(fields, snapshot, snapshot, {
+        ...validationContext,
         signal: controller.signal,
       });
       if (run !== validationRun || data.value !== snapshot) {
@@ -104,7 +129,7 @@ export function useDynamicForm({
     validationRun += 1;
     isValidating.value = false;
 
-    const res = validateFields(fields, next);
+    const res = validateFields(fields, next, undefined, validationContext);
     commitSyncResult(res);
 
     if (validateOnChange) {
@@ -153,7 +178,12 @@ export function useDynamicForm({
   function handleBlur(fieldName: string) {
     setFieldTouched(fieldName, true);
     if (validateOnBlur) {
-      const res = validateFields(fields, data.value);
+      const res = validateFields(
+        fields,
+        data.value,
+        undefined,
+        validationContext,
+      );
       errors.value = res.errors;
       commitSyncResult(res);
     }
@@ -172,7 +202,9 @@ export function useDynamicForm({
     validationController?.abort();
     validationRun += 1;
     isValidating.value = false;
-    commitSyncResult(validateFields(fields, next));
+    commitSyncResult(
+      validateFields(fields, next, undefined, validationContext),
+    );
   }
 
   function handleSubmit(
@@ -201,6 +233,7 @@ export function useDynamicForm({
         const snapshot = data.value;
         isValidating.value = true;
         const res = await validateFieldsAsync(fields, snapshot, snapshot, {
+          ...validationContext,
           signal: controller.signal,
         });
         if (thisSubmit !== submitRun) {
@@ -214,7 +247,12 @@ export function useDynamicForm({
           errors.value = res.errors;
           validationResult.value = res;
         } else {
-          const live = validateFields(fields, data.value);
+          const live = validateFields(
+            fields,
+            data.value,
+            undefined,
+            validationContext,
+          );
           errors.value = live.errors;
           validationResult.value = live;
         }

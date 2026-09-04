@@ -1,3 +1,4 @@
+import { validators } from '@dynamic-field-kit/core';
 import { describe, expect, it, vi } from 'vitest';
 import { effectScope } from 'vue';
 import type { FieldDescription } from '../src';
@@ -369,5 +370,30 @@ describe('baselineValues and getDirtyValues', () => {
     form.reset({ title: 'c', note: 'n' });
     form.reset();
     expect(form.baselineValues.value).toEqual({ title: 'a', note: 'n' });
+  });
+});
+
+describe('messages', () => {
+  const msgFields: FieldDescription[] = [
+    { name: 'title', type: 'text', validate: validators.required() },
+  ];
+
+  it('resolves validator messages through the supplied catalog', () => {
+    const form = useDynamicForm({
+      fields: msgFields,
+      initialValues: { title: '' },
+      messages: { required: 'Bắt buộc' },
+    });
+    form.validate();
+    expect(form.errors.value.title).toEqual(['Bắt buộc']);
+  });
+
+  it('keeps the English default with no catalog', () => {
+    const form = useDynamicForm({
+      fields: msgFields,
+      initialValues: { title: '' },
+    });
+    form.validate();
+    expect(form.errors.value.title).toEqual(['Field is required']);
   });
 });
