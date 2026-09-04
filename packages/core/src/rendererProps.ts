@@ -43,6 +43,59 @@ export const FIELD_RENDERER_PROP_KEYS = [
 
 export type FieldRendererPropKey = (typeof FIELD_RENDERER_PROP_KEYS)[number];
 
+function isDev(): boolean {
+  return (
+    typeof process !== 'undefined' &&
+    !!process.env &&
+    process.env.NODE_ENV !== 'production'
+  );
+}
+
+const RESERVED_PROP_KEYS: ReadonlySet<string> = new Set(
+  FIELD_RENDERER_PROP_KEYS,
+);
+const warnedReservedProps = new Set<string>();
+
+/** Test-only. Clears the warn-once memo so each case starts from silence. */
+export function __resetReservedPropWarnings(): void {
+  warnedReservedProps.clear();
+}
+
+/**
+ * `props` is spread *before* the resolved contract in every adapter, so a key
+ * the contract owns is silently overwritten - usually by `undefined`, which is
+ * indistinguishable from the value simply vanishing. Nothing throws, so this
+ * warning is the only signal a consumer gets.
+ *
+ * Fires once per field+key: a form re-renders constantly, and a console filled
+ * with the same line is a console nobody reads.
+ */
+function warnOnReservedProps(
+  fieldName: string,
+  extraProps: Properties | undefined,
+): void {
+  if (!isDev() || !extraProps) {
+    return;
+  }
+  for (const key of Object.keys(extraProps)) {
+    if (!RESERVED_PROP_KEYS.has(key)) {
+      continue;
+    }
+    const memo = `${fieldName}.${key}`;
+    if (warnedReservedProps.has(memo)) {
+      continue;
+    }
+    warnedReservedProps.add(memo);
+    console.warn(
+      `[dynamic-field-kit] field "${fieldName}" passes "${key}" through ` +
+        `\`props\`, but "${key}" is part of the renderer prop contract and is ` +
+        `resolved from the field description itself, so the value in \`props\` ` +
+        `is discarded. Move it to the top level: ` +
+        `{ name: "${fieldName}", ${key}: ... }.`,
+    );
+  }
+}
+
 /**
  * A fully resolved renderer prop bag, plus the two keys the adapter layer needs
  * but the renderer never sees as-is: `type` (which renderer to look up) and
@@ -124,6 +177,8 @@ export function buildFieldRendererProps({
     multiple,
     props: extraProps,
   } = fieldDescription;
+
+  warnOnReservedProps(name, extraProps);
 
   const disabled = resolveDisabled(fieldDescription, data, rootData);
   const readOnly = resolveReadOnly(fieldDescription, data, rootData);
