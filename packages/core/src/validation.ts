@@ -1,4 +1,5 @@
 import { isFieldGroup } from './fieldGroup';
+import { isAsyncOptions } from './optionsLoader';
 import type { FieldDescription, Properties, ValidationContext } from './types';
 
 export interface ValidationResult {
@@ -97,17 +98,23 @@ export function resolveReadOnly(
   return field.readOnlyCondition?.(data, rootData) === true;
 }
 
-/** Resolves dynamic options or returns static options list. */
+/**
+ * Resolves a static or synchronous options list.
+ *
+ * Returns undefined for a field whose options load asynchronously: those are
+ * owned by `createOptionsLoader`, and calling the function here would hand the
+ * renderer a Promise as its `options`.
+ */
 export function resolveOptions(
   field: FieldDescription,
   data: Properties,
   rootData?: Properties,
 ): Properties[] | undefined {
-  if (!field.options) {
+  if (!field.options || isAsyncOptions(field)) {
     return undefined;
   }
   if (typeof field.options === 'function') {
-    return field.options(data, rootData);
+    return field.options(data, rootData) as Properties[];
   }
   return field.options;
 }
