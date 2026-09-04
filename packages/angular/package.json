@@ -1,6 +1,6 @@
 {
   "name": "@dynamic-field-kit/angular",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "Angular renderer for dynamic-field-kit",
   "license": "MIT",
   "private": false,
@@ -54,7 +54,7 @@
     "@angular/core": "^21.2.0",
     "@angular/forms": "^21.2.0",
     "@angular/platform-browser": "^21.2.0",
-    "@dynamic-field-kit/core": "^1.6.0",
+    "@dynamic-field-kit/core": "^1.7.0",
     "@vitest/coverage-istanbul": "^4.1.11",
     "jsdom": "^29.1.1",
     "ng-packagr": "^21.2.0",
