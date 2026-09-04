@@ -23,6 +23,10 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
   const validateOnChange = options.validateOnChange ?? false;
 
   const data = signal<Properties>(applyComputedValues(fields, initialValues));
+  // The baseline `dirty` is measured against: the initialValues option until
+  // reset(newValues) replaces it. Distinct from that option, which never
+  // changes. See the React adapter for the full rationale.
+  const baselineValues = signal<Properties>({ ...data() });
   const errors = signal<Record<string, string[]>>({});
   const isDirty = signal<boolean>(false);
   const touched = signal<Record<string, boolean>>({});
@@ -120,6 +124,18 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
   }
 
   /** Clears the touched map without touching data, errors or dirty state. */
+  function getDirtyValues(): Properties {
+    const baseline = baselineValues();
+    const current = data();
+    const dirty: Properties = {};
+    for (const key of Object.keys(current)) {
+      if (!Object.is(current[key], baseline[key])) {
+        dirty[key] = current[key];
+      }
+    }
+    return dirty;
+  }
+
   function resetTouched() {
     touched.set({});
   }
@@ -137,6 +153,7 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
     const seed = newValues ?? initialValues;
     const next = applyComputedValues(fields, seed);
     data.set(next);
+    baselineValues.set({ ...next });
     errors.set({});
     isDirty.set(false);
     touched.set({});
@@ -219,6 +236,8 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
     isValidationComplete,
     validationStatus,
     isDirty,
+    baselineValues,
+    getDirtyValues,
     touched,
     isSubmitting,
     isSubmitted,
