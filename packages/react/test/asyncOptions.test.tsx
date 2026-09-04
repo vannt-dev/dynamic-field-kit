@@ -209,3 +209,64 @@ describe('async options under StrictMode', () => {
     expect(screen.getByTestId('s-city-options')).toHaveTextContent('hn');
   });
 });
+
+describe('the options loader is bound to the field it first saw', () => {
+  beforeEach(() => {
+    fieldRegistry.register('optionProbe', OptionProbe);
+  });
+
+  const makeField = (tag: string, name: string): FieldDescription => ({
+    name,
+    type: 'optionProbe',
+    options: async () => [{ value: tag }],
+  });
+
+  it('rebuilds when the field name changes, because that remounts', async () => {
+    const { rerender } = render(
+      <MultiFieldInput
+        fieldDescriptions={[makeField('first', 'cityA')]}
+        idPrefix="r"
+      />,
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('r-cityA-options')).toHaveTextContent('first'),
+    );
+
+    rerender(
+      <MultiFieldInput
+        fieldDescriptions={[makeField('second', 'cityB')]}
+        idPrefix="r"
+      />,
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('r-cityB-options')).toHaveTextContent('second'),
+    );
+  });
+
+  // Deliberate, not an oversight. Rebuilding on the options closure's identity
+  // would refetch on every render for the very common case of a `fields` array
+  // built inline in a component body - new closure each render, so: rebuild,
+  // fetch, setState, render, rebuild... Change the field's `name` (or remount
+  // with a `key`) to swap a loader at runtime.
+  it('does not rebuild when only the options closure changes', async () => {
+    const { rerender } = render(
+      <MultiFieldInput
+        fieldDescriptions={[makeField('first', 'city')]}
+        idPrefix="q"
+      />,
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('q-city-options')).toHaveTextContent('first'),
+    );
+
+    rerender(
+      <MultiFieldInput
+        fieldDescriptions={[makeField('second', 'city')]}
+        idPrefix="q"
+      />,
+    );
+    await new Promise((r) => setTimeout(r, 20));
+
+    expect(screen.getByTestId('q-city-options')).toHaveTextContent('first');
+  });
+});

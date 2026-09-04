@@ -816,3 +816,10 @@ the promise is dropped and a development warning says so.
 Note that a form whose `properties` arrive after mount sees its data change
 twice (empty, then loaded), which is two loads without a `debounceMs`. Setting
 one collapses them.
+
+The loader is bound to the field description it first saw. Changing a field's
+`name` swaps it — every adapter keys each field by name, so that remounts —
+but changing only the `options` closure on a same-named field does not. That is
+deliberate: a `fields` array built inline in a component body gets a fresh
+closure on every render, and rebuilding on closure identity would refetch in a
+loop.
