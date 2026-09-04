@@ -1,5 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  __resetReservedPropWarnings,
   buildFieldRendererProps,
   FIELD_RENDERER_PROP_KEYS,
   makeErrorId,
@@ -193,5 +194,82 @@ describe('ariaDescribedBy', () => {
     });
 
     expect(props.ariaDescribedBy).toBeUndefined();
+  });
+});
+
+describe('reserved props warning', () => {
+  beforeEach(() => {
+    __resetReservedPropWarnings();
+  });
+
+  it('warns when props carries a key the contract owns', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    buildFieldRendererProps({
+      fieldDescription: {
+        name: 'title',
+        type: 'text',
+        props: { placeholder: 'from props' },
+      },
+      data: {},
+      id: 'form-title',
+    });
+
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0][0]).toContain('placeholder');
+    expect(warn.mock.calls[0][0]).toContain('title');
+    warn.mockRestore();
+  });
+
+  it('warns only once for the same field and key', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const fieldDescription: FieldDescription = {
+      name: 'title',
+      type: 'text',
+      props: { placeholder: 'from props' },
+    };
+
+    buildFieldRendererProps({ fieldDescription, data: {}, id: 'a' });
+    buildFieldRendererProps({ fieldDescription, data: {}, id: 'a' });
+
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
+  });
+
+  it('stays silent for props keys the contract does not own', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    buildFieldRendererProps({
+      fieldDescription: {
+        name: 'title',
+        type: 'text',
+        props: { maxLength: 10, acceptFile: 'x' },
+      },
+      data: {},
+      id: 'form-title',
+    });
+
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('stays silent in production', () => {
+    const previous = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    buildFieldRendererProps({
+      fieldDescription: {
+        name: 'title',
+        type: 'text',
+        props: { placeholder: 'from props' },
+      },
+      data: {},
+      id: 'form-title',
+    });
+
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+    process.env.NODE_ENV = previous;
   });
 });
