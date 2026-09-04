@@ -124,6 +124,7 @@ function runSyncValidate(
   rootData: Properties | undefined,
   /** Key to report this field under - a grouped field is not just `name`. */
   reportKey = field.name,
+  context?: ValidationContext,
 ): { errors: string[]; isPending: boolean } {
   if (!field.validate) {
     return { errors: [], isPending: false };
@@ -136,7 +137,7 @@ function runSyncValidate(
     }
     return { errors: [], isPending: true };
   }
-  const result = field.validate(value, data, rootData);
+  const result = field.validate(value, data, rootData, context);
   if (isPromiseLike<string | string[] | undefined>(result)) {
     // A rejected async result has no observer on the synchronous path. Attach
     // one so live validation does not create an unhandled rejection; callers
@@ -160,8 +161,10 @@ export function validateField(
   value: unknown,
   data: Properties,
   rootData?: Properties,
+  context?: ValidationContext,
 ): string[] {
-  return runSyncValidate(field, value, data, rootData).errors;
+  return runSyncValidate(field, value, data, rootData, field.name, context)
+    .errors;
 }
 
 /** Run one field's validate hook asynchronously; always returns a Promise resolving to string[]. */
@@ -192,6 +195,7 @@ export function validateFields(
   fields: FieldDescription[],
   data: Properties,
   rootData: Properties = data,
+  context?: ValidationContext,
 ): ValidationResult {
   const errors: Record<string, string[]> = {};
   const pending: string[] = [];
@@ -209,7 +213,7 @@ export function validateFields(
         ? (data[field.name] as Properties[])
         : [];
       items.forEach((item, index) => {
-        const sub = validateFields(field.fields, item, rootData);
+        const sub = validateFields(field.fields, item, rootData, context);
         for (const [key, messages] of Object.entries(sub.errors)) {
           errors[`${field.name}[${index}].${key}`] = messages;
         }
@@ -225,6 +229,8 @@ export function validateFields(
       data[field.name],
       data,
       rootData,
+      field.name,
+      context,
     );
     if (fieldErrors.length > 0) {
       errors[field.name] = fieldErrors;

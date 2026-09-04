@@ -1,6 +1,7 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, it, test } from 'vitest';
 import type { FieldDescription } from '../src';
 import { zodValidator, yupValidator } from '../src/adapters';
+import { createMessageResolver } from '../src/messages';
 import {
   resolveDisabled,
   resolveOptions,
@@ -9,6 +10,7 @@ import {
   validateFields,
   validateFieldsAsync,
 } from '../src/validation';
+import { validators } from '../src/validators';
 
 declare module '../src' {
   interface FieldTypeMap {
@@ -239,5 +241,51 @@ describe('zodValidator and yupValidator', () => {
     const validator = yupValidator(mockYup, { target: 'field' });
     expect(validator('hi', {})).toEqual(['Must be at least 3 chars']);
     expect(validator('hello', {})).toBeUndefined();
+  });
+});
+
+describe('validateFields threads the message context', () => {
+  const ctxFields: FieldDescription[] = [
+    { name: 'title', type: 'text', validate: validators.required() },
+  ];
+
+  it('reaches a built-in validator through validateFields', () => {
+    const result = validateFields(ctxFields, { title: '' }, undefined, {
+      t: createMessageResolver({ required: 'Bắt buộc' }),
+    });
+    expect(result.errors.title).toEqual(['Bắt buộc']);
+  });
+
+  it('reaches it through validateField too', () => {
+    expect(
+      validateField(ctxFields[0], '', { title: '' }, undefined, {
+        t: createMessageResolver({ required: 'Bắt buộc' }),
+      }),
+    ).toEqual(['Bắt buộc']);
+  });
+
+  it('keeps the English default with no context', () => {
+    expect(validateFields(ctxFields, { title: '' }).errors.title).toEqual([
+      'Field is required',
+    ]);
+  });
+
+  it('descends into repeatable groups with the context intact', () => {
+    const grouped: FieldDescription[] = [
+      {
+        name: 'items',
+        type: 'text',
+        fields: [
+          { name: 'label', type: 'text', validate: validators.required() },
+        ],
+      },
+    ];
+    const result = validateFields(
+      grouped,
+      { items: [{ label: '' }] },
+      undefined,
+      { t: createMessageResolver({ required: 'Bắt buộc' }) },
+    );
+    expect(result.errors['items[0].label']).toEqual(['Bắt buộc']);
   });
 });
