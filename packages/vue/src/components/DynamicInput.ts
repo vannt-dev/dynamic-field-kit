@@ -1,4 +1,9 @@
-import { FieldTypeKey, makeErrorId, Properties } from '@dynamic-field-kit/core';
+import {
+  FieldTypeKey,
+  makeErrorId,
+  type OptionsStatus,
+  Properties,
+} from '@dynamic-field-kit/core';
 import { defineComponent, computed, h, PropType } from 'vue';
 import { getDefaultRenderer } from '../defaultRenderers';
 import { useFieldRegistry } from '../fieldRegistryContext';
@@ -50,6 +55,14 @@ const DynamicInput = /* @__PURE__ */ defineComponent({
     },
     options: {
       type: Array as PropType<Properties[]>,
+      default: undefined,
+    },
+    optionsStatus: {
+      type: String as PropType<OptionsStatus>,
+      default: undefined,
+    },
+    optionsError: {
+      type: null,
       default: undefined,
     },
     className: {
@@ -108,6 +121,11 @@ const DynamicInput = /* @__PURE__ */ defineComponent({
       type: Boolean,
       default: undefined,
     },
+    // Renderer-driven refetch for a search-remote field.
+    onOptionsQuery: {
+      type: Function as PropType<(query: string) => void>,
+      default: undefined,
+    },
     // Extra, framework-agnostic props forwarded verbatim to the renderer.
     extraProps: {
       type: Object as PropType<Properties>,
@@ -139,6 +157,7 @@ const DynamicInput = /* @__PURE__ */ defineComponent({
         'onUpdate:value': props.onChange,
         onValueChange: props.onChange,
         onBlur: props.onBlur,
+        onOptionsQuery: props.onOptionsQuery,
         label: props.label,
         placeholder: props.placeholder,
         required: props.required,
@@ -146,6 +165,8 @@ const DynamicInput = /* @__PURE__ */ defineComponent({
         dirty: props.dirty,
         error: props.error,
         options: props.options,
+        optionsStatus: props.optionsStatus,
+        optionsError: props.optionsError,
         // Vue's name for the contract's `className`, and the one intentional
         // deviation from it. Forwarding `className` as well is not an option:
         // a renderer that does not declare it lets the key fall through to its
