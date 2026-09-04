@@ -1,3 +1,8 @@
+import {
+  FieldRegistry,
+  makeErrorId,
+  type FieldRendererProps,
+} from '@dynamic-field-kit/core';
 import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
@@ -7,6 +12,7 @@ import {
   DefaultEmailRenderer,
   DefaultTextareaRenderer,
 } from '../src/defaultRenderers';
+import { FieldRegistryProvider } from '../src/FieldRegistryContext';
 
 describe('React Default Built-in Renderers', () => {
   it('renders default text input when type is "text" without custom registration', () => {
@@ -137,5 +143,76 @@ describe('React Default Built-in Renderers', () => {
     render(<DefaultEmailRenderer value="mail@test.com" onValueChange={fn} />);
     render(<DefaultTextareaRenderer value="area" onValueChange={fn} />);
     expect(screen.getByDisplayValue('pass')).toBeInTheDocument();
+  });
+});
+
+describe('default renderer error node', () => {
+  it('renders the message with the id ariaDescribedBy points at', () => {
+    render(
+      <DynamicInput
+        type="text"
+        id="f-title"
+        value=""
+        error={['Title is required']}
+        ariaInvalid
+        ariaDescribedBy={makeErrorId('f-title')}
+        onChange={() => {}}
+      />,
+    );
+
+    const input = screen.getByRole('textbox');
+    const described = input.getAttribute('aria-describedby');
+    expect(described).toBe('f-title-error');
+    expect(document.getElementById(described!)).toHaveTextContent(
+      'Title is required',
+    );
+  });
+
+  it('renders nothing extra when the field is valid', () => {
+    render(
+      <DynamicInput type="text" id="f-ok" value="x" onChange={() => {}} />,
+    );
+
+    expect(document.getElementById('f-ok-error')).toBeNull();
+  });
+
+  it('leaves a custom renderer to render its own message', () => {
+    const registry = new FieldRegistry();
+    registry.register('text', (({ error }: FieldRendererProps) => (
+      <span data-testid="custom">{error?.[0]}</span>
+    )) as unknown as never);
+
+    render(
+      <FieldRegistryProvider registry={registry}>
+        <DynamicInput
+          type="text"
+          id="f-custom"
+          value=""
+          error={['Boom']}
+          onChange={() => {}}
+        />
+      </FieldRegistryProvider>,
+    );
+
+    expect(screen.getByTestId('custom')).toHaveTextContent('Boom');
+    expect(document.getElementById('f-custom-error')).toBeNull();
+  });
+});
+
+describe('default renderer error node accepts a bare string', () => {
+  it('renders the whole string, not its first character', () => {
+    render(
+      <DynamicInput
+        type="text"
+        id="f-str"
+        value=""
+        error="Title is required"
+        onChange={() => {}}
+      />,
+    );
+
+    expect(document.getElementById('f-str-error')).toHaveTextContent(
+      'Title is required',
+    );
   });
 });

@@ -1,5 +1,63 @@
 # @dynamic-field-kit/react
 
+## 1.7.0
+
+### Minor Changes
+
+- Dirty-baseline rebasing, accessible validation errors, form-level message catalogs, and async field options across React, Vue, and Angular.
+- 9b06e3f: Validation messages can be set once per form via `useDynamicForm({ messages })`,
+  or process-wide via `setDefaultMessages`, instead of passing a string to every
+  validator on every field. Built-in validators now resolve their message when
+  they run rather than when the field description is built, which is what made a
+  catalog impossible before. A message passed directly to a validator still wins,
+  and the English defaults are unchanged when no catalog is supplied.
+
+  `ValidationContext` - already `validate`'s fourth argument - gains an optional
+  `t` resolver, so a hand-written validator can translate its own messages too.
+
+  Adds `validators.matches(otherFieldName)` for confirm-password and
+  confirm-email fields, which every consumer was hand-writing.
+
+  No locale bundles ship: the mechanism is here, the translations are yours.
+
+- a7358f9: Fix per-field `dirty`, which was measured against a baseline captured at mount
+  and never re-based - wrong after `reset(newValues)` on all three adapters, and
+  wrong on React and Vue for values that arrive after mount, where every field
+  reported dirty forever.
+
+  Adds `baselineValues` and `getDirtyValues()` to the form store on all three
+  adapters, and an `initialProperties` prop to `MultiFieldInput` for re-basing
+  without a store. Comparison moves from `!==` to `Object.is`, so a `NaN` numeric
+  field no longer reads as permanently dirty.
+
+  React's `useDynamicForm` no longer validates the same data twice per change.
+
+- 53ed45a: `options` can now return a promise, covering both dependent selects
+  (`optionsDeps`) and search-remote pickers (`onOptionsQuery`). Renderers receive
+  `optionsStatus` and `optionsError` alongside `options`.
+
+  `debounceMs` was declared on `FieldDescription`, published in the `.d.ts` and
+  read by no implementation anywhere - setting it did nothing. It now debounces
+  these loads.
+
+  Debounce, abort of a superseded request, and discarding a response that lands
+  out of order all live in core's `createOptionsLoader`, so the three adapters
+  share one implementation. Synchronous and static options are untouched and never
+  enter a loading state.
+
+- e35e876: `ariaDescribedBy` is now `${id}-error` when a field has an error instead of
+  being hard-coded `undefined`, and `makeErrorId` is exported so a custom renderer
+  can put the matching id on its message element. Without this,
+  `focusFirstInvalidField` had nothing to find for anyone following the official
+  renderer recipe.
+
+  Default renderers now render the validation message they were already being
+  handed - the one visible change in this release. Custom renderers are untouched,
+  so nobody gets two copies of their own message.
+
+  Development builds now warn when `FieldDescription.props` carries a key the
+  renderer prop contract owns, which 1.6.0 made possible to lose silently.
+
 ## 1.6.0
 
 ### Minor Changes

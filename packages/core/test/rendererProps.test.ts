@@ -1,7 +1,9 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  __resetReservedPropWarnings,
   buildFieldRendererProps,
   FIELD_RENDERER_PROP_KEYS,
+  makeErrorId,
   makeFieldId,
 } from '../src/rendererProps';
 import type { FieldDescription } from '../src/types';
@@ -147,5 +149,181 @@ describe('buildFieldRendererProps', () => {
     for (const key of FIELD_RENDERER_PROP_KEYS) {
       expect(Object.prototype.hasOwnProperty.call(p, key)).toBe(true);
     }
+  });
+});
+
+describe('ariaDescribedBy', () => {
+  it('points at the error node id when the field has an error', () => {
+    const props = buildFieldRendererProps({
+      fieldDescription: {
+        name: 'title',
+        type: 'text',
+        required: true,
+        validate: () => 'Required',
+      },
+      data: { title: '' },
+      id: 'form-title',
+    });
+
+    expect(props.ariaInvalid).toBe(true);
+    expect(props.ariaDescribedBy).toBe('form-title-error');
+    expect(props.ariaDescribedBy).toBe(makeErrorId('form-title'));
+  });
+
+  it('is undefined when the field is valid', () => {
+    const props = buildFieldRendererProps({
+      fieldDescription: { name: 'title', type: 'text' },
+      data: { title: 'ok' },
+      id: 'form-title',
+    });
+
+    expect(props.ariaInvalid).toBe(false);
+    expect(props.ariaDescribedBy).toBeUndefined();
+  });
+
+  it('is undefined for a disabled field, which is never validated', () => {
+    const props = buildFieldRendererProps({
+      fieldDescription: {
+        name: 'title',
+        type: 'text',
+        disabled: true,
+        validate: () => 'Required',
+      },
+      data: { title: '' },
+      id: 'form-title',
+    });
+
+    expect(props.ariaDescribedBy).toBeUndefined();
+  });
+});
+
+describe('reserved props warning', () => {
+  beforeEach(() => {
+    __resetReservedPropWarnings();
+  });
+
+  it('warns when props carries a key the contract owns', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    buildFieldRendererProps({
+      fieldDescription: {
+        name: 'title',
+        type: 'text',
+        props: { placeholder: 'from props' },
+      },
+      data: {},
+      id: 'form-title',
+    });
+
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0][0]).toContain('placeholder');
+    expect(warn.mock.calls[0][0]).toContain('title');
+    warn.mockRestore();
+  });
+
+  it('warns only once for the same field and key', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const fieldDescription: FieldDescription = {
+      name: 'title',
+      type: 'text',
+      props: { placeholder: 'from props' },
+    };
+
+    buildFieldRendererProps({ fieldDescription, data: {}, id: 'a' });
+    buildFieldRendererProps({ fieldDescription, data: {}, id: 'a' });
+
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
+  });
+
+  it('stays silent for props keys the contract does not own', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    buildFieldRendererProps({
+      fieldDescription: {
+        name: 'title',
+        type: 'text',
+        props: { maxLength: 10, acceptFile: 'x' },
+      },
+      data: {},
+      id: 'form-title',
+    });
+
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('stays silent in production', () => {
+    const previous = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    buildFieldRendererProps({
+      fieldDescription: {
+        name: 'title',
+        type: 'text',
+        props: { placeholder: 'from props' },
+      },
+      data: {},
+      id: 'form-title',
+    });
+
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+    process.env.NODE_ENV = previous;
+  });
+});
+
+describe('options loading state', () => {
+  const asyncField: FieldDescription = {
+    name: 'city',
+    type: 'text',
+    options: async () => [{ value: 'hn' }],
+  };
+
+  it('takes options and status from the supplied loader state', () => {
+    const props = buildFieldRendererProps({
+      fieldDescription: asyncField,
+      data: {},
+      id: 'f-city',
+      optionsState: { status: 'ready', options: [{ value: 'hn' }] },
+    });
+
+    expect(props.options).toEqual([{ value: 'hn' }]);
+    expect(props.optionsStatus).toBe('ready');
+    expect(props.optionsError).toBeUndefined();
+  });
+
+  it('surfaces a load failure', () => {
+    const boom = new Error('down');
+    const props = buildFieldRendererProps({
+      fieldDescription: asyncField,
+      data: {},
+      id: 'f-city',
+      optionsState: { status: 'error', error: boom },
+    });
+
+    expect(props.optionsStatus).toBe('error');
+    expect(props.optionsError).toBe(boom);
+  });
+
+  it('leaves a synchronous field untouched', () => {
+    const props = buildFieldRendererProps({
+      fieldDescription: {
+        name: 'city',
+        type: 'text',
+        options: [{ value: 'hn' }],
+      },
+      data: {},
+      id: 'f-city',
+    });
+
+    expect(props.options).toEqual([{ value: 'hn' }]);
+    expect(props.optionsStatus).toBeUndefined();
+  });
+
+  it('declares both new keys in the contract', () => {
+    expect(FIELD_RENDERER_PROP_KEYS).toContain('optionsStatus');
+    expect(FIELD_RENDERER_PROP_KEYS).toContain('optionsError');
   });
 });

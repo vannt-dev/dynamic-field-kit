@@ -1,4 +1,4 @@
-import { FieldDescription } from '@dynamic-field-kit/core';
+import { FieldDescription, validators } from '@dynamic-field-kit/core';
 import { describe, expect, it, vi } from 'vitest';
 import { createDynamicFormStore } from '../src/lib/dynamic-form.store';
 
@@ -256,5 +256,77 @@ describe('Angular Signal DynamicFormStore', () => {
 
     expect(store.data().username).toBe('ada');
     expect(store.isSubmitted()).toBe(false);
+  });
+});
+
+describe('baselineValues and getDirtyValues', () => {
+  const baselineFields: FieldDescription[] = [
+    { name: 'title', type: 'text', label: 'Title' },
+    { name: 'note', type: 'text', label: 'Note' },
+  ];
+
+  it('exposes the initial values as the baseline', () => {
+    const store = createDynamicFormStore({
+      fields: baselineFields,
+      initialValues: { title: 'a', note: 'n' },
+    });
+    expect(store.baselineValues()).toEqual({ title: 'a', note: 'n' });
+    expect(store.getDirtyValues()).toEqual({});
+  });
+
+  it('reports only the changed entries as dirty', () => {
+    const store = createDynamicFormStore({
+      fields: baselineFields,
+      initialValues: { title: 'a', note: 'n' },
+    });
+    store.setFieldValue('title', 'b');
+    expect(store.getDirtyValues()).toEqual({ title: 'b' });
+  });
+
+  it('re-bases the baseline on reset(newValues)', () => {
+    const store = createDynamicFormStore({
+      fields: baselineFields,
+      initialValues: { title: 'a', note: 'n' },
+    });
+    store.setFieldValue('title', 'b');
+    store.reset({ title: 'c', note: 'n' });
+
+    expect(store.baselineValues()).toEqual({ title: 'c', note: 'n' });
+    expect(store.getDirtyValues()).toEqual({});
+  });
+
+  it('restores the original baseline on a bare reset()', () => {
+    const store = createDynamicFormStore({
+      fields: baselineFields,
+      initialValues: { title: 'a', note: 'n' },
+    });
+    store.reset({ title: 'c', note: 'n' });
+    store.reset();
+    expect(store.baselineValues()).toEqual({ title: 'a', note: 'n' });
+  });
+});
+
+describe('messages', () => {
+  const msgFields: FieldDescription[] = [
+    { name: 'title', type: 'text', validate: validators.required() },
+  ];
+
+  it('resolves validator messages through the supplied catalog', () => {
+    const store = createDynamicFormStore({
+      fields: msgFields,
+      initialValues: { title: '' },
+      messages: { required: 'Bắt buộc' },
+    });
+    store.validate();
+    expect(store.errors()['title']).toEqual(['Bắt buộc']);
+  });
+
+  it('keeps the English default with no catalog', () => {
+    const store = createDynamicFormStore({
+      fields: msgFields,
+      initialValues: { title: '' },
+    });
+    store.validate();
+    expect(store.errors()['title']).toEqual(['Field is required']);
   });
 });

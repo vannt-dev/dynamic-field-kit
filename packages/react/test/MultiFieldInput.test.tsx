@@ -1,15 +1,30 @@
-import type { FieldDescription } from '@dynamic-field-kit/core';
-import { render, screen } from '@testing-library/react';
+import type {
+  FieldDescription,
+  FieldRendererProps,
+  Properties,
+} from '@dynamic-field-kit/core';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import MultiFieldInput from '../src/components/MultiFieldInput';
 import { fieldRegistry } from '../src/fieldRegistry';
 import { layoutRegistry } from '../src/layout/layoutRegistry';
+import {
+  useDynamicForm,
+  type UseDynamicFormResult,
+} from '../src/useDynamicForm';
 
 declare module '@dynamic-field-kit/core' {
   interface FieldTypeMap {
     text: string;
     email: string;
+    dirtyProbe: string;
   }
 }
 
@@ -215,5 +230,202 @@ describe('MultiFieldInput', () => {
       expect.objectContaining({ firstName: 'Ada', greeting: 'Hello Ada' }),
     );
     expect(screen.getAllByTestId('input')[1]).toHaveValue('Hello Ada');
+  });
+});
+
+describe('dirty baseline', () => {
+  const dirtyFields: FieldDescription[] = [
+    { name: 'title', type: 'dirtyProbe', label: 'Title' },
+  ];
+
+  const DirtyProbe = ({
+    id,
+    value,
+    dirty,
+    onValueChange,
+  }: FieldRendererProps) => (
+    <input
+      data-testid={id}
+      data-dirty={String(dirty)}
+      value={(value as string) ?? ''}
+      onChange={(e) => onValueChange?.(e.target.value)}
+    />
+  );
+
+  beforeEach(() => {
+    fieldRegistry.register('dirtyProbe', DirtyProbe);
+    layoutRegistry.register(
+      'column',
+      ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+    );
+  });
+
+  it('is not dirty when properties arrive after mount', async () => {
+    const Late = () => {
+      const [props, setProps] = React.useState<Properties | undefined>(
+        undefined,
+      );
+      React.useEffect(() => setProps({ title: 'loaded' }), []);
+      return (
+        <MultiFieldInput
+          fieldDescriptions={dirtyFields}
+          properties={props}
+          idPrefix="late"
+        />
+      );
+    };
+    render(<Late />);
+    await waitFor(() =>
+      expect(screen.getByTestId('late-title')).toHaveValue('loaded'),
+    );
+    expect(screen.getByTestId('late-title')).toHaveAttribute(
+      'data-dirty',
+      'false',
+    );
+  });
+
+  it('honours an explicit initialProperties baseline', () => {
+    render(
+      <MultiFieldInput
+        fieldDescriptions={dirtyFields}
+        properties={{ title: 'edited' }}
+        initialProperties={{ title: 'original' }}
+        idPrefix="explicit"
+      />,
+    );
+    expect(screen.getByTestId('explicit-title')).toHaveAttribute(
+      'data-dirty',
+      'true',
+    );
+  });
+
+  it('re-bases when the bound form is reset to new values', async () => {
+    let api: UseDynamicFormResult | undefined;
+    const Bound = () => {
+      const form = useDynamicForm({
+        fields: dirtyFields,
+        initialValues: { title: 'a' },
+      });
+      api = form;
+      return (
+        <MultiFieldInput
+          fieldDescriptions={dirtyFields}
+          form={form}
+          idPrefix="bound"
+        />
+      );
+    };
+    render(<Bound />);
+
+    await act(async () => api!.reset({ title: 'b' }));
+
+    expect(screen.getByTestId('bound-title')).toHaveValue('b');
+    expect(screen.getByTestId('bound-title')).toHaveAttribute(
+      'data-dirty',
+      'false',
+    );
+  });
+
+  it('still reports dirty while the user types in controlled mode', async () => {
+    const Bound = () => {
+      const form = useDynamicForm({
+        fields: dirtyFields,
+        initialValues: { title: 'a' },
+      });
+      return (
+        <MultiFieldInput
+          fieldDescriptions={dirtyFields}
+          form={form}
+          idPrefix="typing"
+        />
+      );
+    };
+    render(<Bound />);
+
+    fireEvent.change(screen.getByTestId('typing-title'), {
+      target: { value: 'ab' },
+    });
+
+    await waitFor(() =>
+      expect(screen.getByTestId('typing-title')).toHaveAttribute(
+        'data-dirty',
+        'true',
+      ),
+    );
+  });
+});
+
+describe('dirty baseline when properties start as an empty object', () => {
+  const dirtyFields2: FieldDescription[] = [
+    { name: 'title', type: 'dirtyProbe', label: 'Title' },
+  ];
+
+  beforeEach(() => {
+    fieldRegistry.register('dirtyProbe', (({
+      id,
+      value,
+      dirty,
+    }: FieldRendererProps) => (
+      <input
+        data-testid={id}
+        data-dirty={String(dirty)}
+        value={(value as string) ?? ''}
+        readOnly
+      />
+    )) as never);
+    layoutRegistry.register(
+      'column',
+      ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+    );
+  });
+
+  it('documents the {} case: an empty object is a real baseline, not "unset"', async () => {
+    const Late = () => {
+      const [props, setProps] = React.useState<Properties>({});
+      React.useEffect(() => setProps({ title: 'loaded' }), []);
+      return (
+        <MultiFieldInput
+          fieldDescriptions={dirtyFields2}
+          properties={props}
+          idPrefix="empty"
+        />
+      );
+    };
+    render(<Late />);
+    await waitFor(() =>
+      expect(screen.getByTestId('empty-title')).toHaveValue('loaded'),
+    );
+
+    // `{}` cannot be told apart from a form that genuinely opens blank, so it
+    // is taken at face value and the field reads dirty. Pass initialProperties
+    // (or drive the form through a store) when values arrive after mount.
+    expect(screen.getByTestId('empty-title')).toHaveAttribute(
+      'data-dirty',
+      'true',
+    );
+  });
+
+  it('initialProperties is the escape hatch for that case', async () => {
+    const Late = () => {
+      const [props, setProps] = React.useState<Properties>({});
+      React.useEffect(() => setProps({ title: 'loaded' }), []);
+      return (
+        <MultiFieldInput
+          fieldDescriptions={dirtyFields2}
+          properties={props}
+          initialProperties={{ title: 'loaded' }}
+          idPrefix="hatch"
+        />
+      );
+    };
+    render(<Late />);
+    await waitFor(() =>
+      expect(screen.getByTestId('hatch-title')).toHaveValue('loaded'),
+    );
+
+    expect(screen.getByTestId('hatch-title')).toHaveAttribute(
+      'data-dirty',
+      'false',
+    );
   });
 });

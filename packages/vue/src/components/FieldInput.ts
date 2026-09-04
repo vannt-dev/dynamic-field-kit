@@ -1,10 +1,21 @@
 import {
   buildFieldRendererProps,
+  createOptionsLoader,
+  isAsyncOptions,
   makeFieldId,
+  type OptionsState,
   FieldDescription,
   Properties,
 } from '@dynamic-field-kit/core';
-import { defineComponent, h, PropType } from 'vue';
+import {
+  defineComponent,
+  getCurrentScope,
+  h,
+  onScopeDispose,
+  PropType,
+  shallowRef,
+  watch,
+} from 'vue';
 import DynamicInput from './DynamicInput';
 
 const FieldInput = /* @__PURE__ */ defineComponent({
@@ -49,6 +60,31 @@ const FieldInput = /* @__PURE__ */ defineComponent({
     },
   },
   setup(props) {
+    // Async options only. A static or synchronous list allocates nothing here
+    // and takes the path it always has.
+    const isAsync = isAsyncOptions(props.fieldDescription);
+    const optionsState = shallowRef<OptionsState | undefined>(
+      isAsync ? { status: 'idle' } : undefined,
+    );
+    const loader = isAsync
+      ? createOptionsLoader(props.fieldDescription, (state) => {
+          optionsState.value = state;
+        })
+      : undefined;
+
+    if (loader) {
+      // The loader decides whether `optionsDeps` actually changed, so watching
+      // the whole data object keeps that decision in one place.
+      watch(
+        () => props.renderInfos,
+        (data) => loader.update(data, props.rootData),
+        { immediate: true, deep: true },
+      );
+      if (getCurrentScope()) {
+        onScopeDispose(() => loader.dispose());
+      }
+    }
+
     return () => {
       const { name } = props.fieldDescription;
 
@@ -61,12 +97,16 @@ const FieldInput = /* @__PURE__ */ defineComponent({
         dirty: props.dirty,
         validationErrors:
           props.errors === undefined ? undefined : (props.errors[name] ?? []),
+        optionsState: optionsState.value,
       });
 
       return h(DynamicInput, {
         ...rendererProps,
         onChange: (v: unknown) => props.onValueChangeField(v, name),
         onBlur: () => props.onBlurField?.(name),
+        onOptionsQuery: loader
+          ? (query: string) => loader.setQuery(query)
+          : undefined,
       });
     };
   },

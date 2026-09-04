@@ -43,6 +43,11 @@ both packages:
 - `validateFields` / `validateFieldsAsync` — a whole schema, returns `ValidationResult`
 - `collectFieldPaths` — the leaf paths a schema actually has in the data (`contacts[0].email`)
 - `indexGroupPathMap` — index an error or touched map by repeatable-group item
+- `makeErrorId` — the id a renderer puts on its message element so
+  `aria-describedby` resolves
+- `createOptionsLoader` / `isAsyncOptions` — the async options engine
+- `createMessageResolver` / `setDefaultMessages` / `MessageCatalog` — validation
+  message catalog
 - `resolveDisabled` / `resolveReadOnly` / `resolveOptions` — resolve a field's dynamic conditions and options
 - `validators` — the built-in validator helpers (`required`, `email`, `minLength`, `compose`, …)
 - `ValidationResult` / `ValidationContext`
@@ -140,6 +145,7 @@ const form = useDynamicForm({
   initialValues: { country: 'VN' },
   validateOnBlur: true, // default
   validateOnChange: false, // default
+  messages: { required: 'Bắt buộc' }, // optional; see Validation & conditions
 });
 
 <form onSubmit={form.handleSubmit((data) => save(data))}>
@@ -163,6 +169,25 @@ const form = useDynamicForm({
 />
 ```
 
+The `form` shorthand also carries `baselineValues`, which is what keeps
+per-field `dirty` correct across a reset. Without a form store, pass the
+baseline yourself:
+
+```tsx
+<MultiFieldInput
+  fieldDescriptions={fields}
+  properties={data}
+  initialProperties={original} // what `dirty` compares against
+/>
+```
+
+Omit it and the baseline is the first non-`undefined` `properties` the
+component sees — which is what an edit form wants when its values arrive from a
+fetch after mount. Note that `{}` counts as a real value: a form
+that opens blank cannot be told apart from one still waiting on a fetch, so
+pass `initialProperties` when `properties` starts as `{}` rather than
+`undefined`.
+
 Passing `touched` and `errors` gives the form store ownership of renderer
 metadata. `touched` is what makes an invalid submit visible: `handleSubmit`
 marks every field touched before validating, so a renderer that gates its error
@@ -170,28 +195,30 @@ on `touched` shows it even for fields the user never focused. `reset()` clears
 touched the same way. Individually passed props win over the ones `form`
 derives, so you can pass `form` and still override one wire.
 
-| Member                              | Description                                                                       |
-| ----------------------------------- | --------------------------------------------------------------------------------- |
-| `data`                              | Current form data, with `computeValue` fields applied                             |
-| `errors`                            | `Record<string, string[]>`, keyed like `validateFields`                           |
-| `isValid` / `isDirty`               | Current synchronous validity / any value has changed                              |
-| `isValidating`                      | An async validation pass is in flight                                             |
-| `isValidationComplete`              | Every applicable validator finished and none is in flight                         |
-| `validationStatus`                  | `'valid'                                                                          | 'invalid' | 'pending'`— prefer it over`isValid`alone:`valid` cannot tell "nothing is wrong" from "nothing is wrong yet" |
-| `isSubmitting` / `isSubmitted`      | In-flight submit / at least one submit attempted                                  |
-| `touched`                           | Fields that have been blurred                                                     |
-| `handleChange(data)`                | Replace the whole form data — pass to `MultiFieldInput`'s `onChange`              |
-| `setFieldValue(name, value)`        | Change one field                                                                  |
-| `handleBlur(name)`                  | Mark touched, and validate when `validateOnBlur`                                  |
-| `setFieldTouched(name, value?)`     | Set touched explicitly                                                            |
-| `touchAll()`                        | Mark every field touched — `handleSubmit` already calls it                        |
-| `resetTouched()`                    | Clear touched only, leaving data/errors/dirty alone                               |
-| `setTouched`                        | Raw setter for the whole touched map                                              |
-| `setData`                           | Raw state setter, for escape hatches                                              |
-| `validate()`                        | Validate now, returns a boolean                                                   |
-| `validateAsync()`                   | Validate now, awaiting Promise-based rules                                        |
-| `reset(values?)`                    | Back to `initialValues` (or the values given), clearing errors/touched/submission |
-| `handleSubmit(onValid, onInvalid?)` | Returns a submit handler; calls `preventDefault`, validates, then dispatches      |
+| Member                              | Description                                                                                     |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `data`                              | Current form data, with `computeValue` fields applied                                           |
+| `errors`                            | `Record<string, string[]>`, keyed like `validateFields`                                         |
+| `isValid` / `isDirty`               | Current synchronous validity / any value has changed                                            |
+| `baselineValues`                    | The values `dirty` is measured against — `initialValues` until `reset(newValues)` replaces them |
+| `getDirtyValues()`                  | Only the entries differing from `baselineValues`, for PATCH-style submits                       |
+| `isValidating`                      | An async validation pass is in flight                                                           |
+| `isValidationComplete`              | Every applicable validator finished and none is in flight                                       |
+| `validationStatus`                  | `'valid'                                                                                        | 'invalid' | 'pending'`— prefer it over`isValid`alone:`valid` cannot tell "nothing is wrong" from "nothing is wrong yet" |
+| `isSubmitting` / `isSubmitted`      | In-flight submit / at least one submit attempted                                                |
+| `touched`                           | Fields that have been blurred                                                                   |
+| `handleChange(data)`                | Replace the whole form data — pass to `MultiFieldInput`'s `onChange`                            |
+| `setFieldValue(name, value)`        | Change one field                                                                                |
+| `handleBlur(name)`                  | Mark touched, and validate when `validateOnBlur`                                                |
+| `setFieldTouched(name, value?)`     | Set touched explicitly                                                                          |
+| `touchAll()`                        | Mark every field touched — `handleSubmit` already calls it                                      |
+| `resetTouched()`                    | Clear touched only, leaving data/errors/dirty alone                                             |
+| `setTouched`                        | Raw setter for the whole touched map                                                            |
+| `setData`                           | Raw state setter, for escape hatches                                                            |
+| `validate()`                        | Validate now, returns a boolean                                                                 |
+| `validateAsync()`                   | Validate now, awaiting Promise-based rules                                                      |
+| `reset(values?)`                    | Back to `initialValues` (or the values given), clearing errors/touched/submission               |
+| `handleSubmit(onValid, onInvalid?)` | Returns a submit handler; calls `preventDefault`, validates, then dispatches                    |
 
 Leave `touched` off and `MultiFieldInput` falls back to tracking it internally
 from blur alone, as it always did. In that mode nothing outside the component
@@ -244,6 +271,13 @@ const Base = getDefaultRenderer('date'); // undefined for an unknown type
 
 `file` emits a `File` (or `File[]` when `multiple` is set), `range` and `number`
 emit numbers, `checkbox` / `switch` emit booleans; everything else emits strings.
+
+Since 1.7.0 a default renderer also renders its validation message, as
+`<div id="{fieldId}-error" class="dfk-field-error" role="alert">`, which is what
+`aria-describedby` points at. Before that they were handed `error` and dropped
+it, so the form showed nothing. A registered custom renderer is unaffected — the
+node is emitted only where a default was used, so you never get two copies. Hide
+it with `.dfk-field-error { display: none }` if you want the old silence.
 
 ## DevTools
 
@@ -349,6 +383,51 @@ fieldRegistry.register('text', ({ value, onValueChange, error, disabled }) => (
   </label>
 ));
 ```
+
+Forward `ariaInvalid`, `ariaRequired` and `ariaDescribedBy` too, and put
+`makeErrorId(id)` on whatever element renders the message. `focusFirstInvalidField`
+selects `[aria-invalid="true"]`, so a renderer that drops those props makes that
+helper silently do nothing. See
+[the recipes](../../docs/ui-kit-recipes.md#forward-the-aria-props).
+
+### Validation messages
+
+Set the built-in validators' messages once per form instead of on every field:
+
+```tsx
+const form = useDynamicForm({
+  fields,
+  messages: { required: 'Bắt buộc', minLength: 'Tối thiểu {min} ký tự' },
+});
+```
+
+A message passed straight to a validator still wins, and any key omitted falls
+back to the English default. `setDefaultMessages(catalog)` sets a process-wide
+one for code calling `validateFields` directly. Full key list in the
+[core README](../core/README.md#validation-messages). **No locale bundles
+ship** — the mechanism is here, the translations are yours.
+
+### Async options
+
+`options` may return a promise, and the renderer receives `optionsStatus`
+(`'idle' | 'loading' | 'ready' | 'error'`), `optionsError` and `onOptionsQuery`:
+
+```tsx
+{
+  name: 'assignee',
+  type: 'userPicker',
+  options: async (data, _rootData, ctx) =>
+    fetch(`/api/users?q=${ctx?.query ?? ''}`, { signal: ctx?.signal })
+      .then((r) => r.json()),
+  optionsDeps: (data) => [data.team],  // reload when this changes; default []
+  debounceMs: 300,                     // collapses rapid reloads into one fetch
+}
+```
+
+Superseded requests are aborted and out-of-order responses discarded, so the
+list always reflects the newest request. Static and synchronous options are
+untouched and never enter a loading state. See the
+[core README](../core/README.md#async-options).
 
 ## Repeatable field groups
 

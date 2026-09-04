@@ -1,4 +1,5 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, it, test } from 'vitest';
+import { createMessageResolver } from '../src/messages';
 import { validators } from '../src/validators';
 
 describe('validators utility', () => {
@@ -54,5 +55,86 @@ describe('validators utility', () => {
     expect(composed('', {})).toEqual(['Req']);
     expect(composed('abc', {})).toEqual(['Too short']);
     expect(composed('abcde', {})).toBeUndefined();
+  });
+});
+
+describe('validators read the message catalog', () => {
+  const ctx = {
+    t: createMessageResolver({
+      required: 'Bắt buộc',
+      minLength: 'Tối thiểu {min} ký tự',
+      max: 'Tối đa {max}',
+    }),
+  };
+
+  it('uses the catalog when no message is passed', () => {
+    expect(validators.required()('', {}, undefined, ctx)).toBe('Bắt buộc');
+  });
+
+  it('interpolates validator params into the catalog entry', () => {
+    expect(validators.minLength(8)('abc', {}, undefined, ctx)).toBe(
+      'Tối thiểu 8 ký tự',
+    );
+    expect(validators.max(10)(11, {}, undefined, ctx)).toBe('Tối đa 10');
+  });
+
+  it('still lets an explicitly passed message win', () => {
+    expect(validators.required('Explicit')('', {}, undefined, ctx)).toBe(
+      'Explicit',
+    );
+  });
+
+  it('keeps the English default when no catalog is in play', () => {
+    expect(validators.required()('')).toBe('Field is required');
+    expect(validators.minLength(8)('abc')).toBe('Minimum length is 8');
+  });
+
+  it('threads the context through compose', () => {
+    const composed = validators.compose(validators.required());
+    expect(composed('', {}, undefined, ctx)).toEqual(['Bắt buộc']);
+  });
+});
+
+describe('validators.matches', () => {
+  it('passes when the two values are equal', () => {
+    expect(
+      validators.matches('password')('secret', { password: 'secret' }),
+    ).toBeUndefined();
+  });
+
+  it('fails when they differ', () => {
+    expect(validators.matches('password')('typo', { password: 'secret' })).toBe(
+      'Must match password',
+    );
+  });
+
+  it('takes its message from the catalog, with the other field interpolated', () => {
+    const ctx = { t: createMessageResolver({ matches: 'Phải khớp {other}' }) };
+    expect(
+      validators.matches('password')(
+        'typo',
+        { password: 'secret' },
+        undefined,
+        ctx,
+      ),
+    ).toBe('Phải khớp password');
+  });
+
+  it('lets an explicit message win', () => {
+    expect(
+      validators.matches('password', 'Passwords differ')('typo', {
+        password: 'secret',
+      }),
+    ).toBe('Passwords differ');
+  });
+
+  it('skips an empty value, leaving required to report it', () => {
+    expect(
+      validators.matches('password')('', { password: 'secret' }),
+    ).toBeUndefined();
+  });
+
+  it('compares with Object.is so two NaNs match', () => {
+    expect(validators.matches('a')(NaN, { a: NaN })).toBeUndefined();
   });
 });

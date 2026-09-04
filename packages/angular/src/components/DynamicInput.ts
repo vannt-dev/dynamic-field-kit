@@ -15,7 +15,7 @@ import {
   ViewChild,
   ViewContainerRef,
 } from '@angular/core';
-import { FieldTypeKey, Properties } from '@dynamic-field-kit/core';
+import { FieldTypeKey, makeErrorId, Properties } from '@dynamic-field-kit/core';
 import { Subscription } from 'rxjs';
 import { FIELD_REGISTRY } from '../fieldRegistryToken';
 import { BaseInputComponent } from './BaseInput';
@@ -37,6 +37,8 @@ const KNOWN_PROPS = [
   'dirty',
   'error',
   'options',
+  'optionsStatus',
+  'optionsError',
   'className',
   'description',
   'id',
@@ -55,7 +57,17 @@ const KNOWN_PROPS = [
   standalone: true,
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `<div #host style="display: contents;"></div>`,
+  // *ngIf rather than @if: the peer range starts at Angular 16, and the
+  // built-in control flow block syntax is 17+.
+  template: `<div #host style="display: contents;"></div>
+    <div
+      *ngIf="showDefaultError()"
+      [id]="errorNodeId()"
+      class="dfk-field-error"
+      role="alert"
+    >
+      {{ firstError() }}
+    </div>`,
 })
 export class DynamicInput
   extends BaseInputComponent
@@ -118,6 +130,9 @@ export class DynamicInput
         )[prop];
       }
     }
+    if (changes['onOptionsQuery']) {
+      this.applyCallbackProps(this.inputInstance);
+    }
     if (changes['extraProps']) {
       this.applyExtraProps(this.inputInstance);
     }
@@ -140,6 +155,31 @@ export class DynamicInput
     this.inputInstance = undefined;
   }
 
+  /** The id `ariaDescribedBy` points at. See core's `makeErrorId`. */
+  errorNodeId(): string {
+    return makeErrorId(this.id ?? '');
+  }
+
+  /** `error` may arrive as a bare string, so index 0 would be a character. */
+  firstError(): string | undefined {
+    return Array.isArray(this.error) ? this.error[0] : this.error;
+  }
+
+  /**
+   * Whether the adapter should render the validation message itself.
+   *
+   * Asks the registry directly rather than reading a flag set by `render()`:
+   * `render()` runs in `ngAfterViewInit`, by which point this template's
+   * bindings have already been checked for the pass, and under `OnPush`
+   * nothing would mark them dirty again. A registered renderer owns its own
+   * error presentation, so only the built-in fallback gets a message here.
+   */
+  showDefaultError(): boolean {
+    return Boolean(
+      !this.registry.get(this.type) && this.firstError() && this.id,
+    );
+  }
+
   private render(): void {
     const Renderer = this.registry.get(this.type);
     this.cleanup();
@@ -147,6 +187,7 @@ export class DynamicInput
 
     if (!Renderer) {
       if (this.renderDefaultFallbackHTML5(this.type)) {
+        this.applyFallbackAria();
         return;
       }
       this.renderError(`Unknown field type: ${this.type}`);
@@ -217,6 +258,7 @@ export class DynamicInput
       ...this.extraProps,
       value: this.value,
       onValueChange: (v: unknown) => this.emitValue(v),
+      onOptionsQuery: this.onOptionsQuery,
       label: this.label ?? '',
       placeholder: this.placeholder ?? '',
       required: this.required ?? false,
@@ -265,7 +307,22 @@ export class DynamicInput
         instanceObj[prop] = (this as Record<string, unknown>)[prop];
       }
     }
+    this.applyCallbackProps(instance);
     this.applyExtraProps(instance);
+  }
+
+  /**
+   * Props that are callbacks rather than resolved values, so they are not in
+   * `KNOWN_PROPS` / `FIELD_RENDERER_PROP_KEYS` and the loop above never sees
+   * them. Without this a renderer declaring `onOptionsQuery` always got
+   * `undefined` and could never trigger a search-remote refetch.
+   */
+  private applyCallbackProps(instance: unknown): void {
+    if (!instance) {
+      return;
+    }
+    (instance as Record<string, unknown>)['onOptionsQuery'] =
+      this.onOptionsQuery;
   }
 
   private applyExtraProps(instance: unknown): void {
@@ -298,6 +355,38 @@ export class DynamicInput
   private emitValue(value: unknown): void {
     this.valueChange.emit(value);
     this.onChange.emit(value);
+  }
+
+  /**
+   * Puts the aria flags on whatever control the HTML5 fallback just built.
+   *
+   * Applied here, once, rather than in each of the fallback's branches: they
+   * hand-build an input, textarea, checkbox or select, and every one of them
+   * would otherwise need the same four lines. Without this the fallback emits
+   * the `{id}-error` node with nothing pointing at it, and
+   * `focusFirstInvalidField` - which selects `[aria-invalid="true"]` - still
+   * finds nothing on this adapter.
+   *
+   * `render()` re-runs on every ngOnChanges while the fallback is in use (there
+   * is no component instance to sync props into), so this stays current as the
+   * field's error comes and goes.
+   */
+  private applyFallbackAria(): void {
+    const control = (
+      this.host.element.nativeElement as HTMLElement
+    ).querySelector('input, select, textarea');
+    if (!control) {
+      return;
+    }
+    if (this.ariaInvalid !== undefined) {
+      control.setAttribute('aria-invalid', String(this.ariaInvalid));
+    }
+    if (this.ariaRequired !== undefined) {
+      control.setAttribute('aria-required', String(this.ariaRequired));
+    }
+    if (this.ariaDescribedBy) {
+      control.setAttribute('aria-describedby', this.ariaDescribedBy);
+    }
   }
 
   private renderDefaultFallbackHTML5(type: string): boolean {

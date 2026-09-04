@@ -1,8 +1,11 @@
 import {
   applyComputedValues,
   collectFieldPaths,
+  createMessageResolver,
   FieldDescription,
+  type MessageCatalog,
   Properties,
+  type ValidationContext,
   type ValidationResult,
   validateFields,
   validateFieldsAsync,
@@ -14,6 +17,13 @@ export interface UseDynamicFormOptions {
   initialValues?: Properties;
   validateOnBlur?: boolean;
   validateOnChange?: boolean;
+  /**
+   * Messages for the built-in validators, set once for the whole form instead
+   * of per field. A message passed directly to a validator still wins, and any
+   * key omitted here falls back to the validator's English default. See core's
+   * `MessageCatalog`.
+   */
+  messages?: MessageCatalog;
 }
 
 export interface UseDynamicFormResult {
@@ -24,6 +34,18 @@ export interface UseDynamicFormResult {
   isValidationComplete: boolean;
   validationStatus: ValidationResult['status'];
   isDirty: boolean;
+  /**
+   * The values `dirty` is measured against: the `initialValues` option until
+   * `reset(newValues)` replaces them. Distinct from that option, which never
+   * changes - pass this to `MultiFieldInput` (or use the `form` shorthand) so
+   * per-field `dirty` survives a reset.
+   */
+  baselineValues: Properties;
+  /**
+   * The entries of `data` that differ from `baselineValues`. Intended for
+   * PATCH-style submits that should carry only what the user actually edited.
+   */
+  getDirtyValues: () => Properties;
   isSubmitting: boolean;
   isSubmitted: boolean;
   touched: Record<string, boolean>;
@@ -85,7 +107,15 @@ export function useDynamicForm({
   initialValues = {},
   validateOnBlur = true,
   validateOnChange = false,
+  messages,
 }: UseDynamicFormOptions): UseDynamicFormResult {
+  // A ref, not a memo: every validation call site reads it, including the
+  // useState initialiser that runs before any memo would be assigned.
+  const validationContextRef = useRef<ValidationContext>({
+    t: createMessageResolver(messages),
+  });
+  validationContextRef.current.t = createMessageResolver(messages);
+
   const [data, setData] = useState<Properties>(() =>
     applyComputedValues(fields, initialValues),
   );
@@ -99,7 +129,7 @@ export function useDynamicForm({
   // for an empty required field and never correct it. The initialiser runs
   // once, unlike the useMemo this replaced, which ran on every render.
   const [validationResult, setValidationResult] = useState<ValidationResult>(
-    () => validateFields(fields, data),
+    () => validateFields(fields, data, undefined, validationContextRef.current),
   );
   const [isValidating, setIsValidating] = useState(false);
   const validationRunRef = useRef(0);
@@ -111,6 +141,15 @@ export function useDynamicForm({
   const dataRef = useRef(data);
   dataRef.current = data;
 
+  // The baseline `dirty` is measured against. Kept in both a ref and state:
+  // `getDirtyValues` needs it synchronously at call time, while
+  // `MultiFieldInput` needs a render-visible value. Both are written together
+  // in `reset`, the only place it changes.
+  const baselineRef = useRef<Properties>(dataRef.current);
+  const [baselineValues, setBaselineValues] = useState<Properties>(
+    () => baselineRef.current,
+  );
+
   const commitSyncResult = useCallback((res: ValidationResult) => {
     setValidationResult((previous) =>
       sameValidationResult(previous, res) ? previous : res,
@@ -121,8 +160,26 @@ export function useDynamicForm({
   // Keeps the result in step with later data changes. The seed above covers
   // the first render (including the server's); from here on validators run
   // after commit, never from a useMemo that re-runs on every render.
+  // Identity of the data the synchronous pass last ran against. `handleChange`
+  // validates eagerly so `errors` is correct in the same tick; without this
+  // the effect below would then validate the identical object a second time.
+  const lastValidatedRef = useRef<Properties | undefined>(undefined);
+  // A `fields` change must re-validate even when `data` is untouched, so
+  // re-arm the guard rather than letting the identity match short-circuit it.
+  const fieldsRef = useRef(fields);
+  if (fieldsRef.current !== fields) {
+    fieldsRef.current = fields;
+    lastValidatedRef.current = undefined;
+  }
+
   useEffect(() => {
-    commitSyncResult(validateFields(fields, data));
+    if (lastValidatedRef.current === data) {
+      return;
+    }
+    lastValidatedRef.current = data;
+    commitSyncResult(
+      validateFields(fields, data, undefined, validationContextRef.current),
+    );
   }, [fields, data, commitSyncResult]);
 
   useEffect(
@@ -134,7 +191,12 @@ export function useDynamicForm({
   );
 
   const validate = useCallback(() => {
-    const res = validateFields(fields, data);
+    const res = validateFields(
+      fields,
+      data,
+      undefined,
+      validationContextRef.current,
+    );
     setErrors(res.errors);
     return commitSyncResult(res);
   }, [fields, data, commitSyncResult]);
@@ -148,6 +210,7 @@ export function useDynamicForm({
     setIsValidating(true);
     try {
       const res = await validateFieldsAsync(fields, snapshot, snapshot, {
+        ...validationContextRef.current,
         signal: controller.signal,
       });
       if (run !== validationRunRef.current || dataRef.current !== snapshot) {
@@ -173,7 +236,13 @@ export function useDynamicForm({
       validationRunRef.current += 1;
       setIsValidating(false);
 
-      const res = validateFields(fields, next);
+      lastValidatedRef.current = next;
+      const res = validateFields(
+        fields,
+        next,
+        undefined,
+        validationContextRef.current,
+      );
       commitSyncResult(res);
 
       if (validateOnChange) {
@@ -204,11 +273,28 @@ export function useDynamicForm({
 
   const resetTouched = useCallback(() => setTouched({}), []);
 
+  const getDirtyValues = useCallback((): Properties => {
+    const baseline = baselineRef.current;
+    const current = dataRef.current;
+    const dirty: Properties = {};
+    for (const key of Object.keys(current)) {
+      if (!Object.is(current[key], baseline[key])) {
+        dirty[key] = current[key];
+      }
+    }
+    return dirty;
+  }, []);
+
   const handleBlur = useCallback(
     (fieldName: string) => {
       setFieldTouched(fieldName, true);
       if (validateOnBlur) {
-        const res = validateFields(fields, data);
+        const res = validateFields(
+          fields,
+          data,
+          undefined,
+          validationContextRef.current,
+        );
         setErrors(res.errors);
         commitSyncResult(res);
       }
@@ -222,6 +308,8 @@ export function useDynamicForm({
       const next = applyComputedValues(fields, seed);
       setData(next);
       dataRef.current = next;
+      baselineRef.current = next;
+      setBaselineValues(next);
       setErrors({});
       setIsDirty(false);
       setTouched({});
@@ -264,6 +352,7 @@ export function useDynamicForm({
           const snapshot = data;
           setIsValidating(true);
           const res = await validateFieldsAsync(fields, snapshot, snapshot, {
+            ...validationContextRef.current,
             signal: controller.signal,
           });
           if (submitRun !== submitRunRef.current) {
@@ -280,7 +369,12 @@ export function useDynamicForm({
             setErrors(res.errors);
             setValidationResult(res);
           } else {
-            const live = validateFields(fields, dataRef.current);
+            const live = validateFields(
+              fields,
+              dataRef.current,
+              undefined,
+              validationContextRef.current,
+            );
             setErrors(live.errors);
             commitSyncResult(live);
           }
@@ -310,6 +404,8 @@ export function useDynamicForm({
     isValidationComplete: validationResult.complete && !isValidating,
     validationStatus: isValidating ? 'pending' : validationResult.status,
     isDirty,
+    baselineValues,
+    getDirtyValues,
     isSubmitting,
     isSubmitted,
     touched,
