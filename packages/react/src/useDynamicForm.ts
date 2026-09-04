@@ -1,8 +1,11 @@
 import {
   applyComputedValues,
   collectFieldPaths,
+  createMessageResolver,
   FieldDescription,
+  type MessageCatalog,
   Properties,
+  type ValidationContext,
   type ValidationResult,
   validateFields,
   validateFieldsAsync,
@@ -14,6 +17,13 @@ export interface UseDynamicFormOptions {
   initialValues?: Properties;
   validateOnBlur?: boolean;
   validateOnChange?: boolean;
+  /**
+   * Messages for the built-in validators, set once for the whole form instead
+   * of per field. A message passed directly to a validator still wins, and any
+   * key omitted here falls back to the validator's English default. See core's
+   * `MessageCatalog`.
+   */
+  messages?: MessageCatalog;
 }
 
 export interface UseDynamicFormResult {
@@ -97,7 +107,15 @@ export function useDynamicForm({
   initialValues = {},
   validateOnBlur = true,
   validateOnChange = false,
+  messages,
 }: UseDynamicFormOptions): UseDynamicFormResult {
+  // A ref, not a memo: every validation call site reads it, including the
+  // useState initialiser that runs before any memo would be assigned.
+  const validationContextRef = useRef<ValidationContext>({
+    t: createMessageResolver(messages),
+  });
+  validationContextRef.current.t = createMessageResolver(messages);
+
   const [data, setData] = useState<Properties>(() =>
     applyComputedValues(fields, initialValues),
   );
@@ -111,7 +129,7 @@ export function useDynamicForm({
   // for an empty required field and never correct it. The initialiser runs
   // once, unlike the useMemo this replaced, which ran on every render.
   const [validationResult, setValidationResult] = useState<ValidationResult>(
-    () => validateFields(fields, data),
+    () => validateFields(fields, data, undefined, validationContextRef.current),
   );
   const [isValidating, setIsValidating] = useState(false);
   const validationRunRef = useRef(0);
@@ -159,7 +177,9 @@ export function useDynamicForm({
       return;
     }
     lastValidatedRef.current = data;
-    commitSyncResult(validateFields(fields, data));
+    commitSyncResult(
+      validateFields(fields, data, undefined, validationContextRef.current),
+    );
   }, [fields, data, commitSyncResult]);
 
   useEffect(
@@ -171,7 +191,12 @@ export function useDynamicForm({
   );
 
   const validate = useCallback(() => {
-    const res = validateFields(fields, data);
+    const res = validateFields(
+      fields,
+      data,
+      undefined,
+      validationContextRef.current,
+    );
     setErrors(res.errors);
     return commitSyncResult(res);
   }, [fields, data, commitSyncResult]);
@@ -185,6 +210,7 @@ export function useDynamicForm({
     setIsValidating(true);
     try {
       const res = await validateFieldsAsync(fields, snapshot, snapshot, {
+        ...validationContextRef.current,
         signal: controller.signal,
       });
       if (run !== validationRunRef.current || dataRef.current !== snapshot) {
@@ -211,7 +237,12 @@ export function useDynamicForm({
       setIsValidating(false);
 
       lastValidatedRef.current = next;
-      const res = validateFields(fields, next);
+      const res = validateFields(
+        fields,
+        next,
+        undefined,
+        validationContextRef.current,
+      );
       commitSyncResult(res);
 
       if (validateOnChange) {
@@ -258,7 +289,12 @@ export function useDynamicForm({
     (fieldName: string) => {
       setFieldTouched(fieldName, true);
       if (validateOnBlur) {
-        const res = validateFields(fields, data);
+        const res = validateFields(
+          fields,
+          data,
+          undefined,
+          validationContextRef.current,
+        );
         setErrors(res.errors);
         commitSyncResult(res);
       }
@@ -316,6 +352,7 @@ export function useDynamicForm({
           const snapshot = data;
           setIsValidating(true);
           const res = await validateFieldsAsync(fields, snapshot, snapshot, {
+            ...validationContextRef.current,
             signal: controller.signal,
           });
           if (submitRun !== submitRunRef.current) {
@@ -332,7 +369,12 @@ export function useDynamicForm({
             setErrors(res.errors);
             setValidationResult(res);
           } else {
-            const live = validateFields(fields, dataRef.current);
+            const live = validateFields(
+              fields,
+              dataRef.current,
+              undefined,
+              validationContextRef.current,
+            );
             setErrors(live.errors);
             commitSyncResult(live);
           }
