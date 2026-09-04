@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   buildFieldRendererProps,
   FIELD_RENDERER_PROP_KEYS,
+  makeErrorId,
   makeFieldId,
 } from '../src/rendererProps';
 import type { FieldDescription } from '../src/types';
@@ -147,5 +148,50 @@ describe('buildFieldRendererProps', () => {
     for (const key of FIELD_RENDERER_PROP_KEYS) {
       expect(Object.prototype.hasOwnProperty.call(p, key)).toBe(true);
     }
+  });
+});
+
+describe('ariaDescribedBy', () => {
+  it('points at the error node id when the field has an error', () => {
+    const props = buildFieldRendererProps({
+      fieldDescription: {
+        name: 'title',
+        type: 'text',
+        required: true,
+        validate: () => 'Required',
+      },
+      data: { title: '' },
+      id: 'form-title',
+    });
+
+    expect(props.ariaInvalid).toBe(true);
+    expect(props.ariaDescribedBy).toBe('form-title-error');
+    expect(props.ariaDescribedBy).toBe(makeErrorId('form-title'));
+  });
+
+  it('is undefined when the field is valid', () => {
+    const props = buildFieldRendererProps({
+      fieldDescription: { name: 'title', type: 'text' },
+      data: { title: 'ok' },
+      id: 'form-title',
+    });
+
+    expect(props.ariaInvalid).toBe(false);
+    expect(props.ariaDescribedBy).toBeUndefined();
+  });
+
+  it('is undefined for a disabled field, which is never validated', () => {
+    const props = buildFieldRendererProps({
+      fieldDescription: {
+        name: 'title',
+        type: 'text',
+        disabled: true,
+        validate: () => 'Required',
+      },
+      data: { title: '' },
+      id: 'form-title',
+    });
+
+    expect(props.ariaDescribedBy).toBeUndefined();
   });
 });
