@@ -1,6 +1,7 @@
 import {
   FieldRendererProps,
   FieldTypeKey,
+  makeErrorId,
   Properties,
 } from '@dynamic-field-kit/core';
 import React, { ReactNode, useMemo } from 'react';
@@ -45,28 +46,51 @@ const DynamicInputInner = <T extends FieldTypeKey>({
 }: Props<T>) => {
   const registry = useFieldRegistry();
 
-  // Memoize renderer lookup to avoid unnecessary work on re-renders
-  const Renderer = useMemo(
-    () =>
-      ((registry.get(type) as React.ComponentType<FieldRendererProps>) ||
+  // Memoize renderer lookup to avoid unnecessary work on re-renders. Whether
+  // it fell back to a default is tracked too: a custom renderer owns its own
+  // error presentation, and emitting a second message would duplicate it.
+  const { Renderer, isDefault } = useMemo(() => {
+    const registered = registry.get(type) as
+      React.ComponentType<FieldRendererProps> | undefined;
+    return {
+      Renderer: (registered ??
         getDefaultRenderer(type)) as React.ComponentType<FieldRendererProps>,
-    [registry, type],
-  );
+      isDefault: !registered,
+    };
+  }, [registry, type]);
 
   if (!Renderer) {
     return <div>Unknown field type: {type}</div>;
   }
 
+  const { error, id } = rendererProps as FieldRendererProps;
+
   // Spread rather than re-listing each prop: the set is fixed by core's
   // FIELD_RENDERER_PROP_KEYS contract, and a hand-maintained list here is
   // exactly how `placeholder`, `min`, `max`, `step`, `accept` and `multiple`
   // came to be silently dropped on their way to the renderer.
-  return React.createElement(Renderer, {
+  const control = React.createElement(Renderer, {
     ...extraProps,
     ...(rendererProps as FieldRendererProps),
     onValueChange: onChange,
     onBlur,
   });
+
+  if (!isDefault || !error?.length || !id) {
+    return control;
+  }
+
+  // A fragment, not a wrapper element: the message appears, but nothing about
+  // the surrounding layout changes. The id is what `ariaDescribedBy` targets -
+  // without this node that reference would dangle.
+  return (
+    <>
+      {control}
+      <div id={makeErrorId(id)} className="dfk-field-error" role="alert">
+        {error[0]}
+      </div>
+    </>
+  );
 };
 
 // Skip re-render when none of the rendered props actually changed, so
