@@ -58,6 +58,28 @@ function warnAsyncValidator(key: string): void {
   );
 }
 
+const warnedUndeclaredAsyncOptions = new Set<string>();
+
+/** Test-only. Clears the warn-once memo so each case starts from silence. */
+export function __resetOptionsWarnings(): void {
+  warnedUndeclaredAsyncOptions.clear();
+}
+
+function warnUndeclaredAsyncOptions(name: string): void {
+  if (!isDev() || warnedUndeclaredAsyncOptions.has(name)) {
+    return;
+  }
+  warnedUndeclaredAsyncOptions.add(name);
+  console.warn(
+    `[dynamic-field-kit] the options function for "${name}" returned a ` +
+      `Promise, but the field is not declared async, so its options were ` +
+      `dropped rather than handed to the renderer as a pending promise. ` +
+      `Native async functions are detected automatically; a loader wrapped ` +
+      `in a memoiser, a spy or a transpiler helper is not. Add ` +
+      `\`optionsMode: 'async'\` to the field.`,
+  );
+}
+
 function isPromiseLike<T>(value: unknown): value is PromiseLike<T> {
   return (
     (typeof value === 'object' || typeof value === 'function') &&
@@ -114,7 +136,17 @@ export function resolveOptions(
     return undefined;
   }
   if (typeof field.options === 'function') {
-    return field.options(data, rootData) as Properties[];
+    const result = field.options(data, rootData);
+    if (isPromiseLike<Properties[]>(result)) {
+      // Detection missed it: `constructor.name` is not 'AsyncFunction' for a
+      // loader wrapped in a memoiser, a spy, or a transpiler's helper. Handing
+      // the renderer this promise as its option list would be worse than an
+      // empty list, so drop it and say what to do about it.
+      void Promise.resolve(result).catch(() => undefined);
+      warnUndeclaredAsyncOptions(field.name);
+      return undefined;
+    }
+    return result;
   }
   return field.options;
 }

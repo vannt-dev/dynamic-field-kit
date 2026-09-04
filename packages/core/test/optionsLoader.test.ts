@@ -5,7 +5,7 @@ import {
   type OptionsState,
 } from '../src/optionsLoader';
 import type { FieldDescription, Properties } from '../src/types';
-import { resolveOptions } from '../src/validation';
+import { __resetOptionsWarnings, resolveOptions } from '../src/validation';
 
 const OPTIONS: Properties[] = [{ label: 'Hanoi', value: 'hn' }];
 
@@ -273,5 +273,44 @@ describe('createOptionsLoader', () => {
     await vi.runAllTimersAsync();
 
     expect(states.map((s) => s.status)).toEqual(['loading']);
+  });
+});
+
+describe('an async loader that detection cannot see', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => {
+    vi.useRealTimers();
+    __resetOptionsWarnings();
+  });
+
+  it('drops the promise instead of handing it to the renderer, and says why', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const field: FieldDescription = {
+      name: 'city',
+      type: 'text',
+      // A spy wrapper loses `constructor.name === 'AsyncFunction'`, exactly as
+      // a memoiser or a transpiler helper would.
+      options: vi.fn(async () => OPTIONS) as never,
+    };
+
+    expect(resolveOptions(field, {})).toBeUndefined();
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0][0]).toContain("optionsMode: 'async'");
+    warn.mockRestore();
+  });
+
+  it('works normally once optionsMode is declared', async () => {
+    const field: FieldDescription = {
+      name: 'city',
+      type: 'text',
+      optionsMode: 'async',
+      options: vi.fn(async () => OPTIONS) as never,
+    };
+    const loader = createOptionsLoader(field, () => {});
+
+    loader.update({});
+    await vi.runAllTimersAsync();
+
+    expect(loader.current().options).toEqual(OPTIONS);
   });
 });
