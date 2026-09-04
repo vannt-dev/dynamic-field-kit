@@ -2,8 +2,11 @@ import { computed, signal } from '@angular/core';
 import {
   applyComputedValues,
   collectFieldPaths,
+  createMessageResolver,
   FieldDescription,
+  type MessageCatalog,
   Properties,
+  type ValidationContext,
   type ValidationResult,
   validateFields,
   validateFieldsAsync,
@@ -14,6 +17,13 @@ export interface DynamicFormOptions {
   initialValues?: Properties;
   validateOnBlur?: boolean;
   validateOnChange?: boolean;
+  /**
+   * Messages for the built-in validators, set once for the whole form instead
+   * of per field. A message passed directly to a validator still wins, and any
+   * key omitted here falls back to the validator's English default. See core's
+   * `MessageCatalog`.
+   */
+  messages?: MessageCatalog;
 }
 
 export function createDynamicFormStore(options: DynamicFormOptions) {
@@ -21,6 +31,9 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
   const initialValues = options.initialValues || {};
   const validateOnBlur = options.validateOnBlur ?? true;
   const validateOnChange = options.validateOnChange ?? false;
+  const validationContext: ValidationContext = {
+    t: createMessageResolver(options.messages),
+  };
 
   const data = signal<Properties>(applyComputedValues(fields, initialValues));
   // The baseline `dirty` is measured against: the initialValues option until
@@ -33,7 +46,7 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
   const isSubmitting = signal<boolean>(false);
   const isSubmitted = signal<boolean>(false);
   const validationResult = signal<ValidationResult>(
-    validateFields(fields, data()),
+    validateFields(fields, data(), undefined, validationContext),
   );
   const isValidating = signal(false);
   let validationRun = 0;
@@ -57,7 +70,7 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
   }
 
   function validate(): boolean {
-    const res = validateFields(fields, data());
+    const res = validateFields(fields, data(), undefined, validationContext);
     errors.set(res.errors);
     return commitSyncResult(res);
   }
@@ -71,6 +84,7 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
     isValidating.set(true);
     try {
       const res = await validateFieldsAsync(fields, snapshot, snapshot, {
+        ...validationContext,
         signal: controller.signal,
       });
       if (run !== validationRun || data() !== snapshot) {
@@ -94,7 +108,7 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
     validationRun += 1;
     isValidating.set(false);
 
-    const res = validateFields(fields, next);
+    const res = validateFields(fields, next, undefined, validationContext);
     commitSyncResult(res);
 
     if (validateOnChange) {
@@ -143,7 +157,7 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
   function handleBlur(fieldName: string) {
     setFieldTouched(fieldName, true);
     if (validateOnBlur) {
-      const res = validateFields(fields, data());
+      const res = validateFields(fields, data(), undefined, validationContext);
       errors.set(res.errors);
       commitSyncResult(res);
     }
@@ -162,7 +176,9 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
     validationController?.abort();
     validationRun += 1;
     isValidating.set(false);
-    commitSyncResult(validateFields(fields, next));
+    commitSyncResult(
+      validateFields(fields, next, undefined, validationContext),
+    );
   }
 
   /**
@@ -196,6 +212,7 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
         const snapshot = data();
         isValidating.set(true);
         const res = await validateFieldsAsync(fields, snapshot, snapshot, {
+          ...validationContext,
           signal: controller.signal,
         });
         if (thisSubmit !== submitRun) {
@@ -209,7 +226,12 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
           errors.set(res.errors);
           validationResult.set(res);
         } else {
-          const live = validateFields(fields, data());
+          const live = validateFields(
+            fields,
+            data(),
+            undefined,
+            validationContext,
+          );
           errors.set(live.errors);
           validationResult.set(live);
         }

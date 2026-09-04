@@ -1,4 +1,4 @@
-import { FieldDescription } from '@dynamic-field-kit/core';
+import { FieldDescription, validators  } from '@dynamic-field-kit/core';
 import { describe, expect, it, vi } from 'vitest';
 import { createDynamicFormStore } from '../src/lib/dynamic-form.store';
 
@@ -303,5 +303,30 @@ describe('baselineValues and getDirtyValues', () => {
     store.reset({ title: 'c', note: 'n' });
     store.reset();
     expect(store.baselineValues()).toEqual({ title: 'a', note: 'n' });
+  });
+});
+
+describe('messages', () => {
+  const msgFields: FieldDescription[] = [
+    { name: 'title', type: 'text', validate: validators.required() },
+  ];
+
+  it('resolves validator messages through the supplied catalog', () => {
+    const store = createDynamicFormStore({
+      fields: msgFields,
+      initialValues: { title: '' },
+      messages: { required: 'Bắt buộc' },
+    });
+    store.validate();
+    expect(store.errors()['title']).toEqual(['Bắt buộc']);
+  });
+
+  it('keeps the English default with no catalog', () => {
+    const store = createDynamicFormStore({
+      fields: msgFields,
+      initialValues: { title: '' },
+    });
+    store.validate();
+    expect(store.errors()['title']).toEqual(['Field is required']);
   });
 });
