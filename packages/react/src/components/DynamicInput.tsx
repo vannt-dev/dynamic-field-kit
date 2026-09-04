@@ -2,6 +2,7 @@ import {
   FieldRendererProps,
   FieldTypeKey,
   makeErrorId,
+  type OptionsStatus,
   Properties,
 } from '@dynamic-field-kit/core';
 import React, { ReactNode, useMemo } from 'react';
@@ -16,6 +17,8 @@ interface Props<T extends FieldTypeKey> {
   label?: string;
   placeholder?: string;
   options?: Properties[];
+  optionsStatus?: OptionsStatus;
+  optionsError?: unknown;
   className?: string;
   description?: ReactNode;
   disabled?: boolean;

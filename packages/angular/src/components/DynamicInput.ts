@@ -37,6 +37,8 @@ const KNOWN_PROPS = [
   'dirty',
   'error',
   'options',
+  'optionsStatus',
+  'optionsError',
   'className',
   'description',
   'id',

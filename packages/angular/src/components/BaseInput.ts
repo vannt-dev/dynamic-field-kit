@@ -8,6 +8,8 @@ import {
   SimpleChanges,
 } from '@angular/core';
 
+import type { OptionsStatus } from '@dynamic-field-kit/core';
+
 // Mirrors the framework-agnostic FieldRendererProps (core's
 // FIELD_RENDERER_PROP_KEYS). Domain-specific inputs (acceptFile, maxLength,
 // ...) intentionally live on the individual renderer, not here - pass them per
@@ -23,6 +25,9 @@ export interface FieldInputProps {
   dirty?: boolean;
   error?: string | string[];
   options?: unknown[];
+  optionsStatus?: OptionsStatus;
+  optionsError?: unknown;
+  onOptionsQuery?: (query: string) => void;
   className?: string;
   description?: string;
   id?: string;
@@ -56,6 +61,10 @@ export abstract class BaseInputComponent implements OnChanges {
   @Input() dirty?: boolean;
   @Input() error?: string | string[];
   @Input() options?: unknown[];
+  @Input() optionsStatus?: OptionsStatus;
+  @Input() optionsError?: unknown;
+  /** Renderer-driven refetch for a search-remote field. */
+  @Input() onOptionsQuery?: (query: string) => void;
   @Input() className?: string;
   @Input() description?: string;
   @Input() id?: string;

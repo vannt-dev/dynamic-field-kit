@@ -6,11 +6,16 @@ import {
   EventEmitter,
   Input,
   OnChanges,
+  OnDestroy,
   Output,
   SimpleChanges,
 } from '@angular/core';
 import {
   buildFieldRendererProps,
+  createOptionsLoader,
+  isAsyncOptions,
+  type OptionsLoader,
+  type OptionsState,
   makeFieldId,
   FieldDescription,
   Properties,
@@ -33,6 +38,8 @@ import { DynamicInput } from './DynamicInput';
       [required]="p.required"
       [description]="$any(p.description)"
       [options]="$any(p.options)"
+      [optionsStatus]="p.optionsStatus"
+      [optionsError]="p.optionsError"
       [className]="p.className"
       [disabled]="p.disabled"
       [readOnly]="p.readOnly"
@@ -53,10 +60,11 @@ import { DynamicInput } from './DynamicInput';
       "
       (focusout)="onBlurField.emit(fieldDescription!.name)"
       [extraProps]="p.extraProps"
+      [onOptionsQuery]="onOptionsQuery"
     ></dfk-dynamic-input>
   `,
 })
-export class FieldInput implements OnChanges {
+export class FieldInput implements OnChanges, OnDestroy {
   @Input() fieldDescription?: FieldDescription;
   /**
    * Data at this field's own level. Preferred over `value`: the shared
@@ -101,9 +109,41 @@ export class FieldInput implements OnChanges {
 
   constructor(private cdr: ChangeDetectorRef) {}
 
+  // Async options only; a static or synchronous list allocates nothing here.
+  private loader?: OptionsLoader;
+  private optionsState?: OptionsState;
+
+  /** Bound into the template so a renderer can drive a search-remote refetch. */
+  onOptionsQuery = (query: string): void => {
+    this.loader?.setQuery(query);
+  };
+
   ngOnChanges(_changes: SimpleChanges): void {
+    this.syncOptionsLoader();
     this.rendererProps = this.buildProps();
     this.cdr.markForCheck();
+  }
+
+  ngOnDestroy(): void {
+    this.loader?.dispose();
+  }
+
+  private syncOptionsLoader(): void {
+    const field = this.fieldDescription;
+    if (!field || !isAsyncOptions(field)) {
+      return;
+    }
+    if (!this.loader) {
+      this.optionsState = { status: 'idle' };
+      this.loader = createOptionsLoader(field, (state) => {
+        this.optionsState = state;
+        this.rendererProps = this.buildProps();
+        // OnPush: an async arrival happens outside any event this view is
+        // checked for, so without this the options would load and never appear.
+        this.cdr.markForCheck();
+      });
+    }
+    this.loader.update(this.data ?? {}, this.rootData);
   }
 
   private buildProps(): ResolvedFieldRendererProps | null {
@@ -120,6 +160,7 @@ export class FieldInput implements OnChanges {
       id: makeFieldId(field, this.idPrefix),
       touched: this.touched,
       dirty: this.dirty,
+      optionsState: this.optionsState,
     });
 
     // Explicitly bound inputs override what the field description resolves to,
