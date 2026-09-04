@@ -86,6 +86,17 @@ export function makeFieldId(
 }
 
 /**
+ * The id of the node that renders a field's validation message.
+ *
+ * `ariaDescribedBy` points here, so a renderer that forwards it must put this
+ * id on whatever element shows the error - otherwise the reference dangles and
+ * assistive technology has nothing to read.
+ */
+export function makeErrorId(id: string): string {
+  return `${id}-error`;
+}
+
+/**
  * Builds the complete renderer prop bag for one field. Shared by the React,
  * Vue and Angular adapters so all three forward an identical set.
  */
@@ -142,11 +153,11 @@ export function buildFieldRendererProps({
     description,
     id,
     ariaInvalid: Boolean(error),
-    // Left undefined on purpose: the adapters do not render the description or
-    // error node themselves, so pointing aria-describedby at an id that may not
-    // exist would be worse than omitting it. A renderer that does render those
-    // nodes can set it from `id`.
-    ariaDescribedBy: undefined,
+    // Points at the error node, but only when there is an error to point at.
+    // The adapters render that node for default renderers; a custom renderer
+    // that forwards this prop must put `makeErrorId(id)` on its own message
+    // element, or the reference dangles.
+    ariaDescribedBy: error ? makeErrorId(id) : undefined,
     ariaRequired: Boolean(required),
     min,
     max,
