@@ -23,6 +23,10 @@ export function useDynamicForm({
   validateOnChange = false,
 }: UseDynamicFormOptions) {
   const data = ref<Properties>(applyComputedValues(fields, initialValues));
+  // The baseline `dirty` is measured against: the initialValues option until
+  // reset(newValues) replaces it. Distinct from that option, which never
+  // changes. See the React adapter for the full rationale.
+  const baselineValues = ref<Properties>({ ...data.value });
   const errors = ref<Record<string, string[]>>({});
   const isDirty = ref<boolean>(false);
   const touched = ref<Record<string, boolean>>({});
@@ -130,6 +134,18 @@ export function useDynamicForm({
   }
 
   /** Clears the touched map without touching data, errors or dirty state. */
+  function getDirtyValues(): Properties {
+    const baseline = baselineValues.value;
+    const current = data.value;
+    const dirty: Properties = {};
+    for (const key of Object.keys(current)) {
+      if (!Object.is(current[key], baseline[key])) {
+        dirty[key] = current[key];
+      }
+    }
+    return dirty;
+  }
+
   function resetTouched() {
     touched.value = {};
   }
@@ -147,6 +163,7 @@ export function useDynamicForm({
     const seed = newValues ?? initialValues;
     const next = applyComputedValues(fields, seed);
     data.value = next;
+    baselineValues.value = { ...next };
     errors.value = {};
     isDirty.value = false;
     touched.value = {};
@@ -224,6 +241,8 @@ export function useDynamicForm({
     isValidationComplete,
     validationStatus,
     isDirty,
+    baselineValues,
+    getDirtyValues,
     touched,
     isSubmitting,
     isSubmitted,

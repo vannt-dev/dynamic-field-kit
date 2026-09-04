@@ -324,3 +324,50 @@ describe('scope cleanup', () => {
     expect(seen?.aborted).toBe(true);
   });
 });
+
+describe('baselineValues and getDirtyValues', () => {
+  const baselineFields: FieldDescription[] = [
+    { name: 'title', type: 'text', label: 'Title' },
+    { name: 'note', type: 'text', label: 'Note' },
+  ];
+
+  it('exposes the initial values as the baseline', () => {
+    const form = useDynamicForm({
+      fields: baselineFields,
+      initialValues: { title: 'a', note: 'n' },
+    });
+    expect(form.baselineValues.value).toEqual({ title: 'a', note: 'n' });
+    expect(form.getDirtyValues()).toEqual({});
+  });
+
+  it('reports only the changed entries as dirty', () => {
+    const form = useDynamicForm({
+      fields: baselineFields,
+      initialValues: { title: 'a', note: 'n' },
+    });
+    form.setFieldValue('title', 'b');
+    expect(form.getDirtyValues()).toEqual({ title: 'b' });
+  });
+
+  it('re-bases the baseline on reset(newValues)', () => {
+    const form = useDynamicForm({
+      fields: baselineFields,
+      initialValues: { title: 'a', note: 'n' },
+    });
+    form.setFieldValue('title', 'b');
+    form.reset({ title: 'c', note: 'n' });
+
+    expect(form.baselineValues.value).toEqual({ title: 'c', note: 'n' });
+    expect(form.getDirtyValues()).toEqual({});
+  });
+
+  it('restores the original baseline on a bare reset()', () => {
+    const form = useDynamicForm({
+      fields: baselineFields,
+      initialValues: { title: 'a', note: 'n' },
+    });
+    form.reset({ title: 'c', note: 'n' });
+    form.reset();
+    expect(form.baselineValues.value).toEqual({ title: 'a', note: 'n' });
+  });
+});
