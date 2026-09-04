@@ -1,4 +1,4 @@
-import { FieldTypeKey, Properties } from '@dynamic-field-kit/core';
+import { FieldTypeKey, makeErrorId, Properties } from '@dynamic-field-kit/core';
 import { defineComponent, computed, h, PropType } from 'vue';
 import { getDefaultRenderer } from '../defaultRenderers';
 import { useFieldRegistry } from '../fieldRegistryContext';
@@ -117,16 +117,20 @@ const DynamicInput = /* @__PURE__ */ defineComponent({
 
   setup(props) {
     const registry = useFieldRegistry();
+    const registered = computed(() => registry.get(props.type));
     const Renderer = computed(
-      () => registry.get(props.type) || getDefaultRenderer(props.type),
+      () => registered.value || getDefaultRenderer(props.type),
     );
+    // A custom renderer owns its own error presentation; emitting a second
+    // message alongside it would duplicate what the consumer already renders.
+    const isDefault = computed(() => !registered.value);
 
     return () => {
       if (!Renderer.value) {
         return h('div', `Unknown field type: ${props.type}`);
       }
 
-      return h(Renderer.value, {
+      const control = h(Renderer.value, {
         ...props.extraProps,
         value: props.value,
         // Both spellings: `onUpdate:value` is the Vue idiom the bundled
@@ -162,6 +166,32 @@ const DynamicInput = /* @__PURE__ */ defineComponent({
         accept: props.accept,
         multiple: props.multiple,
       });
+
+      // This adapter accepts `error` as a string as well as an array, so index
+      // 0 of a raw string would be its first character.
+      const firstError = Array.isArray(props.error)
+        ? props.error[0]
+        : props.error;
+
+      if (!isDefault.value || !firstError || !props.id) {
+        return control;
+      }
+
+      // An array, not a wrapper element: Vue renders it as a fragment, so the
+      // message appears without changing the surrounding layout. The id is
+      // what `ariaDescribedBy` targets.
+      return [
+        control,
+        h(
+          'div',
+          {
+            id: makeErrorId(props.id),
+            class: 'dfk-field-error',
+            role: 'alert',
+          },
+          firstError,
+        ),
+      ];
     };
   },
 });
