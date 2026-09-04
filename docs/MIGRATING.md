@@ -73,3 +73,55 @@ Synchronous validators are pure by contract, so this is invisible unless you
 were counting calls in a test or relying on a side effect inside a validator.
 Vue and Angular were never affected; their stores run no watch or effect and
 already validated exactly once.
+
+### Default renderers now show validation messages
+
+**This is the one visible change in 1.7.0.** If a field uses the built-in
+renderers — that is, you registered no renderer for its type — an invalid field
+now renders
+
+```html
+<div id="<field id>-error" class="dfk-field-error" role="alert">…</div>
+```
+
+as a sibling of the control. Previously the default renderers were handed
+`error` and dropped it, so the form showed nothing at all.
+
+Custom renderers are **not** affected. The node is emitted only where a default
+renderer was used, so nobody who renders their own message gets a second copy.
+
+The node ships with no styling beyond that class hook. To keep the old silence:
+
+```css
+.dfk-field-error {
+  display: none;
+}
+```
+
+### `ariaDescribedBy` now has a value
+
+It was hard-coded `undefined`. It is now `` `${id}-error` `` when the field has
+an error, and `undefined` while it is valid.
+
+If your renderer forwards `aria-describedby`, put the matching id on your
+message element. `makeErrorId(id)` is exported from core and re-exported by all
+three adapters:
+
+| Before                                | After                                                       |
+| ------------------------------------- | ----------------------------------------------------------- |
+| `help={message}`                      | `help={<span id={makeErrorId(id)}>{message}</span>}`        |
+| `aria-describedby` always `undefined` | bind `props.ariaDescribedBy` directly — no need to clear it |
+
+This matters beyond screen readers: `focusFirstInvalidField` selects
+`[aria-invalid="true"]`, so a renderer that never forwards `ariaInvalid` makes
+that helper silently do nothing. See
+[Forward the aria props](./ui-kit-recipes.md#forward-the-aria-props).
+
+### Dev-mode warning when `props` shadows the contract
+
+1.6.0 moved `placeholder`, `min`, `max`, `step`, `accept` and `multiple` to the
+top level of `FieldDescription`. Values left behind in `props` were discarded
+silently — no throw, no warning, the value just vanished.
+
+A development-only `console.warn` now names the field and the key, once per
+pair. Production builds are unchanged and emit nothing.

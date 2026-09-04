@@ -42,6 +42,15 @@ export type {
   ValidationContext,
 } from '@dynamic-field-kit/core';
 
+// Renderer prop contract helpers. `makeErrorId` in particular is what a custom
+// renderer needs to put on its message element so `ariaDescribedBy` resolves.
+export {
+  buildFieldRendererProps,
+  makeErrorId,
+  makeFieldId,
+  FIELD_RENDERER_PROP_KEYS,
+} from '@dynamic-field-kit/core';
+
 // Scoped registry: provide FIELD_REGISTRY on a component/route to give that
 // subtree an isolated set of renderers.
 export { FIELD_REGISTRY } from './fieldRegistryToken';
