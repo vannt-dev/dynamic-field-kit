@@ -131,6 +131,13 @@ export class FieldInput implements OnChanges, OnDestroy {
   private syncOptionsLoader(): void {
     const field = this.fieldDescription;
     if (!field || !isAsyncOptions(field)) {
+      // A field can be swapped for one with synchronous options. Without this,
+      // the stale optionsState would keep winning in buildFieldRendererProps
+      // (`optionsState ? optionsState.options : resolveOptions(...)`) and the
+      // old async list would be served forever, with the loader never disposed.
+      this.loader?.dispose();
+      this.loader = undefined;
+      this.optionsState = undefined;
       return;
     }
     if (!this.loader) {

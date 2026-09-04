@@ -183,7 +183,10 @@ baseline yourself:
 
 Omit it and the baseline is the first non-`undefined` `properties` the
 component sees — which is what an edit form wants when its values arrive from a
-fetch after mount.
+fetch after mount. Note that `{}` counts as a real value: a form
+that opens blank cannot be told apart from one still waiting on a fetch, so
+pass `initialProperties` when `properties` starts as `{}` rather than
+`undefined`.
 
 Passing `touched` and `errors` gives the form store ownership of renderer
 metadata. `touched` is what makes an invalid submit visible: `handleSubmit`

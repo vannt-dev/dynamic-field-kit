@@ -130,6 +130,9 @@ export class DynamicInput
         )[prop];
       }
     }
+    if (changes['onOptionsQuery']) {
+      this.applyCallbackProps(this.inputInstance);
+    }
     if (changes['extraProps']) {
       this.applyExtraProps(this.inputInstance);
     }
@@ -184,6 +187,7 @@ export class DynamicInput
 
     if (!Renderer) {
       if (this.renderDefaultFallbackHTML5(this.type)) {
+        this.applyFallbackAria();
         return;
       }
       this.renderError(`Unknown field type: ${this.type}`);
@@ -254,6 +258,7 @@ export class DynamicInput
       ...this.extraProps,
       value: this.value,
       onValueChange: (v: unknown) => this.emitValue(v),
+      onOptionsQuery: this.onOptionsQuery,
       label: this.label ?? '',
       placeholder: this.placeholder ?? '',
       required: this.required ?? false,
@@ -302,7 +307,22 @@ export class DynamicInput
         instanceObj[prop] = (this as Record<string, unknown>)[prop];
       }
     }
+    this.applyCallbackProps(instance);
     this.applyExtraProps(instance);
+  }
+
+  /**
+   * Props that are callbacks rather than resolved values, so they are not in
+   * `KNOWN_PROPS` / `FIELD_RENDERER_PROP_KEYS` and the loop above never sees
+   * them. Without this a renderer declaring `onOptionsQuery` always got
+   * `undefined` and could never trigger a search-remote refetch.
+   */
+  private applyCallbackProps(instance: unknown): void {
+    if (!instance) {
+      return;
+    }
+    (instance as Record<string, unknown>)['onOptionsQuery'] =
+      this.onOptionsQuery;
   }
 
   private applyExtraProps(instance: unknown): void {
@@ -335,6 +355,38 @@ export class DynamicInput
   private emitValue(value: unknown): void {
     this.valueChange.emit(value);
     this.onChange.emit(value);
+  }
+
+  /**
+   * Puts the aria flags on whatever control the HTML5 fallback just built.
+   *
+   * Applied here, once, rather than in each of the fallback's branches: they
+   * hand-build an input, textarea, checkbox or select, and every one of them
+   * would otherwise need the same four lines. Without this the fallback emits
+   * the `{id}-error` node with nothing pointing at it, and
+   * `focusFirstInvalidField` - which selects `[aria-invalid="true"]` - still
+   * finds nothing on this adapter.
+   *
+   * `render()` re-runs on every ngOnChanges while the fallback is in use (there
+   * is no component instance to sync props into), so this stays current as the
+   * field's error comes and goes.
+   */
+  private applyFallbackAria(): void {
+    const control = (
+      this.host.element.nativeElement as HTMLElement
+    ).querySelector('input, select, textarea');
+    if (!control) {
+      return;
+    }
+    if (this.ariaInvalid !== undefined) {
+      control.setAttribute('aria-invalid', String(this.ariaInvalid));
+    }
+    if (this.ariaRequired !== undefined) {
+      control.setAttribute('aria-required', String(this.ariaRequired));
+    }
+    if (this.ariaDescribedBy) {
+      control.setAttribute('aria-describedby', this.ariaDescribedBy);
+    }
   }
 
   private renderDefaultFallbackHTML5(type: string): boolean {

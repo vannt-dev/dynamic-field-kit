@@ -31,6 +31,14 @@ The baseline now comes from whoever owns the values.
 **No change is required.** If you worked around this by remounting the form with
 a changing `key`, you can drop the workaround.
 
+**One case the automatic baseline cannot cover.** It falls back to the first
+`properties` that is not `undefined`, and `{}` is a real value - a form that
+genuinely opens blank is indistinguishable from one still waiting on a fetch.
+So `properties={data}` where `data` starts as `{}` locks the baseline to `{}`
+and every field reads dirty once the values land. Pass `initialProperties`
+explicitly, start from `undefined` rather than `{}`, or drive the form through a
+store and use `reset(fetched)`.
+
 Angular is the exception: it never had the late-load bug, because its `init()`
 only records a baseline once `properties` is actually set. It did have the reset
 bug. Since the Angular adapter has no `form` shorthand, pass the store's
