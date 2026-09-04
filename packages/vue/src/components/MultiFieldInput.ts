@@ -17,6 +17,7 @@ import {
   h,
   PropType,
   reactive,
+  ref,
   unref,
   watch,
 } from 'vue';
@@ -32,6 +33,8 @@ export interface DynamicFormBinding {
   data: Ref<Properties> | Properties;
   errors: Ref<Record<string, string[]>> | Record<string, string[]>;
   touched: Ref<Record<string, boolean>> | Record<string, boolean>;
+  /** The values per-field `dirty` is measured against. See `useDynamicForm`. */
+  baselineValues?: Ref<Properties> | Properties;
   handleChange: (data: Properties) => void;
   handleBlur: (fieldName: string) => void;
 }
@@ -86,6 +89,14 @@ const MultiFieldInput = /* @__PURE__ */ defineComponent({
     // Left undefined rather than `{}` when unset so the `form` shorthand can
     // tell "no properties passed" from "passed an empty object".
     properties: {
+      type: Object as PropType<Properties>,
+      default: undefined,
+    },
+    // The values per-field `dirty` is measured against. Defaults to the first
+    // non-undefined `properties` this component sees - what an edit form wants
+    // when its values arrive from a fetch after mount. Supplied automatically
+    // by the `form` shorthand.
+    initialProperties: {
       type: Object as PropType<Properties>,
       default: undefined,
     },
@@ -204,10 +215,33 @@ const MultiFieldInput = /* @__PURE__ */ defineComponent({
       }
     };
 
-    // Snapshot of the values this form opened with, for the `dirty` flag.
-    const initialProperties: Properties = {
-      ...(effectiveProperties.value ?? {}),
-    };
+    // Baseline for the `dirty` flag. Tracks the first non-undefined properties
+    // rather than `{}` at mount: values that arrive from a fetch after mount
+    // would otherwise mark every field dirty forever. Re-basing on every
+    // change is not an option - in controlled mode `form.data` gets a new
+    // identity on every keystroke, which would pin `dirty` to false instead.
+    // A ref, not a plain binding: `baseline` below is a computed, so it only
+    // re-evaluates when something it reads is reactive.
+    const firstSeenProperties = ref<Properties | undefined>(undefined);
+    watch(
+      () => effectiveProperties.value,
+      (next) => {
+        if (firstSeenProperties.value === undefined && next !== undefined) {
+          firstSeenProperties.value = { ...next };
+        }
+      },
+      { immediate: true },
+    );
+
+    const baseline = computed<Properties>(
+      () =>
+        props.initialProperties ??
+        (props.form?.baselineValues !== undefined
+          ? unref(props.form.baselineValues)
+          : undefined) ??
+        firstSeenProperties.value ??
+        {},
+    );
 
     function handleBlurField(key: string) {
       if (controlledTouched.value === undefined) {
@@ -440,7 +474,7 @@ const MultiFieldInput = /* @__PURE__ */ defineComponent({
               idPrefix: effectiveIdPrefix.value,
               touched: Boolean(effectiveTouched.value[f.name]),
               errors: effectiveErrors.value,
-              dirty: data[f.name] !== initialProperties[f.name],
+              dirty: !Object.is(data[f.name], baseline.value[f.name]),
               onValueChangeField: handleValueChange,
               onBlurField: handleBlurField,
             }),

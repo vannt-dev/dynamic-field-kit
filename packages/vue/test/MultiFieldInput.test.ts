@@ -261,3 +261,63 @@ describe('MultiFieldInput', () => {
     expect(wrapper.findAll('input')[1].element.value).toBe('Hello Ada');
   });
 });
+
+describe('dirty baseline', () => {
+  const dirtyProbeRenderer = {
+    props: ['value', 'dirty', 'id'],
+    template:
+      '<input :data-testid="id" :data-dirty="String(dirty)" :value="value ?? \'\'" />',
+  };
+
+  const dirtyFields: FieldDescription[] = [
+    { name: 'title', type: 'text', label: 'Title' },
+  ];
+
+  it('is not dirty when properties arrive after mount', async () => {
+    const wrapper = mountMulti(
+      {
+        fieldDescriptions: dirtyFields,
+        properties: undefined,
+        idPrefix: 'late',
+      },
+      dirtyProbeRenderer,
+    );
+
+    await wrapper.setProps({ properties: { title: 'loaded' } });
+
+    const input = wrapper.get('[data-testid="late-title"]');
+    expect((input.element as HTMLInputElement).value).toBe('loaded');
+    expect(input.attributes('data-dirty')).toBe('false');
+  });
+
+  it('honours an explicit initialProperties baseline', () => {
+    const wrapper = mountMulti(
+      {
+        fieldDescriptions: dirtyFields,
+        properties: { title: 'edited' },
+        initialProperties: { title: 'original' },
+        idPrefix: 'explicit',
+      },
+      dirtyProbeRenderer,
+    );
+
+    expect(
+      wrapper.get('[data-testid="explicit-title"]').attributes('data-dirty'),
+    ).toBe('true');
+  });
+
+  it('is not dirty against its own opening values', () => {
+    const wrapper = mountMulti(
+      {
+        fieldDescriptions: dirtyFields,
+        properties: { title: 'original' },
+        idPrefix: 'same',
+      },
+      dirtyProbeRenderer,
+    );
+
+    expect(
+      wrapper.get('[data-testid="same-title"]').attributes('data-dirty'),
+    ).toBe('false');
+  });
+});
