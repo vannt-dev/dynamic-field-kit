@@ -24,6 +24,18 @@ export interface UseDynamicFormResult {
   isValidationComplete: boolean;
   validationStatus: ValidationResult['status'];
   isDirty: boolean;
+  /**
+   * The values `dirty` is measured against: the `initialValues` option until
+   * `reset(newValues)` replaces them. Distinct from that option, which never
+   * changes - pass this to `MultiFieldInput` (or use the `form` shorthand) so
+   * per-field `dirty` survives a reset.
+   */
+  baselineValues: Properties;
+  /**
+   * The entries of `data` that differ from `baselineValues`. Intended for
+   * PATCH-style submits that should carry only what the user actually edited.
+   */
+  getDirtyValues: () => Properties;
   isSubmitting: boolean;
   isSubmitted: boolean;
   touched: Record<string, boolean>;
@@ -110,6 +122,15 @@ export function useDynamicForm({
   const submitAbortRef = useRef<AbortController | undefined>(undefined);
   const dataRef = useRef(data);
   dataRef.current = data;
+
+  // The baseline `dirty` is measured against. Kept in both a ref and state:
+  // `getDirtyValues` needs it synchronously at call time, while
+  // `MultiFieldInput` needs a render-visible value. Both are written together
+  // in `reset`, the only place it changes.
+  const baselineRef = useRef<Properties>(dataRef.current);
+  const [baselineValues, setBaselineValues] = useState<Properties>(
+    () => baselineRef.current,
+  );
 
   const commitSyncResult = useCallback((res: ValidationResult) => {
     setValidationResult((previous) =>
@@ -204,6 +225,18 @@ export function useDynamicForm({
 
   const resetTouched = useCallback(() => setTouched({}), []);
 
+  const getDirtyValues = useCallback((): Properties => {
+    const baseline = baselineRef.current;
+    const current = dataRef.current;
+    const dirty: Properties = {};
+    for (const key of Object.keys(current)) {
+      if (!Object.is(current[key], baseline[key])) {
+        dirty[key] = current[key];
+      }
+    }
+    return dirty;
+  }, []);
+
   const handleBlur = useCallback(
     (fieldName: string) => {
       setFieldTouched(fieldName, true);
@@ -222,6 +255,8 @@ export function useDynamicForm({
       const next = applyComputedValues(fields, seed);
       setData(next);
       dataRef.current = next;
+      baselineRef.current = next;
+      setBaselineValues(next);
       setErrors({});
       setIsDirty(false);
       setTouched({});
@@ -310,6 +345,8 @@ export function useDynamicForm({
     isValidationComplete: validationResult.complete && !isValidating,
     validationStatus: isValidating ? 'pending' : validationResult.status,
     isDirty,
+    baselineValues,
+    getDirtyValues,
     isSubmitting,
     isSubmitted,
     touched,
