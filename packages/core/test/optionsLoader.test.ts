@@ -314,3 +314,49 @@ describe('an async loader that detection cannot see', () => {
     expect(loader.current().options).toEqual(OPTIONS);
   });
 });
+
+describe('loader state hygiene', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it('clears a previous error when a retry starts loading', async () => {
+    let shouldFail = true;
+    const field: FieldDescription = {
+      name: 'city',
+      type: 'text',
+      options: async () => {
+        if (shouldFail) {
+          throw new Error('network down');
+        }
+        return OPTIONS;
+      },
+      optionsDeps: (data) => [data.attempt],
+    };
+    const { states, onChange } = collect();
+    const loader = createOptionsLoader(field, onChange);
+
+    loader.update({ attempt: 1 });
+    await vi.runAllTimersAsync();
+    expect(loader.current().status).toBe('error');
+
+    shouldFail = false;
+    states.length = 0;
+    loader.update({ attempt: 2 });
+
+    // The very first state of the retry must not still carry the old error.
+    expect(states[0].status).toBe('loading');
+    expect(states[0].error).toBeUndefined();
+  });
+
+  it('does not treat a static array as async even when optionsMode says so', () => {
+    const field: FieldDescription = {
+      name: 'city',
+      type: 'text',
+      optionsMode: 'async',
+      options: OPTIONS,
+    };
+
+    expect(isAsyncOptions(field)).toBe(false);
+    expect(resolveOptions(field, {})).toEqual(OPTIONS);
+  });
+});

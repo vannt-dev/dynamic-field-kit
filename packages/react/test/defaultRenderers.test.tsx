@@ -198,3 +198,21 @@ describe('default renderer error node', () => {
     expect(document.getElementById('f-custom-error')).toBeNull();
   });
 });
+
+describe('default renderer error node accepts a bare string', () => {
+  it('renders the whole string, not its first character', () => {
+    render(
+      <DynamicInput
+        type="text"
+        id="f-str"
+        value=""
+        error="Title is required"
+        onChange={() => {}}
+      />,
+    );
+
+    expect(document.getElementById('f-str-error')).toHaveTextContent(
+      'Title is required',
+    );
+  });
+});

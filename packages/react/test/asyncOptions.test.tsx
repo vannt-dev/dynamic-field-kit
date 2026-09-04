@@ -179,3 +179,33 @@ describe('dependent async options', () => {
     expect(load).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('async options under StrictMode', () => {
+  beforeEach(() => {
+    fieldRegistry.register('optionProbe', OptionProbe);
+  });
+
+  // StrictMode double-invokes effects: mount, cleanup, mount. A loader created
+  // in the render body and disposed by that cleanup would be reused - dead -
+  // by the second mount, leaving every dev build stuck on 'loading'.
+  it('still reaches ready when effects are double-invoked', async () => {
+    const fields: FieldDescription[] = [
+      {
+        name: 'city',
+        type: 'optionProbe',
+        options: async () => [{ value: 'hn' }],
+      },
+    ];
+
+    render(
+      <React.StrictMode>
+        <MultiFieldInput fieldDescriptions={fields} idPrefix="s" />
+      </React.StrictMode>,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByTestId('s-city-status')).toHaveTextContent('ready'),
+    );
+    expect(screen.getByTestId('s-city-options')).toHaveTextContent('hn');
+  });
+});

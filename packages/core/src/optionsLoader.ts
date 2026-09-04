@@ -36,16 +36,21 @@ export interface OptionsLoader {
  * `async` keyword.
  */
 export function isAsyncOptions(field: FieldDescription): boolean {
+  // A loader has to be callable before any of the rest matters. Without this,
+  // `optionsMode: 'async'` alongside a static array would send the field down
+  // the loader path and throw `load is not a function` out of a React effect,
+  // a Vue watcher or Angular's ngOnChanges - crashing the render rather than
+  // degrading to the synchronous path.
+  if (typeof field.options !== 'function') {
+    return false;
+  }
   if (field.optionsMode === 'async') {
     return true;
   }
   if (field.optionsMode === 'sync') {
     return false;
   }
-  return (
-    typeof field.options === 'function' &&
-    field.options.constructor?.name === 'AsyncFunction'
-  );
+  return field.options.constructor?.name === 'AsyncFunction';
 }
 
 function isAbortError(error: unknown): boolean {
@@ -104,7 +109,11 @@ export function createOptionsLoader(
     const thisController = new AbortController();
     controller = thisController;
 
-    emit({ ...state, status: 'loading' });
+    // Keep the previous options visible while reloading (a list that blinks to
+    // empty on every keystroke is worse than a stale one), but drop any error
+    // from the last attempt - `loading` alongside a stale `optionsError` is a
+    // state no renderer should have to reason about.
+    emit({ status: 'loading', options: state.options });
 
     const load = field.options as OptionsFn;
     Promise.resolve(

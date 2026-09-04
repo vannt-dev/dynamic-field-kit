@@ -83,7 +83,11 @@ const DynamicInputInner = <T extends FieldTypeKey>({
     onOptionsQuery,
   });
 
-  if (!isDefault || !error?.length || !id) {
+  // `error` is typed `string | string[]` and this component is exported, so a
+  // consumer can hand it a bare string - index 0 of which is a character.
+  const firstError = Array.isArray(error) ? error[0] : error;
+
+  if (!isDefault || !firstError || !id) {
     return control;
   }
 
@@ -94,7 +98,7 @@ const DynamicInputInner = <T extends FieldTypeKey>({
     <>
       {control}
       <div id={makeErrorId(id)} className="dfk-field-error" role="alert">
-        {error[0]}
+        {firstError}
       </div>
     </>
   );

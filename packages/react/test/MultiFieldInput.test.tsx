@@ -354,3 +354,78 @@ describe('dirty baseline', () => {
     );
   });
 });
+
+describe('dirty baseline when properties start as an empty object', () => {
+  const dirtyFields2: FieldDescription[] = [
+    { name: 'title', type: 'dirtyProbe', label: 'Title' },
+  ];
+
+  beforeEach(() => {
+    fieldRegistry.register('dirtyProbe', (({
+      id,
+      value,
+      dirty,
+    }: FieldRendererProps) => (
+      <input
+        data-testid={id}
+        data-dirty={String(dirty)}
+        value={(value as string) ?? ''}
+        readOnly
+      />
+    )) as never);
+    layoutRegistry.register(
+      'column',
+      ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+    );
+  });
+
+  it('documents the {} case: an empty object is a real baseline, not "unset"', async () => {
+    const Late = () => {
+      const [props, setProps] = React.useState<Properties>({});
+      React.useEffect(() => setProps({ title: 'loaded' }), []);
+      return (
+        <MultiFieldInput
+          fieldDescriptions={dirtyFields2}
+          properties={props}
+          idPrefix="empty"
+        />
+      );
+    };
+    render(<Late />);
+    await waitFor(() =>
+      expect(screen.getByTestId('empty-title')).toHaveValue('loaded'),
+    );
+
+    // `{}` cannot be told apart from a form that genuinely opens blank, so it
+    // is taken at face value and the field reads dirty. Pass initialProperties
+    // (or drive the form through a store) when values arrive after mount.
+    expect(screen.getByTestId('empty-title')).toHaveAttribute(
+      'data-dirty',
+      'true',
+    );
+  });
+
+  it('initialProperties is the escape hatch for that case', async () => {
+    const Late = () => {
+      const [props, setProps] = React.useState<Properties>({});
+      React.useEffect(() => setProps({ title: 'loaded' }), []);
+      return (
+        <MultiFieldInput
+          fieldDescriptions={dirtyFields2}
+          properties={props}
+          initialProperties={{ title: 'loaded' }}
+          idPrefix="hatch"
+        />
+      );
+    };
+    render(<Late />);
+    await waitFor(() =>
+      expect(screen.getByTestId('hatch-title')).toHaveValue('loaded'),
+    );
+
+    expect(screen.getByTestId('hatch-title')).toHaveAttribute(
+      'data-dirty',
+      'false',
+    );
+  });
+});

@@ -47,19 +47,46 @@ const FieldInputInner = ({
     isAsync ? { status: 'idle' } : undefined,
   );
   const loaderRef = useRef<OptionsLoader | undefined>(undefined);
-  if (isAsync && !loaderRef.current) {
-    loaderRef.current = createOptionsLoader(fieldDescription, setOptionsState);
-  }
-  useEffect(() => () => loaderRef.current?.dispose(), []);
+  const fieldRef = useRef(fieldDescription);
+  fieldRef.current = fieldDescription;
+
+  // Created lazily rather than during render, and re-created after disposal.
+  // StrictMode double-invokes effects (mount, cleanup, mount): a loader built
+  // in the render body would be disposed by that cleanup and then reused by
+  // the second mount, and every later update would hit its `disposed` guard -
+  // options would sit at 'loading' forever in any dev build.
+  const ensureLoader = useCallback((): OptionsLoader | undefined => {
+    if (!isAsyncOptions(fieldRef.current)) {
+      return undefined;
+    }
+    if (!loaderRef.current) {
+      loaderRef.current = createOptionsLoader(
+        fieldRef.current,
+        setOptionsState,
+      );
+    }
+    return loaderRef.current;
+  }, []);
+
+  useEffect(
+    () => () => {
+      loaderRef.current?.dispose();
+      loaderRef.current = undefined;
+    },
+    [],
+  );
   useEffect(() => {
     // The loader decides whether `optionsDeps` actually changed, so calling it
     // on every data change is cheap and keeps that decision in one place.
-    loaderRef.current?.update(renderInfos, rootData);
+    ensureLoader()?.update(renderInfos, rootData);
   });
 
-  const handleOptionsQuery = useCallback((query: string) => {
-    loaderRef.current?.setQuery(query);
-  }, []);
+  const handleOptionsQuery = useCallback(
+    (query: string) => {
+      ensureLoader()?.setQuery(query);
+    },
+    [ensureLoader],
+  );
 
   // Stable per-field handler so DynamicInput's memoization isn't defeated
   // by a freshly-allocated closure on every parent render.
