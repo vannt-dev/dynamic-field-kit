@@ -23,6 +23,17 @@ export type Properties = Record<string, unknown>;
 export interface ValidationContext {
   /** Aborted when a newer validation run supersedes this one. */
   signal?: AbortSignal;
+  /**
+   * Resolves a validator's message key against the catalog in effect for this
+   * form, returning undefined for a key the catalog omits so the validator
+   * falls back to its own default. Supplied by the adapters from
+   * `useDynamicForm({ messages })`.
+   *
+   * It lives here rather than in a parameter of its own because `validate`
+   * already receives this context as its fourth argument - one object carries
+   * both concerns, and an async validator gets the resolver for free.
+   */
+  t?: (key: string, params?: Properties) => string | undefined;
 }
 
 export interface FieldRendererProps<T = unknown> {
