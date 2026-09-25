@@ -5,6 +5,10 @@
 [![npm](https://img.shields.io/npm/v/@dynamic-field-kit/react?label=react)](https://www.npmjs.com/package/@dynamic-field-kit/react)
 [![npm](https://img.shields.io/npm/v/@dynamic-field-kit/vue?label=vue)](https://www.npmjs.com/package/@dynamic-field-kit/vue)
 [![npm](https://img.shields.io/npm/v/@dynamic-field-kit/angular?label=angular)](https://www.npmjs.com/package/@dynamic-field-kit/angular)
+[![core downloads](https://img.shields.io/npm/d18m/@dynamic-field-kit/core?label=core%20downloads)](https://www.npmjs.com/package/@dynamic-field-kit/core)
+[![react downloads](https://img.shields.io/npm/d18m/@dynamic-field-kit/react?label=react%20downloads)](https://www.npmjs.com/package/@dynamic-field-kit/react)
+[![vue downloads](https://img.shields.io/npm/d18m/@dynamic-field-kit/vue?label=vue%20downloads)](https://www.npmjs.com/package/@dynamic-field-kit/vue)
+[![angular downloads](https://img.shields.io/npm/d18m/@dynamic-field-kit/angular?label=angular%20downloads)](https://www.npmjs.com/package/@dynamic-field-kit/angular)
 
 **[▶ Live demos](https://vannt-dev.github.io/dynamic-field-kit/)** — the same
 schema rendered by [React](https://vannt-dev.github.io/dynamic-field-kit/react/),
