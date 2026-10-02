@@ -23,6 +23,7 @@ documented below.
 - `collectFieldPaths` to expand a schema into the leaf paths that exist in the data (`contacts[0].email`), and `indexGroupPathMap` to index an error or touched map by group item
 - `isFieldGroup`, `createGroupItem`, `canAddGroupItem`, `canRemoveGroupItem` to work with repeatable field groups (`FieldDescription.fields`), plus `moveGroupItem`, `swapGroupItems`, `insertGroupItem` and `focusFirstInvalidField` for driving a group's array yourself
 - `zodValidator`, `yupValidator`, `valibotValidator` / `standardSchemaValidator` to validate with an existing schema library
+- `fieldsFromJsonSchema` to build the field list itself from a JSON Schema
 - A multi-step wizard state machine: `createWizardState`, `validateStep`, `canGoNext` / `canGoPrev`, `goNext` / `goPrev` / `goToStep`, `markStepCompleted` / `isStepCompleted`
 
 ## Install
@@ -557,6 +558,53 @@ Adapters parse **synchronously**, so the result works with the synchronous
 `validateFields` (and therefore with the framework form hooks). A schema with
 async refinements or async `.test()` rules cannot be parsed synchronously —
 those return a Promise, so validate through `validateFieldsAsync`.
+
+## Fields from a JSON Schema
+
+`fieldsFromJsonSchema` turns a JSON Schema object into a field list, so a form can be driven by the schema an API already publishes (an OpenAPI `components.schemas` entry, for example).
+
+```ts
+import { fieldsFromJsonSchema } from '@dynamic-field-kit/core';
+
+const { fields, defaults, warnings } = fieldsFromJsonSchema(
+  {
+    type: 'object',
+    required: ['email'],
+    properties: {
+      email: { type: 'string', format: 'email' },
+      age: { type: 'integer', minimum: 18 },
+      plan: { enum: ['free', 'pro'], default: 'free' },
+      contacts: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: { phone: { type: 'string' } },
+        },
+      },
+    },
+  },
+  { overrides: { 'contacts[].phone': { placeholder: '+84…' } } },
+);
+```
+
+- `fields` goes to `MultiFieldInput` / `useDynamicForm` like a hand-written list.
+- `defaults` holds the schema's `default` values, shaped like the form data. Pass it as the initial data.
+- `warnings` lists every property or keyword that did not make it into the form, with its path. Nothing is dropped silently.
+
+| Schema                                            | Field                                                                                                   |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `string`                                          | `text`; `format` picks `email`, `date`, `time`, `datetime-local` (`date-time`) or `password`            |
+| `number`, `integer`                               | `number`, with `min` / `max` from `minimum` / `maximum` and `step` from `multipleOf` (1 for an integer) |
+| `boolean`                                         | `checkbox`                                                                                              |
+| `enum`, or `oneOf` / `anyOf` made only of `const` | `select`; a `const` member's `title` is the option label                                                |
+| array of enums                                    | `select` with `multiple`                                                                                |
+| array of objects                                  | repeatable group, with `minItems` / `maxItems` and a `defaultItem` from the item defaults               |
+
+`title` becomes the label (a readable form of the property name otherwise), `description` the description, `readOnly` a `readOnlyCondition`. `required`, `minLength`, `maxLength`, `pattern`, `minimum`, `maximum` and the `email` format become `validate` hooks built from `validators`, so their messages go through the form's [message catalog](#validation-messages). Local `$ref` (`#/...`), `allOf`, and nullable types (`type: ['string', 'null']`, or `anyOf` with a `null` branch) are followed.
+
+Not turned into fields, and reported in `warnings` instead: nested objects, tuples, arrays of free-form values, remote `$ref`, and `exclusiveMinimum` / `exclusiveMaximum`. Conditional keywords (`if` / `then`, `dependentRequired`) are ignored; express those with `appearCondition` through `overrides`.
+
+`overrides` is keyed by the same path the warnings use and is merged over the generated field. Use it to choose an application-specific `type` (`textarea`, a custom picker), or to attach hooks a schema cannot express.
 
 ## Multi-step wizard
 
