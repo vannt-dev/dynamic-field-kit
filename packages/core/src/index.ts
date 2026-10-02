@@ -19,6 +19,7 @@ export {
 
 export * from './adapters';
 export * from './wizard';
+export * from './formDraft';
 
 export * from './rendererProps';
 export * from './pathMaps';
