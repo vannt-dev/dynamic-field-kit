@@ -558,6 +558,58 @@ Adapters parse **synchronously**, so the result works with the synchronous
 async refinements or async `.test()` rules cannot be parsed synchronously —
 those return a Promise, so validate through `validateFieldsAsync`.
 
+## Saving a draft
+
+`createFormDraft` keeps a form's data in storage between visits, so a reload or a closed tab does not lose what was typed. It is not tied to an adapter: load the draft into the initial values, save whenever the data changes, clear after a submit.
+
+```tsx
+import { createFormDraft, draftExclusions } from '@dynamic-field-kit/core';
+import { useDynamicForm } from '@dynamic-field-kit/react';
+
+const draft = createFormDraft({
+  key: 'signup-form',
+  version: 1, // bump when the fields change shape
+  maxAgeMs: 7 * 24 * 60 * 60 * 1000,
+  exclude: draftExclusions(fields), // passwords and file inputs
+});
+
+function SignupForm() {
+  const form = useDynamicForm({
+    fields,
+    initialValues: draft.load() ?? { plan: 'free' },
+  });
+
+  useEffect(() => draft.save(form.data), [form.data]);
+  useEffect(() => () => draft.flush(), []); // write what is pending on unmount
+
+  const submit = form.handleSubmit(async (data) => {
+    await api.signUp(data);
+    draft.clear();
+  });
+  // …
+}
+```
+
+The same four calls work with the Vue composable (`watch(() => form.data, draft.save, { deep: true })`) and the Angular signal store (`effect(() => draft.save(store.data()))`).
+
+| Option       | Meaning                                                                                                                                   |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `key`        | Storage key. Use one per form, and per record when editing existing data.                                                                 |
+| `storage`    | Anything with `getItem` / `setItem` / `removeItem`. Defaults to `localStorage`; pass `sessionStorage` for a draft that ends with the tab. |
+| `version`    | A draft saved under another version is discarded, not loaded into fields that no longer match it.                                         |
+| `debounceMs` | Writes wait this long after the last `save` (default 300). `0` writes at once.                                                            |
+| `maxAgeMs`   | A draft older than this is discarded on load.                                                                                             |
+| `exclude`    | Top-level field names that are never written.                                                                                             |
+| `onError`    | Told when storage refuses a read or a write.                                                                                              |
+
+`load()` returns `undefined` when there is no usable draft, `flush()` writes a pending save now, `clear()` removes the draft and `savedAt()` gives the time of the last write, for a "draft restored from …" notice.
+
+Things to know:
+
+- **The draft is plain JSON in the browser's storage.** Do not keep secrets in it: `draftExclusions(fields)` lists the top-level `password` and `file` fields, and you can add your own names. Fields nested inside a repeatable group are not filtered.
+- **Storage can fail** (private browsing, a full quota, a sandboxed frame, server rendering). The draft then does nothing rather than throw; `onError` hears about it.
+- **Values that JSON cannot represent** (`Date` objects, `File`s, `undefined`) do not survive a round trip. Dates stored as strings, as the built-in `date` input produces, are fine.
+
 ## Multi-step wizard
 
 A framework-agnostic state machine over grouped fields. State is immutable:
