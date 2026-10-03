@@ -688,13 +688,21 @@ All packages share the same `fieldRegistry` instance, so registrations are visib
 
 ## 🚫 Non-Goals
 
-This library intentionally does not include:
+Form state, validation and a set of HTML renderers used to be out of scope; they
+are all in the kit now (see above). What it still leaves to you:
 
-- Built-in UI components (bring your own renderers)
-- Form state management
-- Validation logic
+- **A design system.** The built-in React and Vue renderers are plain HTML
+  inputs that take a `className` and nothing more, and Angular ships none.
+  Styling, and wiring in a component library, happen in your renderers.
+- **A form builder UI.** The kit renders a form from a field list; it has no
+  editor for writing one. It is meant to sit under a builder, not be one.
+- **Sending the data.** `handleSubmit` hands you the values; there is no HTTP
+  client, retry or submission transport.
+- **A full schema language.** The built-in validators cover the common rules.
+  For anything richer, write the schema in Zod, Yup, Valibot or any Standard
+  Schema library and plug it in through the adapters.
 
-It is a **form engine**, not a full form framework.
+It is a **form engine**, not a UI kit.
 
 ## 🚀 Releasing
 
