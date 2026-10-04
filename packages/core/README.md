@@ -718,6 +718,45 @@ Things to know:
 - **Storage can fail** (private browsing, a full quota, a sandboxed frame, server rendering). The draft then does nothing rather than throw; `onError` hears about it.
 - **Values that JSON cannot represent** (`Date` objects, `File`s, `undefined`) do not survive a round trip. Dates stored as strings, as the built-in `date` input produces, are fine.
 
+## Undo and redo
+
+`createFormHistory` gives a form undo and redo. Like the draft, it is not tied to an adapter: push the data whenever it changes and put what `undo` or `redo` returns back into the form.
+
+```tsx
+import { createFormHistory } from '@dynamic-field-kit/core';
+import { useDynamicForm } from '@dynamic-field-kit/react';
+
+function ProfileForm() {
+  const form = useDynamicForm({ fields, initialValues });
+  const [history] = useState(() => createFormHistory(form.data));
+
+  useEffect(() => history.push(form.data), [form.data]);
+
+  const undo = () => {
+    const data = history.undo();
+    if (data) form.setData(data);
+  };
+  const redo = () => {
+    const data = history.redo();
+    if (data) form.setData(data);
+  };
+  // <button disabled={!history.canUndo()} onClick={undo}>Undo</button>
+}
+```
+
+| Option       | Meaning                                                                                                          |
+| ------------ | ---------------------------------------------------------------------------------------------------------------- |
+| `limit`      | How many undo steps are kept (default 100); the oldest go first.                                                 |
+| `coalesceMs` | Pushes that change the same top-level fields within this window become one step (default 500). `0` turns it off. |
+
+`canUndo()` and `canRedo()` say whether there is a step to go to, `current()` returns the data at the current step and `reset(data)` forgets the history, for example after a submit or after loading a draft.
+
+Things to know:
+
+- **Pushing the data `current()` already holds is ignored.** Restoring a step makes the form report that data back, and that report does not become a new step or wipe the redo steps.
+- **Typing is grouped.** Typing a word into one field is undone in one go; a pause longer than `coalesceMs`, a change to another field, or an undo starts a new step.
+- **Steps are kept by reference.** Plain objects and arrays are compared by content; other values (`Date`, `File`) by identity. Replace form data instead of mutating it, as the adapters already do.
+
 ## Group array helpers
 
 Every adapter's `MultiFieldInput` renders add/remove controls itself. These
