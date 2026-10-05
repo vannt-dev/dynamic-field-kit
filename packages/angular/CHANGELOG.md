@@ -1,5 +1,11 @@
 # @dynamic-field-kit/angular
 
+## 1.8.0
+
+### Minor Changes
+
+- Core adds form drafts, fields from a JSON Schema, and undo/redo; the adapters are republished unchanged on the same version line.
+
 ## 1.7.0
 
 ### Minor Changes
