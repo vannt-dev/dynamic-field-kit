@@ -1,15 +1,19 @@
-name: Deploy demos to Pages
+name: Deploy demos and handbook to Pages
 
-# Publishes the three example apps to GitHub Pages so there is a link to hand
-# people. They consume the packages through `file:` paths, so whatever is on
-# this branch is exactly what the demos are built against.
+# Publishes the three example apps and the handbook to GitHub Pages so there is
+# a link to hand people. The demos consume the packages through `file:` paths,
+# so whatever is on this branch is exactly what the demos are built against.
 on:
   push:
     branches: [develop]
-    # Only rebuild when something the demos actually render could have changed.
+    # Only rebuild when something the site actually renders could have changed.
+    # The handbook is built from the READMEs and docs/.
     paths:
       - 'packages/**'
       - 'example/**'
+      - 'handbook/**'
+      - 'docs/**'
+      - 'README.md'
       - '.github/workflows/deploy-pages.yml'
   workflow_dispatch:
 
@@ -72,10 +76,21 @@ jobs:
           npm install --no-audit --no-fund
           npm run build -- --base-href ${{ env.SITE_BASE }}/angular/
 
+      # The handbook's pages are generated from the READMEs and docs/ by
+      # handbook/scripts/sync.mjs, which `npm run build` runs first.
+      - name: Build handbook
+        working-directory: handbook
+        env:
+          PAGES_BASE_PATH: ${{ env.SITE_BASE }}/handbook/
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
+
       - name: Assemble the site
         run: |
           mkdir -p _site
           cp example/pages-index.html _site/index.html
+          cp -r handbook/.vitepress/dist       _site/handbook
           cp -r example/react-app/out          _site/react
           cp -r example/vue-app/dist           _site/vue
           cp -r example/angular-app/dist/example-angular-app _site/angular
