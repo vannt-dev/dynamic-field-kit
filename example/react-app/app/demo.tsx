@@ -21,6 +21,7 @@ const fields: FieldDescription[] = [
     name: 'contacts',
     type: 'group',
     label: 'Contacts',
+    className: 'demo-group',
     // Repeatable field group: data.contacts becomes an array of items shaped
     // by these sub-fields, with Add/Remove controls rendered automatically.
     fields: [
@@ -48,7 +49,10 @@ export default function BasicsDemo() {
           desktop: { type: 'grid', columns: 2, gap: 16 },
         }}
       />
-      <pre>{JSON.stringify(data, null, 2)}</pre>
+      <div className="demo-panel">
+        <h3>Dữ liệu form</h3>
+        <pre>{JSON.stringify(data, null, 2)}</pre>
+      </div>
     </>
   );
 }

@@ -8,7 +8,7 @@ export default function WizardPage() {
   return (
     <DemoShell
       current="wizard"
-      title="Multi-Step Form Wizard"
+      title="Multi-Step Wizard"
       code={readDemoSource('wizard/demo.tsx')}
       codePath="app/wizard/demo.tsx"
       intro={

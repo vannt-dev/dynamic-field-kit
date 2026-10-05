@@ -23,6 +23,7 @@ documented below.
 - `collectFieldPaths` to expand a schema into the leaf paths that exist in the data (`contacts[0].email`), and `indexGroupPathMap` to index an error or touched map by group item
 - `isFieldGroup`, `createGroupItem`, `canAddGroupItem`, `canRemoveGroupItem` to work with repeatable field groups (`FieldDescription.fields`), plus `moveGroupItem`, `swapGroupItems`, `insertGroupItem` and `focusFirstInvalidField` for driving a group's array yourself
 - `zodValidator`, `yupValidator`, `valibotValidator` / `standardSchemaValidator` to validate with an existing schema library
+- `fieldsFromJsonSchema` to build the field list itself from a JSON Schema
 - A multi-step wizard state machine: `createWizardState`, `validateStep`, `canGoNext` / `canGoPrev`, `goNext` / `goPrev` / `goToStep`, `markStepCompleted` / `isStepCompleted`
 
 ## Install
@@ -558,6 +559,53 @@ Adapters parse **synchronously**, so the result works with the synchronous
 async refinements or async `.test()` rules cannot be parsed synchronously —
 those return a Promise, so validate through `validateFieldsAsync`.
 
+## Fields from a JSON Schema
+
+`fieldsFromJsonSchema` turns a JSON Schema object into a field list, so a form can be driven by the schema an API already publishes (an OpenAPI `components.schemas` entry, for example).
+
+```ts
+import { fieldsFromJsonSchema } from '@dynamic-field-kit/core';
+
+const { fields, defaults, warnings } = fieldsFromJsonSchema(
+  {
+    type: 'object',
+    required: ['email'],
+    properties: {
+      email: { type: 'string', format: 'email' },
+      age: { type: 'integer', minimum: 18 },
+      plan: { enum: ['free', 'pro'], default: 'free' },
+      contacts: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: { phone: { type: 'string' } },
+        },
+      },
+    },
+  },
+  { overrides: { 'contacts[].phone': { placeholder: '+84…' } } },
+);
+```
+
+- `fields` goes to `MultiFieldInput` / `useDynamicForm` like a hand-written list.
+- `defaults` holds the schema's `default` values, shaped like the form data. Pass it as the initial data.
+- `warnings` lists every property or keyword that did not make it into the form, with its path. Nothing is dropped silently.
+
+| Schema                                            | Field                                                                                                   |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `string`                                          | `text`; `format` picks `email`, `date`, `time`, `datetime-local` (`date-time`) or `password`            |
+| `number`, `integer`                               | `number`, with `min` / `max` from `minimum` / `maximum` and `step` from `multipleOf` (1 for an integer) |
+| `boolean`                                         | `checkbox`                                                                                              |
+| `enum`, or `oneOf` / `anyOf` made only of `const` | `select`; a `const` member's `title` is the option label                                                |
+| array of enums                                    | `select` with `multiple`                                                                                |
+| array of objects                                  | repeatable group, with `minItems` / `maxItems` and a `defaultItem` from the item defaults               |
+
+`title` becomes the label (a readable form of the property name otherwise), `description` the description, `readOnly` a `readOnlyCondition`. `required`, `minLength`, `maxLength`, `pattern`, `minimum`, `maximum` and the `email` format become `validate` hooks built from `validators`, so their messages go through the form's [message catalog](#validation-messages). Local `$ref` (`#/...`), `allOf`, and nullable types (`type: ['string', 'null']`, or `anyOf` with a `null` branch) are followed.
+
+Not turned into fields, and reported in `warnings` instead: nested objects, tuples, arrays of free-form values, remote `$ref`, and `exclusiveMinimum` / `exclusiveMaximum`. Conditional keywords (`if` / `then`, `dependentRequired`) are ignored; express those with `appearCondition` through `overrides`.
+
+`overrides` is keyed by the same path the warnings use and is merged over the generated field. Use it to choose an application-specific `type` (`textarea`, a custom picker), or to attach hooks a schema cannot express.
+
 ## Multi-step wizard
 
 A framework-agnostic state machine over grouped fields. State is immutable:
@@ -617,6 +665,97 @@ export interface WizardState {
 
 `goNext` does not validate — call `validateStep` yourself so a "save draft and
 come back" flow stays possible.
+
+## Saving a draft
+
+`createFormDraft` keeps a form's data in storage between visits, so a reload or a closed tab does not lose what was typed. It is not tied to an adapter: load the draft into the initial values, save whenever the data changes, clear after a submit.
+
+```tsx
+import { createFormDraft, draftExclusions } from '@dynamic-field-kit/core';
+import { useDynamicForm } from '@dynamic-field-kit/react';
+
+const draft = createFormDraft({
+  key: 'signup-form',
+  version: 1, // bump when the fields change shape
+  maxAgeMs: 7 * 24 * 60 * 60 * 1000,
+  exclude: draftExclusions(fields), // passwords and file inputs
+});
+
+function SignupForm() {
+  const form = useDynamicForm({
+    fields,
+    initialValues: draft.load() ?? { plan: 'free' },
+  });
+
+  useEffect(() => draft.save(form.data), [form.data]);
+  useEffect(() => () => draft.flush(), []); // write what is pending on unmount
+
+  const submit = form.handleSubmit(async (data) => {
+    await api.signUp(data);
+    draft.clear();
+  });
+  // …
+}
+```
+
+The same four calls work with the Vue composable (`watch(() => form.data, draft.save, { deep: true })`) and the Angular signal store (`effect(() => draft.save(store.data()))`).
+
+| Option       | Meaning                                                                                                                                   |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `key`        | Storage key. Use one per form, and per record when editing existing data.                                                                 |
+| `storage`    | Anything with `getItem` / `setItem` / `removeItem`. Defaults to `localStorage`; pass `sessionStorage` for a draft that ends with the tab. |
+| `version`    | A draft saved under another version is discarded, not loaded into fields that no longer match it.                                         |
+| `debounceMs` | Writes wait this long after the last `save` (default 300). `0` writes at once.                                                            |
+| `maxAgeMs`   | A draft older than this is discarded on load.                                                                                             |
+| `exclude`    | Top-level field names that are never written.                                                                                             |
+| `onError`    | Told when storage refuses a read or a write.                                                                                              |
+
+`load()` returns `undefined` when there is no usable draft, `flush()` writes a pending save now, `clear()` removes the draft and `savedAt()` gives the time of the last write, for a "draft restored from …" notice.
+
+Things to know:
+
+- **The draft is plain JSON in the browser's storage.** Do not keep secrets in it: `draftExclusions(fields)` lists the top-level `password` and `file` fields, and you can add your own names. Fields nested inside a repeatable group are not filtered.
+- **Storage can fail** (private browsing, a full quota, a sandboxed frame, server rendering). The draft then does nothing rather than throw; `onError` hears about it.
+- **Values that JSON cannot represent** (`Date` objects, `File`s, `undefined`) do not survive a round trip. Dates stored as strings, as the built-in `date` input produces, are fine.
+
+## Undo and redo
+
+`createFormHistory` gives a form undo and redo. Like the draft, it is not tied to an adapter: push the data whenever it changes and put what `undo` or `redo` returns back into the form.
+
+```tsx
+import { createFormHistory } from '@dynamic-field-kit/core';
+import { useDynamicForm } from '@dynamic-field-kit/react';
+
+function ProfileForm() {
+  const form = useDynamicForm({ fields, initialValues });
+  const [history] = useState(() => createFormHistory(form.data));
+
+  useEffect(() => history.push(form.data), [form.data]);
+
+  const undo = () => {
+    const data = history.undo();
+    if (data) form.setData(data);
+  };
+  const redo = () => {
+    const data = history.redo();
+    if (data) form.setData(data);
+  };
+  // <button disabled={!history.canUndo()} onClick={undo}>Undo</button>
+}
+```
+
+| Option       | Meaning                                                                                                          |
+| ------------ | ---------------------------------------------------------------------------------------------------------------- |
+| `limit`      | How many undo steps are kept (default 100); the oldest go first.                                                 |
+| `coalesceMs` | Pushes that change the same top-level fields within this window become one step (default 500). `0` turns it off. |
+
+`canUndo()` and `canRedo()` say whether there is a step to go to, `current()` returns the data at the current step and `reset(data)` forgets the history, for example after a submit or after loading a draft.
+
+Things to know:
+
+- **Pushing the data `current()` already holds is ignored.** Restoring a step makes the form report that data back, and that report does not become a new step or wipe the redo steps.
+- **Typing is grouped.** Typing a word into one field is undone in one go; a pause longer than `coalesceMs`, a change to another field, or an undo starts a new step.
+- **Steps are kept by reference.** Plain objects and arrays are compared by content; other values (`Date`, `File`) by identity. Replace form data instead of mutating it, as the adapters already do.
 
 ## Group array helpers
 

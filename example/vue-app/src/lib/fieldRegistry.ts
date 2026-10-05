@@ -1,138 +1,202 @@
 import { fieldRegistry as registry } from '@dynamic-field-kit/vue';
-import { defineComponent, h } from 'vue';
+import { defineComponent, h, type VNode } from 'vue';
 
-const inputStyle =
-  'padding: 8px; margin-bottom: 4px; border: 1px solid #ccc;' +
-  ' border-radius: 4px; display: block; width: 100%; box-sizing: border-box;';
+// The renderers this app draws its fields with. The kit's built-in renderers
+// are bare inputs with no label and no styling, so an application registers
+// its own for every type it uses - these are plain HTML styled by
+// `example/shared/demo.css`.
 
-const TextRenderer = defineComponent({
-  props: ['value', 'label', 'disabled', 'readOnly', 'error', 'placeholder'],
-  emits: ['update:value', 'blur'],
-  setup(props, { emit }) {
-    return () =>
-      h('label', { style: 'display: block; margin-bottom: 12px;' }, [
-        props.label
-          ? h(
-              'span',
-              {
-                style: 'font-weight: 500; display: block; margin-bottom: 4px;',
-              },
-              props.label,
-            )
-          : null,
-        h('input', {
-          value: props.value ?? '',
-          placeholder: props.placeholder ?? '',
-          disabled: props.disabled,
-          readOnly: props.readOnly,
-          onInput: (e: any) => emit('update:value', e.target.value),
-          onBlur: () => emit('blur'),
-          style: `${inputStyle} background-color: ${
-            props.disabled ? '#f0f0f0' : props.readOnly ? '#fafafa' : '#fff'
-          }; border-color: ${props.error ? '#ef4444' : '#ccc'};`,
-        }),
-        props.error
-          ? h(
-              'span',
-              { style: 'color: #ef4444; font-size: 12px; display: block;' },
-              Array.isArray(props.error) ? props.error.join(', ') : props.error,
-            )
-          : null,
-      ]);
-  },
-});
+const PROPS = [
+  'value',
+  'label',
+  'placeholder',
+  'disabled',
+  'readOnly',
+  'touched',
+  'error',
+  'options',
+  'min',
+  'max',
+  'step',
+  'id',
+];
+const EMITS = ['update:value', 'blur'];
 
-const NumberRenderer = defineComponent({
-  props: ['value', 'label', 'disabled', 'readOnly', 'error'],
-  emits: ['update:value', 'blur'],
-  setup(props, { emit }) {
-    return () =>
-      h('label', { style: 'display: block; margin-bottom: 12px;' }, [
-        props.label
-          ? h(
-              'span',
-              {
-                style: 'font-weight: 500; display: block; margin-bottom: 4px;',
-              },
-              props.label,
-            )
-          : null,
-        h('input', {
-          type: 'number',
-          value: props.value ?? '',
-          disabled: props.disabled,
-          readOnly: props.readOnly,
-          onInput: (e: any) =>
-            emit(
-              'update:value',
-              e.target.value === '' ? undefined : Number(e.target.value),
-            ),
-          onBlur: () => emit('blur'),
-          style: `${inputStyle} background-color: ${
-            props.disabled ? '#f0f0f0' : props.readOnly ? '#fafafa' : '#fff'
-          }; border-color: ${props.error ? '#ef4444' : '#ccc'};`,
-        }),
-        props.error
-          ? h(
-              'span',
-              { style: 'color: #ef4444; font-size: 12px; display: block;' },
-              Array.isArray(props.error) ? props.error.join(', ') : props.error,
-            )
-          : null,
-      ]);
-  },
-});
+type Option = { label?: string; value: string | number } | string;
+
+const optionValue = (opt: Option) =>
+  typeof opt === 'string' ? opt : opt.value;
+const optionLabel = (opt: Option) =>
+  typeof opt === 'string' ? opt : (opt.label ?? String(opt.value));
+
+/** An error is shown once the field has been visited, not while it is pristine. */
+function shownError(props: any): string | undefined {
+  if (!props.touched || !props.error) return undefined;
+  return Array.isArray(props.error) ? props.error.join(', ') : props.error;
+}
+
+function field(props: any, control: VNode, tag = 'label'): VNode {
+  const error = shownError(props);
+  return h(tag, { class: ['field', { 'field--invalid': error }] }, [
+    props.label
+      ? h(
+          tag === 'label' ? 'span' : 'legend',
+          { class: 'field__label' },
+          props.label,
+        )
+      : null,
+    control,
+    error ? h('span', { class: 'field__error' }, error) : null,
+  ]);
+}
+
+const input = (type: string) =>
+  defineComponent({
+    props: PROPS,
+    emits: EMITS,
+    setup(props: any, { emit }) {
+      return () =>
+        field(
+          props,
+          h('input', {
+            type,
+            class: 'field__control',
+            value: props.value ?? '',
+            placeholder: props.placeholder ?? '',
+            disabled: props.disabled,
+            readonly: props.readOnly,
+            onInput: (e: Event) => {
+              const raw = (e.target as HTMLInputElement).value;
+              emit(
+                'update:value',
+                type === 'number'
+                  ? raw === ''
+                    ? undefined
+                    : Number(raw)
+                  : raw,
+              );
+            },
+            onBlur: () => emit('blur'),
+          }),
+        );
+    },
+  });
 
 const SelectRenderer = defineComponent({
-  props: ['value', 'label', 'options', 'disabled', 'readOnly', 'error'],
-  emits: ['update:value', 'blur'],
-  setup(props, { emit }) {
+  props: PROPS,
+  emits: EMITS,
+  setup(props: any, { emit }) {
     return () =>
-      h('label', { style: 'display: block; margin-bottom: 12px;' }, [
-        props.label
-          ? h(
-              'span',
-              {
-                style: 'font-weight: 500; display: block; margin-bottom: 4px;',
-              },
-              props.label,
-            )
-          : null,
+      field(
+        props,
         h(
           'select',
           {
+            class: 'field__control',
             value: props.value ?? '',
             disabled: props.disabled || props.readOnly,
-            onChange: (e: any) => emit('update:value', e.target.value),
+            onChange: (e: Event) =>
+              emit('update:value', (e.target as HTMLSelectElement).value),
             onBlur: () => emit('blur'),
-            style: `${inputStyle} background-color: ${
-              props.disabled ? '#f0f0f0' : '#fff'
-            }; border-color: ${props.error ? '#ef4444' : '#ccc'};`,
           },
           [
             h('option', { value: '' }, '-- Chọn --'),
-            ...(props.options || []).map((opt: any) =>
+            ...((props.options as Option[]) || []).map((opt) =>
               h(
                 'option',
-                { key: opt.value ?? opt, value: opt.value ?? opt },
-                opt.label ?? opt.value ?? opt,
+                { key: optionValue(opt), value: optionValue(opt) },
+                optionLabel(opt),
               ),
             ),
           ],
         ),
-        props.error
-          ? h(
-              'span',
-              { style: 'color: #ef4444; font-size: 12px; display: block;' },
-              Array.isArray(props.error) ? props.error.join(', ') : props.error,
-            )
-          : null,
+      );
+  },
+});
+
+const RadioRenderer = defineComponent({
+  props: PROPS,
+  emits: EMITS,
+  setup(props: any, { emit }) {
+    return () =>
+      field(
+        props,
+        h(
+          'div',
+          { class: 'field__options' },
+          ((props.options as Option[]) || []).map((opt) =>
+            h('label', { key: optionValue(opt) }, [
+              h('input', {
+                type: 'radio',
+                name: props.id,
+                checked: props.value === optionValue(opt),
+                disabled: props.disabled,
+                onChange: () => emit('update:value', optionValue(opt)),
+                onBlur: () => emit('blur'),
+              }),
+              optionLabel(opt),
+            ]),
+          ),
+        ),
+        'fieldset',
+      );
+  },
+});
+
+const RangeRenderer = defineComponent({
+  props: PROPS,
+  emits: EMITS,
+  setup(props: any, { emit }) {
+    return () =>
+      field(
+        props,
+        h('span', { class: 'field__range' }, [
+          h('input', {
+            type: 'range',
+            min: props.min,
+            max: props.max,
+            step: props.step,
+            value: props.value ?? props.min ?? 0,
+            disabled: props.disabled,
+            onInput: (e: Event) =>
+              emit(
+                'update:value',
+                Number((e.target as HTMLInputElement).value),
+              ),
+            onBlur: () => emit('blur'),
+          }),
+          h('output', String(props.value ?? '')),
+        ]),
+      );
+  },
+});
+
+const CheckRenderer = defineComponent({
+  props: PROPS,
+  emits: EMITS,
+  setup(props: any, { emit }) {
+    return () =>
+      h('label', { class: 'field field--inline' }, [
+        h('input', {
+          type: 'checkbox',
+          checked: Boolean(props.value),
+          disabled: props.disabled || props.readOnly,
+          onChange: (e: Event) =>
+            emit('update:value', (e.target as HTMLInputElement).checked),
+          onBlur: () => emit('blur'),
+        }),
+        props.label,
       ]);
   },
 });
 
-registry.register('text', TextRenderer as any);
-registry.register('number', NumberRenderer as any);
+for (const type of ['text', 'email', 'password', 'number', 'date']) {
+  registry.register(type as any, input(type) as any);
+}
 registry.register('select', SelectRenderer as any);
+registry.register('radio' as any, RadioRenderer as any);
+registry.register('range' as any, RangeRenderer as any);
+registry.register('checkbox' as any, CheckRenderer as any);
+registry.register('switch' as any, CheckRenderer as any);
 
 export {};

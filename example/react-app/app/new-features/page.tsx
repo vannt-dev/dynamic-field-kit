@@ -6,14 +6,12 @@ export default function NewFeaturesPage() {
   return (
     <DemoShell
       current="new-features"
-      title="Tính Năng Enterprise-Grade (v1.5+)"
+      title="Form state với useDynamicForm"
       code={readDemoSource('new-features/demo.tsx')}
       codePath="app/new-features/demo.tsx"
       intro={
         <>
-          Minh hoạ <code>useDynamicForm</code>, Extended Renderers (
-          <code>radio</code>, <code>range</code>, <code>date</code>,{' '}
-          <code>switch</code>), blur wiring qua <code>onBlurField</code>, và{' '}
+          Hook giữ data, errors, touched và trạng thái submit;{' '}
           <code>DynamicFormDevTools</code> ở góc màn hình.
         </>
       }

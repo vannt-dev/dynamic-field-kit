@@ -1,256 +1,92 @@
-<div
-  style="
-    padding: 24px;
-    max-width: 700px;
-    margin: 0 auto;
-    font-family: sans-serif;
-  "
->
-  <!-- Navigation Tabs -->
-  <nav
-    style="
-      display: flex;
-      gap: 8px;
-      margin-bottom: 24px;
-      padding: 6px;
-      background: #f0f4f8;
-      border-radius: 8px;
-    "
-  >
+<main class="demo" [class.demo--wide]="showCode && hasSource">
+  <nav class="demo-nav" aria-label="Demo pages">
     <button
-      (click)="activeTab = 'legacy'"
-      [style.font-weight]="activeTab === 'legacy' ? 'bold' : 'normal'"
-      [style.background-color]="activeTab === 'legacy' ? '#fff' : 'transparent'"
-      style="
-        padding: 8px 16px;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-      "
+      *ngFor="let tab of tabs"
+      type="button"
+      class="demo-tab"
+      [attr.aria-current]="activeTab === tab.id ? 'page' : null"
+      (click)="activeTab = tab.id"
     >
-      📌 Demo Cơ Bản (Legacy)
+      {{ tab.label }}
     </button>
-    <button
-      (click)="activeTab = 'new'"
-      [style.font-weight]="activeTab === 'new' ? 'bold' : 'normal'"
-      [style.background-color]="activeTab === 'new' ? '#fff' : 'transparent'"
-      style="
-        padding: 8px 16px;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-      "
-    >
-      ✨ Demo Tính Năng Mới (v1.3+)
-    </button>
-    <button
-      (click)="activeTab = 'enterprise'"
-      [style.font-weight]="activeTab === 'enterprise' ? 'bold' : 'normal'"
-      [style.background-color]="
-        activeTab === 'enterprise' ? '#fff' : 'transparent'
-      "
-      style="
-        padding: 8px 16px;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-      "
-    >
-      🚀 Enterprise (v1.5+)
-    </button>
-    <button
-      (click)="activeTab = 'wizard'"
-      [style.font-weight]="activeTab === 'wizard' ? 'bold' : 'normal'"
-      [style.background-color]="activeTab === 'wizard' ? '#fff' : 'transparent'"
-      style="
-        padding: 8px 16px;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-      "
-    >
-      🧭 Wizard
-    </button>
-    <a
-      [href]="ALL_DEMOS_URL"
-      style="
-        margin-left: auto;
-        align-self: center;
-        padding: 8px 12px;
-        color: #0066cc;
-        text-decoration: none;
-        font-size: 14px;
-      "
-    >
-      ← Tất cả demo
-    </a>
+    <a [href]="ALL_DEMOS_URL" class="demo-tab demo-nav__home">← Tất cả demo</a>
   </nav>
 
-  <!-- Tab 3 & 4: v1.5 features, with their own source beside them -->
-  <div *ngIf="activeTab === 'enterprise' || activeTab === 'wizard'">
-    <div
-      style="
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 16px;
-      "
-    >
-      <h2 style="margin: 0; font-size: 20px">
-        {{
-          activeTab === 'enterprise'
-            ? 'Tính năng Enterprise (v1.5+)'
-            : 'Multi-Step Wizard'
-        }}
-      </h2>
-      <button
-        (click)="showCode = !showCode"
-        [style.background]="showCode ? '#0f172a' : '#fff'"
-        [style.color]="showCode ? '#f8fafc' : '#0f172a'"
-        style="
-          padding: 8px 14px;
-          border-radius: 8px;
-          border: 1px solid #d7dee6;
-          cursor: pointer;
-          font-size: 13px;
-          font-weight: 600;
-        "
-      >
-        {{ showCode ? '✕ Ẩn code' : '‹/› Xem code' }}
-      </button>
+  <div class="demo-head">
+    <div>
+      <h1>{{ current.title }}</h1>
+      <p class="demo-intro">{{ current.intro }}</p>
     </div>
-
-    <div
-      [style.display]="'grid'"
-      [style.gap]="'20px'"
-      [style.grid-template-columns]="
-        showCode ? 'minmax(0, 1fr) minmax(0, 1fr)' : '1fr'
-      "
-      [style.align-items]="'start'"
+    <button
+      *ngIf="hasSource"
+      type="button"
+      class="btn"
+      [attr.aria-pressed]="showCode"
+      style="flex-shrink: 0"
+      (click)="showCode = !showCode"
     >
-      <div style="min-width: 0">
-        <app-enterprise-demo
-          *ngIf="activeTab === 'enterprise'"
-        ></app-enterprise-demo>
-        <app-wizard-demo *ngIf="activeTab === 'wizard'"></app-wizard-demo>
-      </div>
+      {{ showCode ? 'Ẩn code' : 'Xem code' }}
+    </button>
+  </div>
 
-      <div
-        *ngIf="showCode"
-        style="
-          min-width: 0;
-          border: 1px solid #23324a;
-          border-radius: 10px;
-          overflow: hidden;
-          background: #0f172a;
-        "
-      >
-        <div
-          style="
-            padding: 8px 12px;
-            background: #16213a;
-            border-bottom: 1px solid #23324a;
-            color: #94a3b8;
-            font-size: 12px;
-            font-family: monospace;
-          "
-        >
-          src/app/demos/{{ activeTab }}.component.ts
+  <div class="demo-split" [class.demo-split--code]="showCode && hasSource">
+    <section class="demo-card">
+      <!-- Cơ bản -->
+      <ng-container *ngIf="activeTab === 'legacy'">
+        <dfk-multi-field-input
+          [fieldDescriptions]="legacyFields"
+          [properties]="legacyData"
+          [layout]="layout"
+          (onChange)="onLegacyChange($event)"
+        ></dfk-multi-field-input>
+        <div class="demo-panel">
+          <h3>Dữ liệu form</h3>
+          <pre>{{ legacyData | json }}</pre>
         </div>
-        <pre
-          style="
-            margin: 0;
-            padding: 14px;
-            max-height: 75vh;
-            overflow: auto;
-            color: #e2e8f0;
-            font-size: 12px;
-            line-height: 1.55;
-          "
-          >{{ currentSource() }}</pre>
+      </ng-container>
+
+      <!-- Validation -->
+      <ng-container *ngIf="activeTab === 'new'">
+        <dfk-multi-field-input
+          [fieldDescriptions]="newFields"
+          [properties]="newData"
+          [layout]="layout"
+          [errors]="errors"
+          [touched]="newTouched"
+          (onBlurField)="onNewBlur($event)"
+          (onChange)="onNewChange($event)"
+        ></dfk-multi-field-input>
+        <div class="demo-actions">
+          <button
+            type="button"
+            class="btn btn--primary"
+            [disabled]="validating"
+            (click)="handleValidate()"
+          >
+            {{ validating ? 'Đang kiểm tra...' : 'Kiểm tra lỗi' }}
+          </button>
+        </div>
+        <div class="demo-panel">
+          <h3>Dữ liệu form</h3>
+          <pre>{{ newData | json }}</pre>
+        </div>
+        <div *ngIf="hasErrors()" class="demo-panel demo-panel--danger">
+          <h3>Lỗi kiểm tra</h3>
+          <pre>{{ errors | json }}</pre>
+        </div>
+      </ng-container>
+
+      <app-enterprise-demo
+        *ngIf="activeTab === 'enterprise'"
+      ></app-enterprise-demo>
+      <app-wizard-demo *ngIf="activeTab === 'wizard'"></app-wizard-demo>
+    </section>
+
+    <aside *ngIf="showCode && hasSource" class="demo-code">
+      <div class="demo-code__bar">
+        <span>src/app/demos/{{ activeTab }}.component.ts</span>
       </div>
-    </div>
+      <pre>{{ currentSource() }}</pre>
+    </aside>
   </div>
-
-  <!-- Tab 1: Legacy -->
-  <div *ngIf="activeTab === 'legacy'">
-    <h2 style="margin-bottom: 24px">Dynamic Field Kit — Angular Demo</h2>
-    <dfk-multi-field-input
-      [fieldDescriptions]="legacyFields"
-      [properties]="legacyData"
-      [layout]="layout"
-      (onChange)="onLegacyChange($event)"
-    ></dfk-multi-field-input>
-    <div
-      style="
-        margin-top: 24px;
-        padding: 16px;
-        background-color: #f5f5f5;
-        border-radius: 8px;
-      "
-    >
-      <pre style="margin: 0">{{ legacyData | json }}</pre>
-    </div>
-  </div>
-
-  <!-- Tab 2: New Features -->
-  <div *ngIf="activeTab === 'new'">
-    <h2 style="margin-bottom: 12px; font-size: 24px">
-      Tính Năng Mới v1.3+ Engine (Angular)
-    </h2>
-    <p style="color: #666; margin-bottom: 24px; line-height: 1.5">
-      Minh họa Built-in Validators (`required`, `email`, `compose`), Dynamic
-      Options (tùy thuộc Quốc gia), Conditional Disabled & Appear, Async
-      Validation.
-    </p>
-
-    <dfk-multi-field-input
-      [fieldDescriptions]="newFields"
-      [properties]="newData"
-      [layout]="layout"
-      [errors]="errors"
-      (onChange)="onNewChange($event)"
-    ></dfk-multi-field-input>
-
-    <div
-      style="margin-top: 20px; display: flex; gap: 12px; align-items: center"
-    >
-      <button
-        (click)="handleValidate()"
-        [disabled]="validating"
-        style="
-          padding: 10px 16px;
-          background-color: #0066cc;
-          color: #fff;
-          border: none;
-          border-radius: 6px;
-          cursor: pointer;
-          font-weight: 600;
-        "
-      >
-        {{ validating ? 'Đang kiểm tra...' : 'Kiểm tra lỗi (Validate Fields)' }}
-      </button>
-    </div>
-
-    <div
-      style="
-        margin-top: 24px;
-        padding: 16px;
-        background-color: #f8fafc;
-        border-radius: 8px;
-        border: 1px solid #e2e8f0;
-      "
-    >
-      <h3 style="margin: 0 0 8px 0; font-size: 16px">Current State (Data):</h3>
-      <pre style="margin: 0; font-size: 13px">{{ newData | json }}</pre>
-      <div *ngIf="hasErrors()">
-        <h3 style="margin: 16px 0 8px 0; font-size: 16px; color: #ef4444">
-          Validation Errors:
-        </h3>
-        <pre style="margin: 0; font-size: 13px; color: #ef4444">{{
-          errors | json
-        }}</pre>
-      </div>
-    </div>
-  </div>
-</div>
+</main>
