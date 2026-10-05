@@ -9,10 +9,11 @@ import {
 } from '@dynamic-field-kit/core';
 import { DEMO_SOURCES } from './demo-sources';
 import { EnterpriseDemoComponent } from './demos/enterprise.component';
+import { SchemaDemoComponent } from './demos/schema.component';
 import { WizardDemoComponent } from './demos/wizard.component';
 import './fieldRegistry';
 
-type Tab = 'legacy' | 'new' | 'enterprise' | 'wizard';
+type Tab = 'legacy' | 'new' | 'enterprise' | 'wizard' | 'schema';
 
 @Component({
   selector: 'app-root',
@@ -22,6 +23,7 @@ type Tab = 'legacy' | 'new' | 'enterprise' | 'wizard';
     MultiFieldInput,
     EnterpriseDemoComponent,
     WizardDemoComponent,
+    SchemaDemoComponent,
   ],
   templateUrl: './app.component.html',
 })
@@ -61,6 +63,13 @@ export class AppComponent {
       title: 'Multi-Step Wizard',
       intro:
         'createWizardState, validateStep, goNext / goPrev. State là bất biến — mỗi lần điều hướng trả về một state mới.',
+    },
+    {
+      id: 'schema',
+      label: 'JSON Schema + Undo',
+      title: 'JSON Schema, bản nháp và Undo / Redo',
+      intro:
+        'fieldsFromJsonSchema dựng form từ một JSON Schema, createFormDraft giữ dữ liệu qua lần tải lại trang, createFormHistory cho undo / redo.',
     },
   ];
 
