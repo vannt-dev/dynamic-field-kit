@@ -9,10 +9,12 @@ import {
 } from '@dynamic-field-kit/core';
 import { DEMO_SOURCES } from './demo-sources';
 import { EnterpriseDemoComponent } from './demos/enterprise.component';
+import { SchemaDemoComponent } from './demos/schema.component';
 import { WizardDemoComponent } from './demos/wizard.component';
 import './fieldRegistry';
+import { lang, setLang, t } from '../../../shared/i18n';
 
-type Tab = 'legacy' | 'new' | 'enterprise' | 'wizard';
+type Tab = 'legacy' | 'new' | 'enterprise' | 'wizard' | 'schema';
 
 @Component({
   selector: 'app-root',
@@ -22,10 +24,15 @@ type Tab = 'legacy' | 'new' | 'enterprise' | 'wizard';
     MultiFieldInput,
     EnterpriseDemoComponent,
     WizardDemoComponent,
+    SchemaDemoComponent,
   ],
   templateUrl: './app.component.html',
 })
 export class AppComponent {
+  t = t;
+  lang = lang;
+  setLang = setLang;
+
   activeTab: Tab = 'legacy';
   showCode = false;
 
@@ -36,31 +43,43 @@ export class AppComponent {
   readonly tabs: { id: Tab; label: string; title: string; intro: string }[] = [
     {
       id: 'legacy',
-      label: 'Cơ bản',
+      label: t('Basics'),
       title: 'Dynamic Field Kit — Angular',
-      intro:
-        'Đăng ký component qua fieldRegistry, dfk-multi-field-input, layout, trường dẫn xuất (computeValue) và nhóm lặp lại.',
+      intro: t(
+        'Registering components with fieldRegistry, dfk-multi-field-input, layouts, computed fields (computeValue) and repeatable groups.',
+      ),
     },
     {
       id: 'new',
       label: 'Validation',
-      title: 'Validators, options động và điều kiện',
-      intro:
-        'Built-in validators (required, email, compose), options phụ thuộc trường khác, appearCondition / disabledCondition và async validation.',
+      title: t('Validators, dynamic options and conditions'),
+      intro: t(
+        'Built-in validators (required, email, compose), options that depend on another field, appearCondition / disabledCondition and async validation.',
+      ),
     },
     {
       id: 'enterprise',
       label: 'Form state',
-      title: 'Form state với createDynamicFormStore',
-      intro:
-        'Signal store giữ data, errors, touched và trạng thái submit; DevTools ở góc màn hình.',
+      title: t('Form state with createDynamicFormStore'),
+      intro: t(
+        'The signal store owns data, errors, touched and submit state; DevTools sits in the corner.',
+      ),
     },
     {
       id: 'wizard',
       label: 'Wizard',
       title: 'Multi-Step Wizard',
-      intro:
-        'createWizardState, validateStep, goNext / goPrev. State là bất biến — mỗi lần điều hướng trả về một state mới.',
+      intro: t(
+        'createWizardState, validateStep, goNext / goPrev. State is immutable: every navigation returns a new state.',
+      ),
+    },
+    {
+      id: 'schema',
+      label: 'JSON Schema + Undo',
+      title: t('JSON Schema, drafts and Undo / Redo'),
+      intro: t(
+        'fieldsFromJsonSchema builds the form from a JSON Schema, createFormDraft keeps the data across reloads, createFormHistory gives undo / redo.',
+      ),
     },
   ];
 
@@ -78,24 +97,26 @@ export class AppComponent {
 
   // 1. Legacy fields
   legacyFields: FieldDescription[] = [
-    { name: 'firstName', type: 'text', label: 'First Name' },
-    { name: 'lastName', type: 'text', label: 'Last Name' },
+    { name: 'firstName', type: 'text', label: t('First Name') },
+    { name: 'lastName', type: 'text', label: t('Last Name') },
     {
       name: 'fullName',
       type: 'text',
-      label: 'Full Name (computed)',
+      label: t('Full Name (computed)'),
       computeValue: (data) =>
         `${data.firstName ?? ''} ${data.lastName ?? ''}`.trim(),
     },
-    { name: 'age', type: 'number', label: 'Age' },
+    { name: 'age', type: 'number', label: t('Age') },
     {
       name: 'contacts',
       type: 'group',
-      label: 'Contacts',
+      label: t('Contacts'),
+      addLabel: t('Add'),
+      removeLabel: t('Remove'),
       className: 'demo-group',
       fields: [
-        { name: 'email', type: 'text', label: 'Email' },
-        { name: 'phone', type: 'text', label: 'Phone' },
+        { name: 'email', type: 'text', label: t('Email') },
+        { name: 'phone', type: 'text', label: t('Phone') },
       ],
       defaultItem: { email: '', phone: '' },
       minItems: 0,
@@ -113,23 +134,23 @@ export class AppComponent {
     {
       name: 'country',
       type: 'select',
-      label: 'Quốc gia',
+      label: t('Country'),
       options: [
-        { label: 'Việt Nam', value: 'VN' },
-        { label: 'Hoa Kỳ (USA)', value: 'US' },
+        { label: t('Vietnam'), value: 'VN' },
+        { label: t('United States'), value: 'US' },
       ],
-      validate: validators.required('Vui lòng chọn quốc gia'),
+      validate: validators.required(t('Please choose a country')),
     },
     {
       name: 'city',
       type: 'select',
-      label: 'Thành phố',
+      label: t('City'),
       options: (data: any) => {
         if (data.country === 'VN') {
           return [
-            { label: 'Hà Nội', value: 'HN' },
-            { label: 'TP. Hồ Chí Minh', value: 'HCM' },
-            { label: 'Đà Nẵng', value: 'DN' },
+            { label: t('Hanoi'), value: 'HN' },
+            { label: t('Ho Chi Minh City'), value: 'HCM' },
+            { label: t('Da Nang'), value: 'DN' },
           ];
         }
         if (data.country === 'US') {
@@ -142,29 +163,29 @@ export class AppComponent {
         return [];
       },
       disabledCondition: (data: any) => !data.country,
-      validate: validators.required('Vui lòng chọn thành phố'),
+      validate: validators.required(t('Please choose a city')),
     },
     {
       name: 'email',
       type: 'text',
-      label: 'Email',
+      label: t('Email'),
       placeholder: 'example@domain.com',
       validate: validators.compose(
-        validators.required('Email bắt buộc'),
-        validators.email('Định dạng email không hợp lệ'),
+        validators.required(t('Email is required')),
+        validators.email(t('Invalid email format')),
       ),
     },
     {
       name: 'username',
       type: 'text',
       label: 'Username',
-      placeholder: 'Nhập username (thử "admin")',
+      placeholder: t('Enter a username (try "admin")'),
       validate: async (value: any) => {
         if (!value) {
-          return 'Username bắt buộc';
+          return t('Username is required');
         }
         if (String(value).toLowerCase() === 'admin') {
-          return 'Tên "admin" đã tồn tại';
+          return t('The name "admin" is taken');
         }
         return undefined;
       },
@@ -172,31 +193,31 @@ export class AppComponent {
     {
       name: 'enableExtra',
       type: 'select',
-      label: 'Hiển thị trường bổ sung?',
+      label: t('Show the extra field?'),
       options: [
-        { label: 'Không', value: 'no' },
-        { label: 'Có', value: 'yes' },
+        { label: t('No'), value: 'no' },
+        { label: t('Yes'), value: 'yes' },
       ],
     },
     {
       name: 'note',
       type: 'text',
-      label: 'Ghi chú thêm (Xuất hiện khi chọn "Có")',
+      label: t('Extra note (appears when "Yes" is chosen)'),
       appearCondition: (data: any) => data.enableExtra === 'yes',
     },
     {
       name: 'lockAll',
       type: 'select',
-      label: 'Khóa trường số điện thoại?',
+      label: t('Lock the phone number field?'),
       options: [
-        { label: 'Mở khóa', value: 'unlocked' },
-        { label: 'Khóa (Disabled)', value: 'locked' },
+        { label: t('Unlocked'), value: 'unlocked' },
+        { label: t('Locked (disabled)'), value: 'locked' },
       ],
     },
     {
       name: 'phone',
       type: 'text',
-      label: 'Số điện thoại',
+      label: t('Phone number'),
       disabledCondition: (data: any) => data.lockAll === 'locked',
     },
   ];
