@@ -1,12 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import DemoNav, { type Page } from './DemoNav';
+import { useEffect, useState } from 'react';
+import DemoNav, { PAGES, type Page } from './DemoNav';
+import { t } from '../../shared/i18n';
 
 interface Props {
   current: Page;
-  title: string;
-  intro: React.ReactNode;
   /** The demo's own source, read at build time. */
   code: string;
   /** Shown as the panel's filename label. */
@@ -16,14 +15,16 @@ interface Props {
 
 export default function DemoShell({
   current,
-  title,
-  intro,
   code,
   codePath,
   children,
 }: Props) {
   const [showCode, setShowCode] = useState(false);
   const [copied, setCopied] = useState(false);
+  // The language is known only in the browser, and these pages are
+  // prerendered: wait for the browser before rendering any text.
+  const [ready, setReady] = useState(false);
+  useEffect(() => setReady(true), []);
 
   async function copy() {
     await navigator.clipboard.writeText(code);
@@ -31,14 +32,18 @@ export default function DemoShell({
     setTimeout(() => setCopied(false), 1500);
   }
 
+  if (!ready) return <main className="demo" />;
+
+  const page = PAGES.find((entry) => entry.id === current)!;
+
   return (
     <main className={`demo${showCode ? ' demo--wide' : ''}`}>
       <DemoNav current={current} />
 
       <div className="demo-head">
         <div>
-          <h1>{title}</h1>
-          <p className="demo-intro">{intro}</p>
+          <h1>{page.title}</h1>
+          <p className="demo-intro">{page.intro}</p>
         </div>
         <button
           type="button"
@@ -47,7 +52,7 @@ export default function DemoShell({
           onClick={() => setShowCode((v) => !v)}
           style={{ flexShrink: 0 }}
         >
-          {showCode ? 'Ẩn code' : 'Xem code'}
+          {showCode ? t('Hide code') : t('View code')}
         </button>
       </div>
 
@@ -59,7 +64,7 @@ export default function DemoShell({
             <div className="demo-code__bar">
               <span>{codePath}</span>
               <button type="button" onClick={copy}>
-                {copied ? 'Đã copy' : 'Copy'}
+                {copied ? t('Copied') : t('Copy')}
               </button>
             </div>
             <pre>{code}</pre>

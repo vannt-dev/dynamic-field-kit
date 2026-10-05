@@ -16,6 +16,10 @@ three show the demo's own source beside the running form.
 | Wizard             | `src/app/demos/wizard.component.ts`     | the multi-step engine: `createWizardState`, `validateStep`, `goNext` / `goPrev`                                               |
 | JSON Schema + Undo | `src/app/demos/schema.component.ts`     | a form built by `fieldsFromJsonSchema`, kept across reloads by `createFormDraft`, with undo and redo from `createFormHistory` |
 
+The demos are in English and Vietnamese: the **EN / VI** switch in the navigation
+reloads the page in the other language (`../shared/i18n.ts`; English is the
+default unless the browser is set to Vietnamese).
+
 Field components live in `src/app/components/fields.ts` - one for every field
 type the demos use - and are registered in `src/app/fieldRegistry.ts`. The look
 comes from `../shared/demo.css`, shared by the three example apps.

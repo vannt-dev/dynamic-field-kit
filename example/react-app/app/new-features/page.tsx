@@ -2,19 +2,15 @@ import DemoShell from '../DemoShell';
 import { readDemoSource } from '../lib/readDemoSource';
 import NewFeaturesDemo from './demo';
 
+// Server Component: reads the demo's source at build time so the code panel
+// shows exactly what is running beside it. The title and introduction come
+// from the page list in DemoNav, in the visitor's language.
 export default function NewFeaturesPage() {
   return (
     <DemoShell
       current="new-features"
-      title="Form state với useDynamicForm"
       code={readDemoSource('new-features/demo.tsx')}
       codePath="app/new-features/demo.tsx"
-      intro={
-        <>
-          Hook giữ data, errors, touched và trạng thái submit;{' '}
-          <code>DynamicFormDevTools</code> ở góc màn hình.
-        </>
-      }
     >
       <NewFeaturesDemo />
     </DemoShell>

@@ -150,11 +150,6 @@ body {
   font-weight: 600;
 }
 
-.demo-nav__home {
-  margin-left: auto;
-  color: var(--demo-accent);
-}
-
 /* ---------- Fields (the renderers each app registers) ---------- */
 
 .field {
@@ -496,4 +491,30 @@ fieldset.field {
 
 fieldset.field legend {
   padding: 0;
+}
+
+/* ---------- Language switch ---------- */
+
+.demo-lang {
+  display: inline-flex;
+  margin-left: auto;
+  border: 1px solid var(--demo-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.demo-lang button {
+  padding: 5px 9px;
+  border: 0;
+  background: transparent;
+  color: var(--demo-text-muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.demo-lang button[aria-pressed='true'] {
+  background: var(--demo-accent);
+  color: #fff;
 }

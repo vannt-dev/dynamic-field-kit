@@ -16,6 +16,10 @@ running form.
 | Wizard             | `src/demos/WizardDemo.vue`     | the multi-step engine: `createWizardState`, `validateStep`, `goNext` / `goPrev`                                                   |
 | JSON Schema + Undo | `src/demos/SchemaFormDemo.vue` | a form built by `fieldsFromJsonSchema`, kept across reloads by `createFormDraft`, with undo and redo from `createFormHistory`     |
 
+The demos are in English and Vietnamese: the **EN / VI** switch in the navigation
+reloads the page in the other language (`../shared/i18n.ts`; English is the
+default unless the browser is set to Vietnamese).
+
 Every field type the demos use has a renderer registered in
 `src/lib/fieldRegistry.ts`. The look comes from `../shared/demo.css`, shared by
 the three example apps.

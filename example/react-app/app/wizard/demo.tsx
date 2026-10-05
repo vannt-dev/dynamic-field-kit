@@ -14,25 +14,26 @@ import {
 import { MultiFieldInput } from '@dynamic-field-kit/react';
 import { useState } from 'react';
 import '../../lib/fieldRegistry';
+import { t } from '../../../shared/i18n';
 
 const accountFields: FieldDescription[] = [
   {
     name: 'email',
     type: 'email',
-    label: 'Email',
+    label: t('Email'),
     placeholder: 'example@domain.com',
     validate: validators.compose(
-      validators.required('Email bắt buộc'),
-      validators.email('Định dạng email không hợp lệ'),
+      validators.required(t('Email is required')),
+      validators.email(t('Invalid email format')),
     ),
   },
   {
     name: 'password',
     type: 'password',
-    label: 'Mật khẩu',
+    label: t('Password'),
     validate: validators.compose(
-      validators.required('Mật khẩu bắt buộc'),
-      validators.minLength(8, 'Tối thiểu 8 ký tự'),
+      validators.required(t('Password is required')),
+      validators.minLength(8, t('At least 8 characters')),
     ),
   },
 ];
@@ -41,13 +42,13 @@ const profileFields: FieldDescription[] = [
   {
     name: 'fullName',
     type: 'text',
-    label: 'Họ và tên',
-    validate: validators.required('Họ tên bắt buộc'),
+    label: t('Full name'),
+    validate: validators.required(t('Full name is required')),
   },
   {
     name: 'birthDate',
     type: 'date',
-    label: 'Ngày sinh',
+    label: t('Date of birth'),
   },
 ];
 
@@ -55,24 +56,24 @@ const preferenceFields: FieldDescription[] = [
   {
     name: 'plan',
     type: 'radio',
-    label: 'Gói dịch vụ',
+    label: t('Plan'),
     options: [
-      { label: 'Miễn phí', value: 'free' },
+      { label: t('Free'), value: 'free' },
       { label: 'Pro', value: 'pro' },
     ],
-    validate: validators.required('Vui lòng chọn gói'),
+    validate: validators.required(t('Please choose a plan')),
   },
   {
     name: 'newsletter',
     type: 'switch',
-    label: 'Nhận bản tin ưu đãi',
+    label: t('Send me the newsletter'),
   },
 ];
 
 const steps: FormStep[] = [
-  { id: 'account', title: 'Tài khoản', fields: accountFields },
-  { id: 'profile', title: 'Hồ sơ', fields: profileFields },
-  { id: 'preferences', title: 'Tuỳ chọn', fields: preferenceFields },
+  { id: 'account', title: t('Account'), fields: accountFields },
+  { id: 'profile', title: t('Profile'), fields: profileFields },
+  { id: 'preferences', title: t('Preferences'), fields: preferenceFields },
 ];
 
 export default function WizardDemo() {
@@ -127,13 +128,13 @@ export default function WizardDemo() {
 
       {submitted ? (
         <div className="demo-notice">
-          <strong>Hoàn tất!</strong>
+          <strong>{t('Done!')}</strong>
           <pre className="demo-panel">{JSON.stringify(data, null, 2)}</pre>
         </div>
       ) : (
         <>
           <h2>
-            Bước {wizard.currentStepIndex + 1}/{wizard.totalSteps}:{' '}
+            {t('Step')} {wizard.currentStepIndex + 1}/{wizard.totalSteps}:{' '}
             {wizard.currentStep.title}
           </h2>
 
@@ -165,7 +166,7 @@ export default function WizardDemo() {
               }}
               disabled={!canGoPrev(wizard)}
             >
-              ← Quay lại
+              {t('← Back')}
             </button>
 
             {wizard.isLastStep ? (
@@ -174,7 +175,7 @@ export default function WizardDemo() {
                 className="btn btn--primary"
                 onClick={() => leaveStep() && setSubmitted(true)}
               >
-                Hoàn tất
+                {t('Finish')}
               </button>
             ) : (
               <button
@@ -182,7 +183,7 @@ export default function WizardDemo() {
                 className="btn btn--primary"
                 onClick={() => leaveStep() && setWizard(goNext(wizard))}
               >
-                Tiếp theo →
+                {t('Next →')}
               </button>
             )}
           </div>

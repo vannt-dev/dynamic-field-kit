@@ -7,6 +7,7 @@ import type { FieldRendererProps } from '@dynamic-field-kit/core';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Props = FieldRendererProps<any>;
 import type { ReactNode } from 'react';
+import { t } from '../../shared/i18n';
 
 // The renderers this app draws its fields with. The kit's built-in renderers
 // are bare inputs with no label and no styling, so an application registers
@@ -80,7 +81,7 @@ fieldRegistry.register('select', (props: Props) => {
         onChange={(e) => onValueChange?.(e.target.value)}
         onBlur={onBlur}
       >
-        <option value="">-- Chọn --</option>
+        <option value="">{t('-- Choose --')}</option>
         {((options as Option[]) || []).map((opt) => (
           <option key={optionValue(opt)} value={optionValue(opt)}>
             {optionLabel(opt)}

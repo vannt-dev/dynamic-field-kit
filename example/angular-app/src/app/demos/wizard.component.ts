@@ -14,60 +14,65 @@ import {
   WizardState,
 } from '@dynamic-field-kit/core';
 import '../fieldRegistry';
+import { t } from '../../../../shared/i18n';
 
 const steps: FormStep[] = [
   {
     id: 'account',
-    title: 'Tài khoản',
+    title: t('Account'),
     fields: [
       {
         name: 'email',
         type: 'email',
-        label: 'Email',
+        label: t('Email'),
         validate: validators.compose(
-          validators.required('Email bắt buộc'),
-          validators.email('Định dạng email không hợp lệ'),
+          validators.required(t('Email is required')),
+          validators.email(t('Invalid email format')),
         ),
       },
       {
         name: 'password',
         type: 'password',
-        label: 'Mật khẩu',
+        label: t('Password'),
         validate: validators.compose(
-          validators.required('Mật khẩu bắt buộc'),
-          validators.minLength(8, 'Tối thiểu 8 ký tự'),
+          validators.required(t('Password is required')),
+          validators.minLength(8, t('At least 8 characters')),
         ),
       },
     ] as FieldDescription[],
   },
   {
     id: 'profile',
-    title: 'Hồ sơ',
+    title: t('Profile'),
     fields: [
       {
         name: 'fullName',
         type: 'text',
-        label: 'Họ và tên',
-        validate: validators.required('Họ tên bắt buộc'),
+        label: t('Full name'),
+        validate: validators.required(t('Full name is required')),
       },
-      { name: 'birthDate', type: 'date', label: 'Ngày sinh' },
+      { name: 'birthDate', type: 'date', label: t('Date of birth') },
     ] as FieldDescription[],
   },
   {
     id: 'preferences',
-    title: 'Tuỳ chọn',
+    title: t('Preferences'),
     fields: [
       {
         name: 'plan',
         type: 'radio',
-        label: 'Gói dịch vụ',
+        label: t('Plan'),
         options: [
-          { label: 'Miễn phí', value: 'free' },
+          { label: t('Free'), value: 'free' },
           { label: 'Pro', value: 'pro' },
         ],
-        validate: validators.required('Vui lòng chọn gói'),
+        validate: validators.required(t('Please choose a plan')),
       },
-      { name: 'newsletter', type: 'switch', label: 'Nhận bản tin' },
+      {
+        name: 'newsletter',
+        type: 'switch',
+        label: t('Send me the newsletter'),
+      },
     ] as FieldDescription[],
   },
 ];
@@ -89,13 +94,15 @@ const steps: FormStep[] = [
     </ol>
 
     <div *ngIf="submitted; else form" class="demo-notice">
-      <strong>Hoàn tất!</strong>
+      <strong>{{ t('Done!') }}</strong>
       <pre class="demo-panel">{{ data | json }}</pre>
     </div>
 
     <ng-template #form>
       <h2>
-        Bước {{ wizard.currentStepIndex + 1 }}/{{ wizard.totalSteps }}:
+        {{ t('Step') }} {{ wizard.currentStepIndex + 1 }}/{{
+          wizard.totalSteps
+        }}:
         {{ wizard.currentStep.title }}
       </h2>
 
@@ -117,7 +124,7 @@ const steps: FormStep[] = [
           [disabled]="!canPrev()"
           (click)="prev()"
         >
-          ← Quay lại
+          {{ t('← Back') }}
         </button>
         <button
           *ngIf="wizard.isLastStep; else nextBtn"
@@ -125,11 +132,11 @@ const steps: FormStep[] = [
           class="btn btn--primary"
           (click)="finish()"
         >
-          Hoàn tất
+          {{ t('Finish') }}
         </button>
         <ng-template #nextBtn>
           <button type="button" class="btn btn--primary" (click)="next()">
-            Tiếp theo →
+            {{ t('Next →') }}
           </button>
         </ng-template>
       </div>
@@ -137,6 +144,8 @@ const steps: FormStep[] = [
   `,
 })
 export class WizardDemoComponent {
+  t = t;
+
   wizard: WizardState = createWizardState(steps);
   data: Record<string, unknown> = {};
   errors: Record<string, string[]> = {};

@@ -17,6 +17,10 @@ that is running.
 | `/wizard`       | `app/wizard/demo.tsx`       | `createWizardState`, `validateStep`, `goNext` / `goPrev` across three steps                                          |
 | `/schema-form`  | `app/schema-form/demo.tsx`  | `fieldsFromJsonSchema`, a draft kept with `createFormDraft`, undo and redo with `createFormHistory`                  |
 
+The demos are in English and Vietnamese: the **EN / VI** switch in the navigation
+reloads the page in the other language (`../shared/i18n.ts`; English is the
+default unless the browser is set to Vietnamese).
+
 Every field type the demos use has a renderer registered in
 `lib/fieldRegistry.tsx`. The look comes from `../shared/demo.css`, shared by the
 three example apps.
