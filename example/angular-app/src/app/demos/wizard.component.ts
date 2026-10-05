@@ -77,85 +77,58 @@ const steps: FormStep[] = [
   standalone: true,
   imports: [CommonModule, MultiFieldInput],
   template: `
-    <ol
-      style="display: flex; gap: 8px; list-style: none; padding: 0; margin-bottom: 24px;"
-    >
+    <ol class="demo-steps">
       <li
         *ngFor="let step of wizard.steps; let i = index"
-        [style.flex]="1"
-        [style.padding]="'10px 12px'"
-        [style.border-radius]="'8px'"
-        [style.font-size]="'14px'"
-        [style.border]="'1px solid'"
-        [style.border-color]="
-          i === wizard.currentStepIndex ? '#0066cc' : '#d7dee6'
-        "
-        [style.background]="
-          i === wizard.currentStepIndex
-            ? '#e8f1fc'
-            : completed(i)
-              ? '#eaf7ee'
-              : '#fff'
-        "
-        [style.font-weight]="i === wizard.currentStepIndex ? 600 : 400"
+        class="demo-step"
+        [ngClass]="'demo-step--' + stepState(i)"
+        [attr.aria-current]="stepState(i) === 'current' ? 'step' : null"
       >
-        {{ completed(i) ? '✓ ' : i + 1 + '. ' }}{{ step.title }}
+        {{ stepState(i) === 'done' ? '✓ ' : i + 1 + '. ' }}{{ step.title }}
       </li>
     </ol>
 
-    <div
-      *ngIf="submitted; else form"
-      style="padding: 16px; border-radius: 8px; background: #eaf7ee; border: 1px solid #b7e2c4;"
-    >
-      <strong style="color: #1c7a3d;">🎉 Hoàn tất!</strong>
-      <pre style="margin-top: 8px; font-size: 12px;">{{ data | json }}</pre>
+    <div *ngIf="submitted; else form" class="demo-notice">
+      <strong>Hoàn tất!</strong>
+      <pre class="demo-panel">{{ data | json }}</pre>
     </div>
 
     <ng-template #form>
-      <h3 style="font-size: 17px; margin-bottom: 12px;">
+      <h2>
         Bước {{ wizard.currentStepIndex + 1 }}/{{ wizard.totalSteps }}:
         {{ wizard.currentStep.title }}
-      </h3>
+      </h2>
 
+      <!-- Only the current step's fields are rendered -->
       <dfk-multi-field-input
         [fieldDescriptions]="wizard.currentStep.fields"
         [properties]="data"
-        (onChange)="data = $event"
-        [layout]="{ type: 'grid', columns: 2, gap: 16 }"
+        [errors]="errors"
+        [touched]="touched"
+        [layout]="layout"
+        (onChange)="onChange($event)"
+        (onBlurField)="onBlur($event)"
       ></dfk-multi-field-input>
 
-      <ul
-        *ngIf="errorKeys().length > 0"
-        style="color: #c0392b; font-size: 13px;"
-      >
-        <li *ngFor="let key of errorKeys()">
-          {{ key }}: {{ errors[key].join(', ') }}
-        </li>
-      </ul>
-
-      <div style="margin-top: 20px; display: flex; gap: 12px;">
+      <div class="demo-actions">
         <button
           type="button"
+          class="btn"
           [disabled]="!canPrev()"
           (click)="prev()"
-          style="padding: 10px 18px; cursor: pointer;"
         >
           ← Quay lại
         </button>
         <button
           *ngIf="wizard.isLastStep; else nextBtn"
           type="button"
+          class="btn btn--primary"
           (click)="finish()"
-          style="padding: 10px 18px; background: #1c7a3d; color: #fff; border: none; border-radius: 6px; cursor: pointer;"
         >
           Hoàn tất
         </button>
         <ng-template #nextBtn>
-          <button
-            type="button"
-            (click)="next()"
-            style="padding: 10px 18px; background: #0066cc; color: #fff; border: none; border-radius: 6px; cursor: pointer;"
-          >
+          <button type="button" class="btn btn--primary" (click)="next()">
             Tiếp theo →
           </button>
         </ng-template>
@@ -167,38 +140,60 @@ export class WizardDemoComponent {
   wizard: WizardState = createWizardState(steps);
   data: Record<string, unknown> = {};
   errors: Record<string, string[]> = {};
+  touched: Record<string, boolean> = {};
   submitted = false;
 
-  completed(index: number): boolean {
-    return isStepCompleted(this.wizard, index);
+  layout = {
+    type: 'responsive' as const,
+    mobile: 'column' as const,
+    desktop: { type: 'grid' as const, columns: 2, gap: 16 },
+  };
+
+  stepState(index: number): 'current' | 'done' | 'todo' {
+    if (!this.submitted && index === this.wizard.currentStepIndex) {
+      return 'current';
+    }
+    return this.submitted || isStepCompleted(this.wizard, index)
+      ? 'done'
+      : 'todo';
   }
 
   canPrev(): boolean {
     return canGoPrev(this.wizard);
   }
 
-  errorKeys(): string[] {
-    return Object.keys(this.errors);
-  }
-
-  // goNext does not validate - the wizard decides whether a step may be left.
-  next(): void {
-    const result = validateStep(this.wizard.currentStep, this.data);
-    this.errors = result.errors;
-    if (result.valid) {
-      this.wizard = goNext(this.wizard);
+  onChange(next: Record<string, unknown>): void {
+    this.data = next;
+    if (Object.keys(this.errors).length > 0) {
+      this.errors = validateStep(this.wizard.currentStep, next).errors;
     }
   }
 
+  onBlur(name: string): void {
+    this.touched = { ...this.touched, [name]: true };
+  }
+
+  // goNext does not validate - the wizard decides whether a step may be left.
+  private leaveStep(): boolean {
+    const result = validateStep(this.wizard.currentStep, this.data);
+    this.errors = result.errors;
+    // A failed attempt marks the whole step as visited, so every message shows.
+    for (const field of this.wizard.currentStep.fields) {
+      this.touched = { ...this.touched, [field.name]: true };
+    }
+    return result.valid;
+  }
+
+  next(): void {
+    if (this.leaveStep()) this.wizard = goNext(this.wizard);
+  }
+
   prev(): void {
+    this.errors = {};
     this.wizard = goPrev(this.wizard);
   }
 
   finish(): void {
-    const result = validateStep(this.wizard.currentStep, this.data);
-    this.errors = result.errors;
-    if (result.valid) {
-      this.submitted = true;
-    }
+    if (this.leaveStep()) this.submitted = true;
   }
 }

@@ -79,57 +79,46 @@ export default function WizardDemo() {
   const [wizard, setWizard] = useState(() => createWizardState(steps));
   const [data, setData] = useState<Record<string, unknown>>({});
   const [errors, setErrors] = useState<Record<string, string[]>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [submitted, setSubmitted] = useState(false);
 
   // goNext deliberately does not validate - the wizard decides whether a step
   // may be left, so a "save draft and come back" flow is possible too.
-  function handleNext() {
+  function leaveStep(): boolean {
     const result = validateStep(wizard.currentStep, data);
     setErrors(result.errors);
-    if (result.valid) {
-      setWizard(goNext(wizard));
-    }
+    // A failed attempt marks the whole step as visited, so every message shows.
+    setTouched((prev) => ({
+      ...prev,
+      ...Object.fromEntries(
+        wizard.currentStep.fields.map((field) => [field.name, true]),
+      ),
+    }));
+    return result.valid;
   }
 
-  function handleFinish() {
-    const result = validateStep(wizard.currentStep, data);
-    setErrors(result.errors);
-    if (result.valid) {
-      setSubmitted(true);
+  function handleChange(next: Record<string, unknown>) {
+    setData(next);
+    if (Object.keys(errors).length > 0) {
+      setErrors(validateStep(wizard.currentStep, next).errors);
     }
   }
 
   return (
     <>
       {/* Step indicator, driven by isStepCompleted */}
-      <ol
-        style={{
-          display: 'flex',
-          gap: '8px',
-          listStyle: 'none',
-          padding: 0,
-          marginBottom: '24px',
-        }}
-      >
+      <ol className="demo-steps">
         {wizard.steps.map((step, index) => {
-          const isCurrent = index === wizard.currentStepIndex;
-          const done = isStepCompleted(wizard, index);
+          const isCurrent = index === wizard.currentStepIndex && !submitted;
+          const done = submitted || isStepCompleted(wizard, index);
+          const state = isCurrent ? 'current' : done ? 'done' : 'todo';
           return (
             <li
               key={step.id}
-              style={{
-                flex: 1,
-                padding: '10px 12px',
-                borderRadius: '8px',
-                fontSize: '14px',
-                border: '1px solid',
-                borderColor: isCurrent ? '#0066cc' : '#d7dee6',
-                background: isCurrent ? '#e8f1fc' : done ? '#eaf7ee' : '#fff',
-                color: isCurrent ? '#0b4f9e' : done ? '#1c7a3d' : '#667',
-                fontWeight: isCurrent ? 600 : 400,
-              }}
+              aria-current={isCurrent ? 'step' : undefined}
+              className={`demo-step demo-step--${state}`}
             >
-              {done ? '✓ ' : `${index + 1}. `}
+              {done && !isCurrent ? '✓ ' : `${index + 1}. `}
               {step.title}
             </li>
           );
@@ -137,22 +126,13 @@ export default function WizardDemo() {
       </ol>
 
       {submitted ? (
-        <div
-          style={{
-            padding: '16px',
-            borderRadius: '8px',
-            background: '#eaf7ee',
-            border: '1px solid #b7e2c4',
-          }}
-        >
-          <strong style={{ color: '#1c7a3d' }}>🎉 Hoàn tất!</strong>
-          <pre style={{ marginTop: '8px', fontSize: '12px' }}>
-            {JSON.stringify(data, null, 2)}
-          </pre>
+        <div className="demo-notice">
+          <strong>Hoàn tất!</strong>
+          <pre className="demo-panel">{JSON.stringify(data, null, 2)}</pre>
         </div>
       ) : (
         <>
-          <h2 style={{ fontSize: '18px', marginBottom: '12px' }}>
+          <h2>
             Bước {wizard.currentStepIndex + 1}/{wizard.totalSteps}:{' '}
             {wizard.currentStep.title}
           </h2>
@@ -162,26 +142,28 @@ export default function WizardDemo() {
             key={wizard.currentStep.id}
             fieldDescriptions={wizard.currentStep.fields}
             properties={data}
-            onChange={setData}
-            layout={{ type: 'grid', columns: 2, gap: 16 }}
+            onChange={handleChange}
+            errors={errors}
+            touched={touched}
+            onBlurField={(name) =>
+              setTouched((prev) => ({ ...prev, [name]: true }))
+            }
+            layout={{
+              type: 'responsive',
+              mobile: 'column',
+              desktop: { type: 'grid', columns: 2, gap: 16 },
+            }}
           />
 
-          {Object.keys(errors).length > 0 && (
-            <ul style={{ color: '#c0392b', fontSize: '13px' }}>
-              {Object.entries(errors).map(([field, messages]) => (
-                <li key={field}>
-                  {field}: {messages.join(', ')}
-                </li>
-              ))}
-            </ul>
-          )}
-
-          <div style={{ marginTop: '20px', display: 'flex', gap: '12px' }}>
+          <div className="demo-actions">
             <button
               type="button"
-              onClick={() => setWizard(goPrev(wizard))}
+              className="btn"
+              onClick={() => {
+                setErrors({});
+                setWizard(goPrev(wizard));
+              }}
               disabled={!canGoPrev(wizard)}
-              style={{ padding: '10px 18px', cursor: 'pointer' }}
             >
               ← Quay lại
             </button>
@@ -189,30 +171,16 @@ export default function WizardDemo() {
             {wizard.isLastStep ? (
               <button
                 type="button"
-                onClick={handleFinish}
-                style={{
-                  padding: '10px 18px',
-                  cursor: 'pointer',
-                  background: '#1c7a3d',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '6px',
-                }}
+                className="btn btn--primary"
+                onClick={() => leaveStep() && setSubmitted(true)}
               >
                 Hoàn tất
               </button>
             ) : (
               <button
                 type="button"
-                onClick={handleNext}
-                style={{
-                  padding: '10px 18px',
-                  cursor: 'pointer',
-                  background: '#0066cc',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '6px',
-                }}
+                className="btn btn--primary"
+                onClick={() => leaveStep() && setWizard(goNext(wizard))}
               >
                 Tiếp theo →
               </button>

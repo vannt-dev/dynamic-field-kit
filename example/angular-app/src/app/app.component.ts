@@ -12,6 +12,8 @@ import { EnterpriseDemoComponent } from './demos/enterprise.component';
 import { WizardDemoComponent } from './demos/wizard.component';
 import './fieldRegistry';
 
+type Tab = 'legacy' | 'new' | 'enterprise' | 'wizard';
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -24,12 +26,51 @@ import './fieldRegistry';
   templateUrl: './app.component.html',
 })
 export class AppComponent {
-  activeTab: 'legacy' | 'new' | 'enterprise' | 'wizard' = 'legacy';
+  activeTab: Tab = 'legacy';
   showCode = false;
 
   // The landing page only exists on the deployed site, one level above this
   // app's base path, so link to it absolutely.
   readonly ALL_DEMOS_URL = 'https://vannt-dev.github.io/dynamic-field-kit/';
+
+  readonly tabs: { id: Tab; label: string; title: string; intro: string }[] = [
+    {
+      id: 'legacy',
+      label: 'Cơ bản',
+      title: 'Dynamic Field Kit — Angular',
+      intro:
+        'Đăng ký component qua fieldRegistry, dfk-multi-field-input, layout, trường dẫn xuất (computeValue) và nhóm lặp lại.',
+    },
+    {
+      id: 'new',
+      label: 'Validation',
+      title: 'Validators, options động và điều kiện',
+      intro:
+        'Built-in validators (required, email, compose), options phụ thuộc trường khác, appearCondition / disabledCondition và async validation.',
+    },
+    {
+      id: 'enterprise',
+      label: 'Form state',
+      title: 'Form state với createDynamicFormStore',
+      intro:
+        'Signal store giữ data, errors, touched và trạng thái submit; DevTools ở góc màn hình.',
+    },
+    {
+      id: 'wizard',
+      label: 'Wizard',
+      title: 'Multi-Step Wizard',
+      intro:
+        'createWizardState, validateStep, goNext / goPrev. State là bất biến — mỗi lần điều hướng trả về một state mới.',
+    },
+  ];
+
+  get current() {
+    return this.tabs.find((tab) => tab.id === this.activeTab)!;
+  }
+
+  get hasSource(): boolean {
+    return Boolean(DEMO_SOURCES[this.activeTab]);
+  }
 
   currentSource(): string {
     return DEMO_SOURCES[this.activeTab] ?? '';
@@ -51,6 +92,7 @@ export class AppComponent {
       name: 'contacts',
       type: 'group',
       label: 'Contacts',
+      className: 'demo-group',
       fields: [
         { name: 'email', type: 'text', label: 'Email' },
         { name: 'phone', type: 'text', label: 'Phone' },
@@ -71,7 +113,7 @@ export class AppComponent {
     {
       name: 'country',
       type: 'select',
-      label: '1. Quốc gia (Dynamic Options)',
+      label: 'Quốc gia',
       options: [
         { label: 'Việt Nam', value: 'VN' },
         { label: 'Hoa Kỳ (USA)', value: 'US' },
@@ -81,7 +123,7 @@ export class AppComponent {
     {
       name: 'city',
       type: 'select',
-      label: '2. Thành phố (Dynamic theo Quốc gia)',
+      label: 'Thành phố',
       options: (data: any) => {
         if (data.country === 'VN') {
           return [
@@ -105,7 +147,7 @@ export class AppComponent {
     {
       name: 'email',
       type: 'text',
-      label: '3. Email (Built-in Validators: required + email)',
+      label: 'Email',
       placeholder: 'example@domain.com',
       validate: validators.compose(
         validators.required('Email bắt buộc'),
@@ -115,7 +157,7 @@ export class AppComponent {
     {
       name: 'username',
       type: 'text',
-      label: '4. Username (Async validation)',
+      label: 'Username',
       placeholder: 'Nhập username (thử "admin")',
       validate: async (value: any) => {
         if (!value) {
@@ -130,7 +172,7 @@ export class AppComponent {
     {
       name: 'enableExtra',
       type: 'select',
-      label: '5. Hiển thị trường bổ sung? (appearCondition)',
+      label: 'Hiển thị trường bổ sung?',
       options: [
         { label: 'Không', value: 'no' },
         { label: 'Có', value: 'yes' },
@@ -145,7 +187,7 @@ export class AppComponent {
     {
       name: 'lockAll',
       type: 'select',
-      label: '6. Khóa trường số điện thoại? (disabledCondition)',
+      label: 'Khóa trường số điện thoại?',
       options: [
         { label: 'Mở khóa', value: 'unlocked' },
         { label: 'Khóa (Disabled)', value: 'locked' },
@@ -161,6 +203,7 @@ export class AppComponent {
 
   newData: any = { country: 'VN' };
   errors: Record<string, string[]> = {};
+  newTouched: Record<string, boolean> = {};
   validating = false;
 
   layout = {
@@ -175,8 +218,16 @@ export class AppComponent {
     this.errors = res.errors;
   }
 
+  onNewBlur(name: string) {
+    this.newTouched = { ...this.newTouched, [name]: true };
+  }
+
   async handleValidate() {
     this.validating = true;
+    // Checking the whole form marks every field as visited.
+    this.newTouched = Object.fromEntries(
+      this.newFields.map((field) => [field.name, true]),
+    );
     const res = await validateFieldsAsync(this.newFields, this.newData);
     this.errors = res.errors;
     this.validating = false;

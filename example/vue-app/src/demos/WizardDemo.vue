@@ -68,137 +68,111 @@ const steps: FormStep[] = [
 const wizard = ref(createWizardState(steps));
 const data = ref<Record<string, unknown>>({});
 const errors = ref<Record<string, string[]>>({});
+const touched = ref<Record<string, boolean>>({});
 const submitted = ref(false);
 
 // goNext does not validate - the wizard decides whether a step may be left.
-function next() {
+function leaveStep(): boolean {
   const result = validateStep(wizard.value.currentStep, data.value);
   errors.value = result.errors;
-  if (result.valid) {
-    wizard.value = goNext(wizard.value);
+  // A failed attempt marks the whole step as visited, so every message shows.
+  for (const field of wizard.value.currentStep.fields) {
+    touched.value = { ...touched.value, [field.name]: true };
+  }
+  return result.valid;
+}
+
+function onChange(next: Record<string, unknown>) {
+  data.value = next;
+  if (Object.keys(errors.value).length > 0) {
+    errors.value = validateStep(wizard.value.currentStep, next).errors;
   }
 }
 
+function next() {
+  if (leaveStep()) wizard.value = goNext(wizard.value);
+}
+
+function prev() {
+  errors.value = {};
+  wizard.value = goPrev(wizard.value);
+}
+
 function finish() {
-  const result = validateStep(wizard.value.currentStep, data.value);
-  errors.value = result.errors;
-  if (result.valid) {
-    submitted.value = true;
+  if (leaveStep()) submitted.value = true;
+}
+
+function stepState(index: number) {
+  if (!submitted.value && index === wizard.value.currentStepIndex) {
+    return 'current';
   }
+  return submitted.value || isStepCompleted(wizard.value, index)
+    ? 'done'
+    : 'todo';
 }
 </script>
 
 <template>
   <div>
-    <ol
-      style="
-        display: flex;
-        gap: 8px;
-        list-style: none;
-        padding: 0;
-        margin-bottom: 24px;
-      "
-    >
+    <ol class="demo-steps">
       <li
         v-for="(step, index) in wizard.steps"
         :key="step.id"
-        :style="{
-          flex: 1,
-          padding: '10px 12px',
-          borderRadius: '8px',
-          fontSize: '14px',
-          border: '1px solid',
-          borderColor:
-            index === wizard.currentStepIndex ? '#0066cc' : '#d7dee6',
-          background:
-            index === wizard.currentStepIndex
-              ? '#e8f1fc'
-              : isStepCompleted(wizard, index)
-                ? '#eaf7ee'
-                : '#fff',
-          fontWeight: index === wizard.currentStepIndex ? 600 : 400,
-        }"
+        :class="['demo-step', `demo-step--${stepState(index)}`]"
+        :aria-current="stepState(index) === 'current' ? 'step' : undefined"
       >
-        {{ isStepCompleted(wizard, index) ? '✓ ' : `${index + 1}. `
+        {{ stepState(index) === 'done' ? '✓ ' : `${index + 1}. `
         }}{{ step.title }}
       </li>
     </ol>
 
-    <div
-      v-if="submitted"
-      style="
-        padding: 16px;
-        border-radius: 8px;
-        background: #eaf7ee;
-        border: 1px solid #b7e2c4;
-      "
-    >
-      <strong style="color: #1c7a3d">🎉 Hoàn tất!</strong>
-      <pre style="margin-top: 8px; font-size: 12px">{{
-        JSON.stringify(data, null, 2)
-      }}</pre>
+    <div v-if="submitted" class="demo-notice">
+      <strong>Hoàn tất!</strong>
+      <pre class="demo-panel">{{ JSON.stringify(data, null, 2) }}</pre>
     </div>
 
     <template v-else>
-      <h3 style="font-size: 17px; margin-bottom: 12px">
+      <h2>
         Bước {{ wizard.currentStepIndex + 1 }}/{{ wizard.totalSteps }}:
         {{ wizard.currentStep.title }}
-      </h3>
+      </h2>
 
+      <!-- Only the current step's fields are rendered -->
       <MultiFieldInput
         :key="wizard.currentStep.id"
         :field-descriptions="wizard.currentStep.fields"
         :properties="data"
-        :on-change="(d: Record<string, unknown>) => (data = d)"
-        :layout="{ type: 'grid', columns: 2, gap: 16 }"
+        :on-change="onChange"
+        :errors="errors"
+        :touched="touched"
+        :on-blur-field="
+          (name: string) => (touched = { ...touched, [name]: true })
+        "
+        :layout="{
+          type: 'responsive',
+          mobile: 'column',
+          desktop: { type: 'grid', columns: 2, gap: 16 },
+        }"
       />
 
-      <ul
-        v-if="Object.keys(errors).length > 0"
-        style="color: #c0392b; font-size: 13px"
-      >
-        <li v-for="(messages, field) in errors" :key="field">
-          {{ field }}: {{ messages.join(', ') }}
-        </li>
-      </ul>
-
-      <div style="margin-top: 20px; display: flex; gap: 12px">
+      <div class="demo-actions">
         <button
           type="button"
+          class="btn"
           :disabled="!canGoPrev(wizard)"
-          @click="wizard = goPrev(wizard)"
-          style="padding: 10px 18px; cursor: pointer"
+          @click="prev"
         >
           ← Quay lại
         </button>
         <button
           v-if="wizard.isLastStep"
           type="button"
+          class="btn btn--primary"
           @click="finish"
-          style="
-            padding: 10px 18px;
-            background: #1c7a3d;
-            color: #fff;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-          "
         >
           Hoàn tất
         </button>
-        <button
-          v-else
-          type="button"
-          @click="next"
-          style="
-            padding: 10px 18px;
-            background: #0066cc;
-            color: #fff;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-          "
-        >
+        <button v-else type="button" class="btn btn--primary" @click="next">
           Tiếp theo →
         </button>
       </div>

@@ -5,7 +5,7 @@ import {
   validateFields,
   validateFieldsAsync,
 } from '@dynamic-field-kit/core';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import './lib/fieldRegistry';
 
 import EnterpriseDemo from './demos/EnterpriseDemo.vue';
@@ -23,15 +23,50 @@ const showCode = ref(false);
 // app's base path, so link to it absolutely.
 const ALL_DEMOS_URL = 'https://vannt-dev.github.io/dynamic-field-kit/';
 
-const tabStyle = (tab: Tab) => ({
-  padding: '8px 16px',
-  border: 'none',
-  borderRadius: '6px',
-  cursor: 'pointer',
-  fontWeight: activeTab.value === tab ? 'bold' : 'normal',
-  backgroundColor: activeTab.value === tab ? '#fff' : 'transparent',
-  boxShadow: activeTab.value === tab ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-});
+const TABS: {
+  id: Tab;
+  label: string;
+  title: string;
+  intro: string;
+  source?: string;
+  sourcePath?: string;
+}[] = [
+  {
+    id: 'legacy',
+    label: 'Cơ bản',
+    title: 'Dynamic Field Kit — Vue',
+    intro:
+      'Đăng ký renderer qua fieldRegistry, MultiFieldInput, layout, trường dẫn xuất (computeValue) và nhóm lặp lại.',
+  },
+  {
+    id: 'new',
+    label: 'Validation',
+    title: 'Validators, options động và điều kiện',
+    intro:
+      'Built-in validators (required, email, compose), options phụ thuộc trường khác, appearCondition / disabledCondition và async validation.',
+  },
+  {
+    id: 'enterprise',
+    label: 'Form state',
+    title: 'Form state với useDynamicForm',
+    intro:
+      'Composable giữ data, errors, touched và trạng thái submit; DynamicFormDevTools ở góc màn hình.',
+    source: enterpriseSource,
+    sourcePath: 'src/demos/EnterpriseDemo.vue',
+  },
+  {
+    id: 'wizard',
+    label: 'Wizard',
+    title: 'Multi-Step Wizard',
+    intro:
+      'createWizardState, validateStep, goNext / goPrev. State là bất biến — mỗi lần điều hướng trả về một state mới.',
+    source: wizardSource,
+    sourcePath: 'src/demos/WizardDemo.vue',
+  },
+];
+
+const current = computed(() => TABS.find((tab) => tab.id === activeTab.value)!);
+const hasSource = computed(() => Boolean(current.value.source));
 
 // 1. Legacy fields
 const legacyFields: FieldDescription[] = [
@@ -49,6 +84,7 @@ const legacyFields: FieldDescription[] = [
     name: 'contacts',
     type: 'group',
     label: 'Contacts',
+    className: 'demo-group',
     fields: [
       { name: 'email', type: 'text', label: 'Email' },
       { name: 'phone', type: 'text', label: 'Phone' },
@@ -69,7 +105,7 @@ const newFields: FieldDescription[] = [
   {
     name: 'country',
     type: 'select',
-    label: '1. Quốc gia (Dynamic Options)',
+    label: 'Quốc gia',
     options: [
       { label: 'Việt Nam', value: 'VN' },
       { label: 'Hoa Kỳ (USA)', value: 'US' },
@@ -79,7 +115,7 @@ const newFields: FieldDescription[] = [
   {
     name: 'city',
     type: 'select',
-    label: '2. Thành phố (Dynamic theo Quốc gia)',
+    label: 'Thành phố',
     options: (data: Record<string, any>) => {
       if (data.country === 'VN') {
         return [
@@ -103,7 +139,7 @@ const newFields: FieldDescription[] = [
   {
     name: 'email',
     type: 'text',
-    label: '3. Email (Built-in Validators: required + email)',
+    label: 'Email',
     placeholder: 'example@domain.com',
     validate: validators.compose(
       validators.required('Email bắt buộc'),
@@ -113,7 +149,7 @@ const newFields: FieldDescription[] = [
   {
     name: 'username',
     type: 'text',
-    label: '4. Username (Async validation)',
+    label: 'Username',
     placeholder: 'Nhập username (thử "admin")',
     validate: async (value: any) => {
       if (!value) return 'Username bắt buộc';
@@ -126,7 +162,7 @@ const newFields: FieldDescription[] = [
   {
     name: 'enableExtra',
     type: 'select',
-    label: '5. Hiển thị trường bổ sung? (appearCondition)',
+    label: 'Hiển thị trường bổ sung?',
     options: [
       { label: 'Không', value: 'no' },
       { label: 'Có', value: 'yes' },
@@ -141,7 +177,7 @@ const newFields: FieldDescription[] = [
   {
     name: 'lockAll',
     type: 'select',
-    label: '6. Khóa trường số điện thoại? (disabledCondition)',
+    label: 'Khóa trường số điện thoại?',
     options: [
       { label: 'Mở khóa', value: 'unlocked' },
       { label: 'Khóa (Disabled)', value: 'locked' },
@@ -157,6 +193,7 @@ const newFields: FieldDescription[] = [
 
 const newData = ref<Record<string, any>>({ country: 'VN' });
 const errors = ref<Record<string, string[]>>({});
+const newTouched = ref<Record<string, boolean>>({});
 const validating = ref(false);
 
 const setNewData = (updated: any) => {
@@ -167,6 +204,10 @@ const setNewData = (updated: any) => {
 
 const handleValidate = async () => {
   validating.value = true;
+  // Checking the whole form marks every field as visited.
+  newTouched.value = Object.fromEntries(
+    newFields.map((field) => [field.name, true]),
+  );
   const res = await validateFieldsAsync(newFields, newData.value);
   errors.value = res.errors;
   validating.value = false;
@@ -174,259 +215,110 @@ const handleValidate = async () => {
 </script>
 
 <template>
-  <main
-    style="
-      padding: 24px;
-      max-width: 700px;
-      margin: 0 auto;
-      font-family: sans-serif;
-    "
-  >
-    <!-- Navigation Tabs -->
-    <nav
-      style="
-        display: flex;
-        gap: 8px;
-        margin-bottom: 24px;
-        padding: 6px;
-        background: #f0f4f8;
-        border-radius: 8px;
-      "
-    >
+  <main :class="['demo', { 'demo--wide': showCode && hasSource }]">
+    <nav class="demo-nav" aria-label="Demo pages">
       <button
-        @click="activeTab = 'legacy'"
-        :style="{
-          padding: '8px 16px',
-          border: 'none',
-          borderRadius: '6px',
-          cursor: 'pointer',
-          fontWeight: activeTab === 'legacy' ? 'bold' : 'normal',
-          backgroundColor: activeTab === 'legacy' ? '#fff' : 'transparent',
-          boxShadow:
-            activeTab === 'legacy' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-        }"
+        v-for="tab in TABS"
+        :key="tab.id"
+        type="button"
+        class="demo-tab"
+        :aria-current="activeTab === tab.id ? 'page' : undefined"
+        @click="activeTab = tab.id"
       >
-        📌 Demo Cơ Bản (Legacy)
+        {{ tab.label }}
       </button>
-      <button
-        @click="activeTab = 'new'"
-        :style="{
-          padding: '8px 16px',
-          border: 'none',
-          borderRadius: '6px',
-          cursor: 'pointer',
-          fontWeight: activeTab === 'new' ? 'bold' : 'normal',
-          backgroundColor: activeTab === 'new' ? '#fff' : 'transparent',
-          boxShadow: activeTab === 'new' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-        }"
-      >
-        ✨ Demo Tính Năng Mới (v1.3+)
-      </button>
-      <button @click="activeTab = 'enterprise'" :style="tabStyle('enterprise')">
-        🚀 Enterprise (v1.5+)
-      </button>
-      <button @click="activeTab = 'wizard'" :style="tabStyle('wizard')">
-        🧭 Wizard
-      </button>
-      <a
-        :href="ALL_DEMOS_URL"
-        style="
-          margin-left: auto;
-          align-self: center;
-          padding: 8px 12px;
-          color: #0066cc;
-          text-decoration: none;
-          font-size: 14px;
-        "
-      >
+      <a :href="ALL_DEMOS_URL" class="demo-tab demo-nav__home">
         ← Tất cả demo
       </a>
     </nav>
 
-    <!-- Tab 3 & 4 render their own source beside them -->
-    <div v-if="activeTab === 'enterprise' || activeTab === 'wizard'">
-      <div
-        style="
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 16px;
-        "
-      >
-        <h1 style="margin: 0; font-size: 22px">
-          {{
-            activeTab === 'enterprise'
-              ? 'Tính năng Enterprise (v1.5+)'
-              : 'Multi-Step Wizard'
-          }}
-        </h1>
-        <button
-          @click="showCode = !showCode"
-          :style="{
-            padding: '8px 14px',
-            borderRadius: '8px',
-            border: '1px solid #d7dee6',
-            background: showCode ? '#0f172a' : '#fff',
-            color: showCode ? '#f8fafc' : '#0f172a',
-            cursor: 'pointer',
-            fontSize: '13px',
-            fontWeight: 600,
-          }"
-        >
-          {{ showCode ? '✕ Ẩn code' : '‹/› Xem code' }}
-        </button>
+    <div class="demo-head">
+      <div>
+        <h1>{{ current.title }}</h1>
+        <p class="demo-intro">{{ current.intro }}</p>
       </div>
-
-      <div
-        :style="{
-          display: 'grid',
-          gap: '20px',
-          gridTemplateColumns: showCode
-            ? 'minmax(0, 1fr) minmax(0, 1fr)'
-            : '1fr',
-          alignItems: 'start',
-        }"
+      <button
+        v-if="hasSource"
+        type="button"
+        class="btn"
+        :aria-pressed="showCode"
+        style="flex-shrink: 0"
+        @click="showCode = !showCode"
       >
-        <div style="min-width: 0">
-          <EnterpriseDemo v-if="activeTab === 'enterprise'" />
-          <WizardDemo v-else />
-        </div>
+        {{ showCode ? 'Ẩn code' : 'Xem code' }}
+      </button>
+    </div>
 
-        <div
-          v-if="showCode"
-          style="
-            min-width: 0;
-            border: 1px solid #23324a;
-            border-radius: 10px;
-            overflow: hidden;
-            background: #0f172a;
-          "
-        >
-          <div
-            style="
-              padding: 8px 12px;
-              background: #16213a;
-              border-bottom: 1px solid #23324a;
-              color: #94a3b8;
-              font-size: 12px;
-              font-family: monospace;
-            "
-          >
-            src/demos/{{
-              activeTab === 'enterprise' ? 'EnterpriseDemo' : 'WizardDemo'
-            }}.vue
+    <div :class="['demo-split', { 'demo-split--code': showCode && hasSource }]">
+      <section class="demo-card">
+        <!-- Cơ bản -->
+        <template v-if="activeTab === 'legacy'">
+          <MultiFieldInput
+            :fieldDescriptions="legacyFields"
+            :properties="legacyData"
+            :onChange="setLegacyData"
+            :layout="{
+              type: 'responsive',
+              mobile: 'column',
+              desktop: { type: 'grid', columns: 2, gap: 16 },
+            }"
+          />
+          <div class="demo-panel">
+            <h3>Dữ liệu form</h3>
+            <pre>{{ JSON.stringify(legacyData, null, 2) }}</pre>
           </div>
-          <pre
-            style="
-              margin: 0;
-              padding: 14px;
-              max-height: 75vh;
-              overflow: auto;
-              color: #e2e8f0;
-              font-size: 12px;
-              line-height: 1.55;
+        </template>
+
+        <!-- Validation -->
+        <template v-else-if="activeTab === 'new'">
+          <MultiFieldInput
+            :fieldDescriptions="newFields"
+            :properties="newData"
+            :onChange="setNewData"
+            :errors="errors"
+            :touched="newTouched"
+            :on-blur-field="
+              (name: string) => (newTouched = { ...newTouched, [name]: true })
             "
-            >{{
-              activeTab === 'enterprise' ? enterpriseSource : wizardSource
-            }}</pre>
+            :layout="{
+              type: 'responsive',
+              mobile: 'column',
+              desktop: { type: 'grid', columns: 2, gap: 16 },
+            }"
+          />
+          <div class="demo-actions">
+            <button
+              type="button"
+              class="btn btn--primary"
+              :disabled="validating"
+              @click="handleValidate"
+            >
+              {{ validating ? 'Đang kiểm tra...' : 'Kiểm tra lỗi' }}
+            </button>
+          </div>
+          <div class="demo-panel">
+            <h3>Dữ liệu form</h3>
+            <pre>{{ JSON.stringify(newData, null, 2) }}</pre>
+          </div>
+          <div
+            v-if="Object.keys(errors).length > 0"
+            class="demo-panel demo-panel--danger"
+          >
+            <h3>Lỗi kiểm tra</h3>
+            <pre>{{ JSON.stringify(errors, null, 2) }}</pre>
+          </div>
+        </template>
+
+        <EnterpriseDemo v-else-if="activeTab === 'enterprise'" />
+        <WizardDemo v-else />
+      </section>
+
+      <aside v-if="showCode && hasSource" class="demo-code">
+        <div class="demo-code__bar">
+          <span>{{ current.sourcePath }}</span>
         </div>
-      </div>
-    </div>
-
-    <!-- Tab 1: Legacy -->
-    <div v-if="activeTab === 'legacy'">
-      <h1 style="margin-bottom: 24px">Dynamic Field Kit Vue Demo</h1>
-      <MultiFieldInput
-        :fieldDescriptions="legacyFields"
-        :properties="legacyData"
-        :onChange="setLegacyData"
-        :layout="{
-          type: 'responsive',
-          mobile: 'column',
-          desktop: { type: 'grid', columns: 2, gap: 16 },
-        }"
-      />
-      <div
-        style="
-          margin-top: 24px;
-          padding: 16px;
-          background-color: #f5f5f5;
-          border-radius: 8px;
-        "
-      >
-        <pre style="margin: 0">{{ JSON.stringify(legacyData, null, 2) }}</pre>
-      </div>
-    </div>
-
-    <!-- Tab 2: New Features -->
-    <div v-else>
-      <h1 style="margin-bottom: 12px; font-size: 24px">
-        Tính Năng Mới v1.3+ Engine (Vue)
-      </h1>
-      <p style="color: #666; margin-bottom: 24px; line-height: 1.5">
-        Minh họa Built-in Validators (`required`, `email`, `compose`), Dynamic
-        Options (tùy thuộc Quốc gia), Conditional Disabled & Appear, Async
-        Validation.
-      </p>
-
-      <MultiFieldInput
-        :fieldDescriptions="newFields"
-        :properties="newData"
-        :onChange="setNewData"
-        :errors="errors"
-        :layout="{
-          type: 'responsive',
-          mobile: 'column',
-          desktop: { type: 'grid', columns: 2, gap: 16 },
-        }"
-      />
-
-      <div
-        style="margin-top: 20px; display: flex; gap: 12px; align-items: center"
-      >
-        <button
-          @click="handleValidate"
-          :disabled="validating"
-          style="
-            padding: 10px 16px;
-            background-color: #0066cc;
-            color: #fff;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-          "
-        >
-          {{
-            validating ? 'Đang kiểm tra...' : 'Kiểm tra lỗi (Validate Fields)'
-          }}
-        </button>
-      </div>
-
-      <div
-        style="
-          margin-top: 24px;
-          padding: 16px;
-          background-color: #f8fafc;
-          border-radius: 8px;
-          border: 1px solid #e2e8f0;
-        "
-      >
-        <h3 style="margin: 0 0 8px 0; font-size: 16px">
-          Current State (Data):
-        </h3>
-        <pre style="margin: 0; font-size: 13px">{{
-          JSON.stringify(newData, null, 2)
-        }}</pre>
-        <div v-if="Object.keys(errors).length > 0">
-          <h3 style="margin: 16px 0 8px 0; font-size: 16px; color: #ef4444">
-            Validation Errors:
-          </h3>
-          <pre style="margin: 0; font-size: 13px; color: #ef4444">{{
-            JSON.stringify(errors, null, 2)
-          }}</pre>
-        </div>
-      </div>
+        <pre>{{ current.source }}</pre>
+      </aside>
     </div>
   </main>
 </template>
