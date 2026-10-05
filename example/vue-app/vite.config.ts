@@ -8,6 +8,8 @@ export default defineConfig({
   // `vite dev` and a plain `vite build` are unaffected.
   base: process.env.PAGES_BASE_PATH || '/',
   plugins: [vue()],
+  // The demos import example/shared (styles and translations).
+  server: { fs: { allow: ['..'] } },
   resolve: {
     alias: {
       '@dynamic-field-kit/core': path.resolve(

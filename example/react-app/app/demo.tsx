@@ -4,29 +4,32 @@ import { FieldDescription } from '@dynamic-field-kit/core';
 import { MultiFieldInput } from '@dynamic-field-kit/react';
 import { useState } from 'react';
 import '../lib/fieldRegistry';
+import { t } from '../../shared/i18n';
 
 const fields: FieldDescription[] = [
-  { name: 'firstName', type: 'text', label: 'First Name' },
-  { name: 'lastName', type: 'text', label: 'Last Name' },
+  { name: 'firstName', type: 'text', label: t('First Name') },
+  { name: 'lastName', type: 'text', label: t('Last Name') },
   {
     name: 'fullName',
     type: 'text',
-    label: 'Full Name (computed)',
+    label: t('Full Name (computed)'),
     // Derived from the two fields above whenever either one changes.
     computeValue: (data) =>
       `${data.firstName ?? ''} ${data.lastName ?? ''}`.trim(),
   },
-  { name: 'age', type: 'number', label: 'Age' },
+  { name: 'age', type: 'number', label: t('Age') },
   {
     name: 'contacts',
     type: 'group',
-    label: 'Contacts',
+    label: t('Contacts'),
+    addLabel: t('Add'),
+    removeLabel: t('Remove'),
     className: 'demo-group',
     // Repeatable field group: data.contacts becomes an array of items shaped
     // by these sub-fields, with Add/Remove controls rendered automatically.
     fields: [
-      { name: 'email', type: 'text', label: 'Email' },
-      { name: 'phone', type: 'text', label: 'Phone' },
+      { name: 'email', type: 'text', label: t('Email') },
+      { name: 'phone', type: 'text', label: t('Phone') },
     ],
     defaultItem: { email: '', phone: '' },
     minItems: 0,
@@ -50,7 +53,7 @@ export default function BasicsDemo() {
         }}
       />
       <div className="demo-panel">
-        <h3>Dữ liệu form</h3>
+        <h3>{t('Form data')}</h3>
         <pre>{JSON.stringify(data, null, 2)}</pre>
       </div>
     </>

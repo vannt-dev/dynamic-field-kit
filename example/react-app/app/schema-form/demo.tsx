@@ -8,6 +8,7 @@ import {
 import { MultiFieldInput, useDynamicForm } from '@dynamic-field-kit/react';
 import { useEffect, useState } from 'react';
 import '../../lib/fieldRegistry';
+import { t } from '../../../shared/i18n';
 
 // The kind of schema an API already publishes, e.g. an OpenAPI
 // `components.schemas` entry. The form below is built from it.
@@ -15,15 +16,19 @@ const schema = {
   type: 'object',
   required: ['fullName', 'email'],
   properties: {
-    fullName: { type: 'string', title: 'Họ và tên', minLength: 2 },
-    email: { type: 'string', format: 'email', title: 'Email' },
-    age: { type: 'integer', title: 'Tuổi', minimum: 18, maximum: 100 },
+    fullName: { type: 'string', title: t('Full name'), minLength: 2 },
+    email: { type: 'string', format: 'email', title: t('Email') },
+    age: { type: 'integer', title: t('Age'), minimum: 18, maximum: 100 },
     plan: {
-      title: 'Gói dịch vụ',
+      title: t('Plan'),
       enum: ['free', 'pro', 'team'],
       default: 'free',
     },
-    newsletter: { type: 'boolean', title: 'Nhận bản tin', default: true },
+    newsletter: {
+      type: 'boolean',
+      title: t('Send me the newsletter'),
+      default: true,
+    },
     // Nested objects are not turned into fields; this one shows up in
     // `warnings` instead of being dropped silently.
     address: { type: 'object', properties: { city: { type: 'string' } } },
@@ -33,7 +38,7 @@ const schema = {
 // `overrides` is merged over the generated fields - here, two placeholders.
 const { fields, defaults, warnings } = fieldsFromJsonSchema(schema, {
   overrides: {
-    fullName: { placeholder: 'Nguyễn Văn A' },
+    fullName: { placeholder: t('Jane Doe') },
     email: { placeholder: 'example@domain.com' },
   },
 });
@@ -92,7 +97,7 @@ export default function SchemaFormDemo() {
     <>
       {restoredAt !== undefined && (
         <p className="demo-notice">
-          Đã khôi phục bản nháp lưu lúc{' '}
+          {t('Draft restored, saved at')}{' '}
           {new Date(restoredAt).toLocaleTimeString()}.
         </p>
       )}
@@ -100,7 +105,7 @@ export default function SchemaFormDemo() {
       <form
         onSubmit={form.handleSubmit((validData) => {
           draft.clear();
-          alert(`Submit thành công:\n${JSON.stringify(validData, null, 2)}`);
+          alert(`${t('Submitted:')}\n${JSON.stringify(validData, null, 2)}`);
         })}
       >
         <MultiFieldInput
@@ -131,24 +136,24 @@ export default function SchemaFormDemo() {
             ↷ Redo
           </button>
           <button type="button" className="btn" onClick={startOver}>
-            Xoá bản nháp
+            {t('Clear draft')}
           </button>
           <button type="submit" className="btn btn--primary">
-            Submit Form
+            {t('Submit Form')}
           </button>
         </div>
       </form>
 
       <p className="demo-note">
-        Nhập vài ô rồi tải lại trang: dữ liệu vẫn còn (lưu trong{' '}
-        <code>localStorage</code>). Undo gom các lần gõ liên tiếp vào cùng một ô
-        thành một bước.
+        {t(
+          'Type in a few fields and reload the page: the data is still there (kept in localStorage). Undo groups consecutive typing in one field into a single step.',
+        )}
       </p>
 
       {warnings.length > 0 && (
         <div className="demo-panel demo-panel--warn">
           <h3>
-            <code>warnings</code> — phần schema không thành field
+            {t('warnings: the parts of the schema that did not become fields')}
           </h3>
           <pre>{JSON.stringify(warnings, null, 2)}</pre>
         </div>

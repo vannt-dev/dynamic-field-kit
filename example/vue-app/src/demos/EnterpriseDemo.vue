@@ -7,31 +7,32 @@ import {
   useDynamicForm,
 } from '@dynamic-field-kit/vue';
 import '../lib/fieldRegistry';
+import { t } from '../../../shared/i18n';
 
 const fields: FieldDescription[] = [
   {
     name: 'country',
     type: 'select',
-    label: 'Quốc gia',
+    label: t('Country'),
     options: [
-      { label: 'Việt Nam', value: 'VN' },
-      { label: 'Hoa Kỳ (USA)', value: 'US' },
+      { label: t('Vietnam'), value: 'VN' },
+      { label: t('United States'), value: 'US' },
     ],
-    validate: validators.required('Vui lòng chọn quốc gia'),
+    validate: validators.required(t('Please choose a country')),
   },
   {
     name: 'gender',
     type: 'radio',
-    label: 'Giới tính',
+    label: t('Gender'),
     options: [
-      { label: 'Nam', value: 'male' },
-      { label: 'Nữ', value: 'female' },
+      { label: t('Male'), value: 'male' },
+      { label: t('Female'), value: 'female' },
     ],
   },
   {
     name: 'satisfaction',
     type: 'range',
-    label: 'Mức độ hài lòng',
+    label: t('Satisfaction'),
     min: 1,
     max: 10,
     step: 1,
@@ -39,22 +40,22 @@ const fields: FieldDescription[] = [
   {
     name: 'email',
     type: 'email',
-    label: 'Email',
+    label: t('Email'),
     placeholder: 'example@domain.com',
     validate: validators.compose(
-      validators.required('Email bắt buộc'),
-      validators.email('Định dạng email không hợp lệ'),
+      validators.required(t('Email is required')),
+      validators.email(t('Invalid email format')),
     ),
   },
   {
     name: 'birthDate',
     type: 'date',
-    label: 'Ngày sinh',
+    label: t('Date of birth'),
   },
   {
     name: 'subscribeNewsletter',
     type: 'switch',
-    label: 'Nhận bản tin',
+    label: t('Send me the newsletter'),
   },
 ];
 
@@ -66,7 +67,7 @@ const form = useDynamicForm({
 });
 
 const onSubmit = form.handleSubmit((data) => {
-  alert(`Submit thành công:\n${JSON.stringify(data, null, 2)}`);
+  alert(`${t('Submitted:')}\n${JSON.stringify(data, null, 2)}`);
 });
 </script>
 
@@ -89,9 +90,11 @@ const onSubmit = form.handleSubmit((data) => {
         class="btn btn--primary"
         :disabled="form.isSubmitting.value"
       >
-        {{ form.isSubmitting.value ? 'Đang gửi…' : 'Gửi đăng ký' }}
+        {{ form.isSubmitting.value ? t('Submitting…') : t('Submit') }}
       </button>
-      <button type="button" class="btn" @click="form.reset()">Reset</button>
+      <button type="button" class="btn" @click="form.reset()">
+        {{ t('Reset') }}
+      </button>
     </div>
 
     <div class="demo-panel">

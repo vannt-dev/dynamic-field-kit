@@ -10,11 +10,14 @@ import './lib/fieldRegistry';
 
 import EnterpriseDemo from './demos/EnterpriseDemo.vue';
 import WizardDemo from './demos/WizardDemo.vue';
+import SchemaFormDemo from './demos/SchemaFormDemo.vue';
 // Vite resolves `?raw` natively, so the panel shows the file that is running.
 import enterpriseSource from './demos/EnterpriseDemo.vue?raw';
 import wizardSource from './demos/WizardDemo.vue?raw';
+import schemaSource from './demos/SchemaFormDemo.vue?raw';
+import { lang, setLang, t } from '../../shared/i18n';
 
-type Tab = 'legacy' | 'new' | 'enterprise' | 'wizard';
+type Tab = 'legacy' | 'new' | 'enterprise' | 'wizard' | 'schema';
 
 const activeTab = ref<Tab>('legacy');
 const showCode = ref(false);
@@ -33,24 +36,27 @@ const TABS: {
 }[] = [
   {
     id: 'legacy',
-    label: 'Cơ bản',
+    label: t('Basics'),
     title: 'Dynamic Field Kit — Vue',
-    intro:
-      'Đăng ký renderer qua fieldRegistry, MultiFieldInput, layout, trường dẫn xuất (computeValue) và nhóm lặp lại.',
+    intro: t(
+      'Registering renderers with fieldRegistry, MultiFieldInput, layouts, computed fields (computeValue) and repeatable groups.',
+    ),
   },
   {
     id: 'new',
     label: 'Validation',
-    title: 'Validators, options động và điều kiện',
-    intro:
-      'Built-in validators (required, email, compose), options phụ thuộc trường khác, appearCondition / disabledCondition và async validation.',
+    title: t('Validators, dynamic options and conditions'),
+    intro: t(
+      'Built-in validators (required, email, compose), options that depend on another field, appearCondition / disabledCondition and async validation.',
+    ),
   },
   {
     id: 'enterprise',
     label: 'Form state',
-    title: 'Form state với useDynamicForm',
-    intro:
-      'Composable giữ data, errors, touched và trạng thái submit; DynamicFormDevTools ở góc màn hình.',
+    title: t('Form state with useDynamicForm'),
+    intro: t(
+      'The composable owns data, errors, touched and submit state; DynamicFormDevTools sits in the corner.',
+    ),
     source: enterpriseSource,
     sourcePath: 'src/demos/EnterpriseDemo.vue',
   },
@@ -58,10 +64,21 @@ const TABS: {
     id: 'wizard',
     label: 'Wizard',
     title: 'Multi-Step Wizard',
-    intro:
-      'createWizardState, validateStep, goNext / goPrev. State là bất biến — mỗi lần điều hướng trả về một state mới.',
+    intro: t(
+      'createWizardState, validateStep, goNext / goPrev. State is immutable: every navigation returns a new state.',
+    ),
     source: wizardSource,
     sourcePath: 'src/demos/WizardDemo.vue',
+  },
+  {
+    id: 'schema',
+    label: 'JSON Schema + Undo',
+    title: t('JSON Schema, drafts and Undo / Redo'),
+    intro: t(
+      'fieldsFromJsonSchema builds the form from a JSON Schema, createFormDraft keeps the data across reloads, createFormHistory gives undo / redo.',
+    ),
+    source: schemaSource,
+    sourcePath: 'src/demos/SchemaFormDemo.vue',
   },
 ];
 
@@ -70,24 +87,26 @@ const hasSource = computed(() => Boolean(current.value.source));
 
 // 1. Legacy fields
 const legacyFields: FieldDescription[] = [
-  { name: 'firstName', type: 'text', label: 'First Name' },
-  { name: 'lastName', type: 'text', label: 'Last Name' },
+  { name: 'firstName', type: 'text', label: t('First Name') },
+  { name: 'lastName', type: 'text', label: t('Last Name') },
   {
     name: 'fullName',
     type: 'text',
-    label: 'Full Name (computed)',
+    label: t('Full Name (computed)'),
     computeValue: (data: Record<string, unknown>) =>
       `${data.firstName ?? ''} ${data.lastName ?? ''}`.trim(),
   },
-  { name: 'age', type: 'number', label: 'Age' },
+  { name: 'age', type: 'number', label: t('Age') },
   {
     name: 'contacts',
     type: 'group',
-    label: 'Contacts',
+    label: t('Contacts'),
+    addLabel: t('Add'),
+    removeLabel: t('Remove'),
     className: 'demo-group',
     fields: [
-      { name: 'email', type: 'text', label: 'Email' },
-      { name: 'phone', type: 'text', label: 'Phone' },
+      { name: 'email', type: 'text', label: t('Email') },
+      { name: 'phone', type: 'text', label: t('Phone') },
     ],
     defaultItem: { email: '', phone: '' },
     minItems: 0,
@@ -105,23 +124,23 @@ const newFields: FieldDescription[] = [
   {
     name: 'country',
     type: 'select',
-    label: 'Quốc gia',
+    label: t('Country'),
     options: [
-      { label: 'Việt Nam', value: 'VN' },
-      { label: 'Hoa Kỳ (USA)', value: 'US' },
+      { label: t('Vietnam'), value: 'VN' },
+      { label: t('United States'), value: 'US' },
     ],
-    validate: validators.required('Vui lòng chọn quốc gia'),
+    validate: validators.required(t('Please choose a country')),
   },
   {
     name: 'city',
     type: 'select',
-    label: 'Thành phố',
+    label: t('City'),
     options: (data: Record<string, any>) => {
       if (data.country === 'VN') {
         return [
-          { label: 'Hà Nội', value: 'HN' },
-          { label: 'TP. Hồ Chí Minh', value: 'HCM' },
-          { label: 'Đà Nẵng', value: 'DN' },
+          { label: t('Hanoi'), value: 'HN' },
+          { label: t('Ho Chi Minh City'), value: 'HCM' },
+          { label: t('Da Nang'), value: 'DN' },
         ];
       }
       if (data.country === 'US') {
@@ -134,27 +153,27 @@ const newFields: FieldDescription[] = [
       return [];
     },
     disabledCondition: (data: Record<string, any>) => !data.country,
-    validate: validators.required('Vui lòng chọn thành phố'),
+    validate: validators.required(t('Please choose a city')),
   },
   {
     name: 'email',
     type: 'text',
-    label: 'Email',
+    label: t('Email'),
     placeholder: 'example@domain.com',
     validate: validators.compose(
-      validators.required('Email bắt buộc'),
-      validators.email('Định dạng email không hợp lệ'),
+      validators.required(t('Email is required')),
+      validators.email(t('Invalid email format')),
     ),
   },
   {
     name: 'username',
     type: 'text',
     label: 'Username',
-    placeholder: 'Nhập username (thử "admin")',
+    placeholder: t('Enter a username (try "admin")'),
     validate: async (value: any) => {
-      if (!value) return 'Username bắt buộc';
+      if (!value) return t('Username is required');
       if (String(value).toLowerCase() === 'admin') {
-        return 'Tên "admin" đã tồn tại';
+        return t('The name "admin" is taken');
       }
       return undefined;
     },
@@ -162,31 +181,31 @@ const newFields: FieldDescription[] = [
   {
     name: 'enableExtra',
     type: 'select',
-    label: 'Hiển thị trường bổ sung?',
+    label: t('Show the extra field?'),
     options: [
-      { label: 'Không', value: 'no' },
-      { label: 'Có', value: 'yes' },
+      { label: t('No'), value: 'no' },
+      { label: t('Yes'), value: 'yes' },
     ],
   },
   {
     name: 'note',
     type: 'text',
-    label: 'Ghi chú thêm (Xuất hiện khi chọn "Có")',
+    label: t('Extra note (appears when "Yes" is chosen)'),
     appearCondition: (data: Record<string, any>) => data.enableExtra === 'yes',
   },
   {
     name: 'lockAll',
     type: 'select',
-    label: 'Khóa trường số điện thoại?',
+    label: t('Lock the phone number field?'),
     options: [
-      { label: 'Mở khóa', value: 'unlocked' },
-      { label: 'Khóa (Disabled)', value: 'locked' },
+      { label: t('Unlocked'), value: 'unlocked' },
+      { label: t('Locked (disabled)'), value: 'locked' },
     ],
   },
   {
     name: 'phone',
     type: 'text',
-    label: 'Số điện thoại',
+    label: t('Phone number'),
     disabledCondition: (data: Record<string, any>) => data.lockAll === 'locked',
   },
 ];
@@ -227,8 +246,24 @@ const handleValidate = async () => {
       >
         {{ tab.label }}
       </button>
-      <a :href="ALL_DEMOS_URL" class="demo-tab demo-nav__home">
-        ← Tất cả demo
+      <span class="demo-lang" role="group" aria-label="Language">
+        <button
+          type="button"
+          :aria-pressed="lang === 'en'"
+          @click="setLang('en')"
+        >
+          EN
+        </button>
+        <button
+          type="button"
+          :aria-pressed="lang === 'vi'"
+          @click="setLang('vi')"
+        >
+          VI
+        </button>
+      </span>
+      <a :href="ALL_DEMOS_URL" class="demo-tab">
+        {{ t('← All demos') }}
       </a>
     </nav>
 
@@ -245,13 +280,13 @@ const handleValidate = async () => {
         style="flex-shrink: 0"
         @click="showCode = !showCode"
       >
-        {{ showCode ? 'Ẩn code' : 'Xem code' }}
+        {{ showCode ? t('Hide code') : t('View code') }}
       </button>
     </div>
 
     <div :class="['demo-split', { 'demo-split--code': showCode && hasSource }]">
       <section class="demo-card">
-        <!-- Cơ bản -->
+        <!-- Basics -->
         <template v-if="activeTab === 'legacy'">
           <MultiFieldInput
             :fieldDescriptions="legacyFields"
@@ -264,7 +299,7 @@ const handleValidate = async () => {
             }"
           />
           <div class="demo-panel">
-            <h3>Dữ liệu form</h3>
+            <h3>{{ t('Form data') }}</h3>
             <pre>{{ JSON.stringify(legacyData, null, 2) }}</pre>
           </div>
         </template>
@@ -293,24 +328,25 @@ const handleValidate = async () => {
               :disabled="validating"
               @click="handleValidate"
             >
-              {{ validating ? 'Đang kiểm tra...' : 'Kiểm tra lỗi' }}
+              {{ validating ? t('Checking…') : t('Check for errors') }}
             </button>
           </div>
           <div class="demo-panel">
-            <h3>Dữ liệu form</h3>
+            <h3>{{ t('Form data') }}</h3>
             <pre>{{ JSON.stringify(newData, null, 2) }}</pre>
           </div>
           <div
             v-if="Object.keys(errors).length > 0"
             class="demo-panel demo-panel--danger"
           >
-            <h3>Lỗi kiểm tra</h3>
+            <h3>{{ t('Validation errors') }}</h3>
             <pre>{{ JSON.stringify(errors, null, 2) }}</pre>
           </div>
         </template>
 
         <EnterpriseDemo v-else-if="activeTab === 'enterprise'" />
-        <WizardDemo v-else />
+        <WizardDemo v-else-if="activeTab === 'wizard'" />
+        <SchemaFormDemo v-else />
       </section>
 
       <aside v-if="showCode && hasSource" class="demo-code">

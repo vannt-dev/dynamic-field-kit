@@ -6,6 +6,7 @@ import {
   Input,
   Output,
 } from '@angular/core';
+import { t } from '../../../../shared/i18n';
 
 // The components this app draws its fields with. The Angular adapter ships no
 // renderers of its own, so an application registers one for every type it
@@ -16,6 +17,9 @@ type Option = { label?: string; value: string | number } | string;
 /** The inputs and outputs the kit binds on whatever component it renders. */
 @Directive()
 export abstract class DemoFieldBase {
+  // Templates reach the translation helper through the component.
+  t = t;
+
   @Input() value?: any;
   @Input() label?: string;
   @Input() placeholder?: string;
@@ -146,7 +150,7 @@ export class NumberFieldComponent extends InputFieldBase {
         (change)="emit($any($event.target).value)"
         (blur)="onBlur.emit()"
       >
-        <option value="">-- Chọn --</option>
+        <option value="">{{ t('-- Choose --') }}</option>
         <option
           *ngFor="let opt of options || []"
           [value]="optionValue(opt)"

@@ -9,7 +9,23 @@
     >
       {{ tab.label }}
     </button>
-    <a [href]="ALL_DEMOS_URL" class="demo-tab demo-nav__home">← Tất cả demo</a>
+    <span class="demo-lang" role="group" aria-label="Language">
+      <button
+        type="button"
+        [attr.aria-pressed]="lang === 'en'"
+        (click)="setLang('en')"
+      >
+        EN
+      </button>
+      <button
+        type="button"
+        [attr.aria-pressed]="lang === 'vi'"
+        (click)="setLang('vi')"
+      >
+        VI
+      </button>
+    </span>
+    <a [href]="ALL_DEMOS_URL" class="demo-tab">{{ t('← All demos') }}</a>
   </nav>
 
   <div class="demo-head">
@@ -25,13 +41,13 @@
       style="flex-shrink: 0"
       (click)="showCode = !showCode"
     >
-      {{ showCode ? 'Ẩn code' : 'Xem code' }}
+      {{ showCode ? t('Hide code') : t('View code') }}
     </button>
   </div>
 
   <div class="demo-split" [class.demo-split--code]="showCode && hasSource">
     <section class="demo-card">
-      <!-- Cơ bản -->
+      <!-- Basics -->
       <ng-container *ngIf="activeTab === 'legacy'">
         <dfk-multi-field-input
           [fieldDescriptions]="legacyFields"
@@ -40,7 +56,7 @@
           (onChange)="onLegacyChange($event)"
         ></dfk-multi-field-input>
         <div class="demo-panel">
-          <h3>Dữ liệu form</h3>
+          <h3>{{ t('Form data') }}</h3>
           <pre>{{ legacyData | json }}</pre>
         </div>
       </ng-container>
@@ -63,15 +79,15 @@
             [disabled]="validating"
             (click)="handleValidate()"
           >
-            {{ validating ? 'Đang kiểm tra...' : 'Kiểm tra lỗi' }}
+            {{ validating ? t('Checking…') : t('Check for errors') }}
           </button>
         </div>
         <div class="demo-panel">
-          <h3>Dữ liệu form</h3>
+          <h3>{{ t('Form data') }}</h3>
           <pre>{{ newData | json }}</pre>
         </div>
         <div *ngIf="hasErrors()" class="demo-panel demo-panel--danger">
-          <h3>Lỗi kiểm tra</h3>
+          <h3>{{ t('Validation errors') }}</h3>
           <pre>{{ errors | json }}</pre>
         </div>
       </ng-container>
@@ -80,6 +96,7 @@
         *ngIf="activeTab === 'enterprise'"
       ></app-enterprise-demo>
       <app-wizard-demo *ngIf="activeTab === 'wizard'"></app-wizard-demo>
+      <app-schema-demo *ngIf="activeTab === 'schema'"></app-schema-demo>
     </section>
 
     <aside *ngIf="showCode && hasSource" class="demo-code">

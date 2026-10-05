@@ -1,5 +1,6 @@
 import { fieldRegistry as registry } from '@dynamic-field-kit/vue';
 import { defineComponent, h, type VNode } from 'vue';
+import { t } from '../../../shared/i18n';
 
 // The renderers this app draws its fields with. The kit's built-in renderers
 // are bare inputs with no label and no styling, so an application registers
@@ -100,7 +101,7 @@ const SelectRenderer = defineComponent({
             onBlur: () => emit('blur'),
           },
           [
-            h('option', { value: '' }, '-- Chọn --'),
+            h('option', { value: '' }, t('-- Choose --')),
             ...((props.options as Option[]) || []).map((opt) =>
               h(
                 'option',
