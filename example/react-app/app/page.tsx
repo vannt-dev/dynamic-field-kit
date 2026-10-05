@@ -1,22 +1,16 @@
-import BasicsDemo from './demo';
 import DemoShell from './DemoShell';
 import { readDemoSource } from './lib/readDemoSource';
+import BasicsDemo from './demo';
 
+// Server Component: reads the demo's source at build time so the code panel
+// shows exactly what is running beside it. The title and introduction come
+// from the page list in DemoNav, in the visitor's language.
 export default function HomePage() {
   return (
     <DemoShell
       current="basics"
-      title="Dynamic Field Kit — React"
       code={readDemoSource('demo.tsx')}
       codePath="app/demo.tsx"
-      intro={
-        <>
-          Nền tảng: đăng ký renderer qua <code>fieldRegistry</code>,{' '}
-          <code>MultiFieldInput</code>, layout, trường điều kiện (
-          <code>appearCondition</code>), trường dẫn xuất (
-          <code>computeValue</code>) và nhóm lặp lại.
-        </>
-      }
     >
       <BasicsDemo />
     </DemoShell>

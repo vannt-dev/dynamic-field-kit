@@ -7,47 +7,48 @@ import {
   DynamicFormDevTools,
 } from '@dynamic-field-kit/react';
 import '../../lib/fieldRegistry';
+import { t } from '../../../shared/i18n';
 
 const fields: FieldDescription[] = [
   {
     name: 'country',
     type: 'select',
-    label: 'Quốc gia',
+    label: t('Country'),
     options: [
-      { label: 'Việt Nam', value: 'VN' },
-      { label: 'Hoa Kỳ (USA)', value: 'US' },
+      { label: t('Vietnam'), value: 'VN' },
+      { label: t('United States'), value: 'US' },
     ],
-    validate: validators.required('Vui lòng chọn quốc gia'),
+    validate: validators.required(t('Please choose a country')),
   },
   {
     name: 'email',
     type: 'email',
-    label: 'Email',
+    label: t('Email'),
     placeholder: 'example@domain.com',
     validate: validators.compose(
-      validators.required('Email bắt buộc'),
-      validators.email('Định dạng email không hợp lệ'),
+      validators.required(t('Email is required')),
+      validators.email(t('Invalid email format')),
     ),
   },
   {
     name: 'gender',
     type: 'radio',
-    label: 'Giới tính',
+    label: t('Gender'),
     options: [
-      { label: 'Nam', value: 'male' },
-      { label: 'Nữ', value: 'female' },
-      { label: 'Khác', value: 'other' },
+      { label: t('Male'), value: 'male' },
+      { label: t('Female'), value: 'female' },
+      { label: t('Other'), value: 'other' },
     ],
   },
   {
     name: 'birthDate',
     type: 'date',
-    label: 'Ngày sinh',
+    label: t('Date of birth'),
   },
   {
     name: 'satisfaction',
     type: 'range',
-    label: 'Mức độ hài lòng',
+    label: t('Satisfaction'),
     min: 1,
     max: 10,
     step: 1,
@@ -55,7 +56,7 @@ const fields: FieldDescription[] = [
   {
     name: 'subscribeNewsletter',
     type: 'switch',
-    label: 'Nhận bản tin ưu đãi',
+    label: t('Send me the newsletter'),
   },
 ];
 
@@ -74,7 +75,7 @@ export default function NewFeaturesDemo() {
     <>
       <form
         onSubmit={form.handleSubmit((validData) =>
-          alert(`Submit thành công:\n${JSON.stringify(validData, null, 2)}`),
+          alert(`${t('Submitted:')}\n${JSON.stringify(validData, null, 2)}`),
         )}
       >
         {/* `form` wires the data, change, blur and touched state in one prop */}
@@ -90,10 +91,10 @@ export default function NewFeaturesDemo() {
 
         <div className="demo-actions">
           <button type="submit" className="btn btn--primary">
-            Submit Form
+            {t('Submit Form')}
           </button>
           <button type="button" className="btn" onClick={() => form.reset()}>
-            Reset Form
+            {t('Reset Form')}
           </button>
         </div>
       </form>

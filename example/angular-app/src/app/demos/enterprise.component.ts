@@ -7,31 +7,32 @@ import {
 } from '@dynamic-field-kit/angular';
 import { FieldDescription, validators } from '@dynamic-field-kit/core';
 import '../fieldRegistry';
+import { t } from '../../../../shared/i18n';
 
 const fields: FieldDescription[] = [
   {
     name: 'country',
     type: 'select',
-    label: 'Quốc gia',
+    label: t('Country'),
     options: [
-      { label: 'Việt Nam', value: 'VN' },
-      { label: 'Hoa Kỳ (USA)', value: 'US' },
+      { label: t('Vietnam'), value: 'VN' },
+      { label: t('United States'), value: 'US' },
     ],
-    validate: validators.required('Vui lòng chọn quốc gia'),
+    validate: validators.required(t('Please choose a country')),
   },
   {
     name: 'gender',
     type: 'radio',
-    label: 'Giới tính',
+    label: t('Gender'),
     options: [
-      { label: 'Nam', value: 'male' },
-      { label: 'Nữ', value: 'female' },
+      { label: t('Male'), value: 'male' },
+      { label: t('Female'), value: 'female' },
     ],
   },
   {
     name: 'satisfaction',
     type: 'range',
-    label: 'Mức độ hài lòng',
+    label: t('Satisfaction'),
     min: 1,
     max: 10,
     step: 1,
@@ -39,15 +40,19 @@ const fields: FieldDescription[] = [
   {
     name: 'email',
     type: 'email',
-    label: 'Email',
+    label: t('Email'),
     placeholder: 'example@domain.com',
     validate: validators.compose(
-      validators.required('Email bắt buộc'),
-      validators.email('Định dạng email không hợp lệ'),
+      validators.required(t('Email is required')),
+      validators.email(t('Invalid email format')),
     ),
   },
-  { name: 'birthDate', type: 'date', label: 'Ngày sinh' },
-  { name: 'subscribeNewsletter', type: 'switch', label: 'Nhận bản tin' },
+  { name: 'birthDate', type: 'date', label: t('Date of birth') },
+  {
+    name: 'subscribeNewsletter',
+    type: 'switch',
+    label: t('Send me the newsletter'),
+  },
 ];
 
 @Component({
@@ -73,9 +78,11 @@ const fields: FieldDescription[] = [
           class="btn btn--primary"
           [disabled]="store.isSubmitting()"
         >
-          {{ store.isSubmitting() ? 'Đang gửi…' : 'Gửi đăng ký' }}
+          {{ store.isSubmitting() ? t('Submitting…') : t('Submit') }}
         </button>
-        <button type="button" class="btn" (click)="store.reset()">Reset</button>
+        <button type="button" class="btn" (click)="store.reset()">
+          {{ t('Reset') }}
+        </button>
       </div>
 
       <div class="demo-panel">
@@ -98,6 +105,8 @@ const fields: FieldDescription[] = [
   `,
 })
 export class EnterpriseDemoComponent {
+  t = t;
+
   fields = fields;
 
   layout = {
@@ -118,6 +127,6 @@ export class EnterpriseDemoComponent {
   });
 
   onSubmit = this.store.handleSubmit((data) => {
-    alert(`Submit thành công:\n${JSON.stringify(data, null, 2)}`);
+    alert(`${t('Submitted:')}\n${JSON.stringify(data, null, 2)}`);
   });
 }

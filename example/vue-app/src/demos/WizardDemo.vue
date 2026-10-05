@@ -13,24 +13,25 @@ import {
 import { MultiFieldInput } from '@dynamic-field-kit/vue';
 import { ref } from 'vue';
 import '../lib/fieldRegistry';
+import { t } from '../../../shared/i18n';
 
 const accountFields: FieldDescription[] = [
   {
     name: 'email',
     type: 'email',
-    label: 'Email',
+    label: t('Email'),
     validate: validators.compose(
-      validators.required('Email bắt buộc'),
-      validators.email('Định dạng email không hợp lệ'),
+      validators.required(t('Email is required')),
+      validators.email(t('Invalid email format')),
     ),
   },
   {
     name: 'password',
     type: 'password',
-    label: 'Mật khẩu',
+    label: t('Password'),
     validate: validators.compose(
-      validators.required('Mật khẩu bắt buộc'),
-      validators.minLength(8, 'Tối thiểu 8 ký tự'),
+      validators.required(t('Password is required')),
+      validators.minLength(8, t('At least 8 characters')),
     ),
   },
 ];
@@ -39,30 +40,30 @@ const profileFields: FieldDescription[] = [
   {
     name: 'fullName',
     type: 'text',
-    label: 'Họ và tên',
-    validate: validators.required('Họ tên bắt buộc'),
+    label: t('Full name'),
+    validate: validators.required(t('Full name is required')),
   },
-  { name: 'birthDate', type: 'date', label: 'Ngày sinh' },
+  { name: 'birthDate', type: 'date', label: t('Date of birth') },
 ];
 
 const preferenceFields: FieldDescription[] = [
   {
     name: 'plan',
     type: 'radio',
-    label: 'Gói dịch vụ',
+    label: t('Plan'),
     options: [
-      { label: 'Miễn phí', value: 'free' },
+      { label: t('Free'), value: 'free' },
       { label: 'Pro', value: 'pro' },
     ],
-    validate: validators.required('Vui lòng chọn gói'),
+    validate: validators.required(t('Please choose a plan')),
   },
-  { name: 'newsletter', type: 'switch', label: 'Nhận bản tin' },
+  { name: 'newsletter', type: 'switch', label: t('Send me the newsletter') },
 ];
 
 const steps: FormStep[] = [
-  { id: 'account', title: 'Tài khoản', fields: accountFields },
-  { id: 'profile', title: 'Hồ sơ', fields: profileFields },
-  { id: 'preferences', title: 'Tuỳ chọn', fields: preferenceFields },
+  { id: 'account', title: t('Account'), fields: accountFields },
+  { id: 'profile', title: t('Profile'), fields: profileFields },
+  { id: 'preferences', title: t('Preferences'), fields: preferenceFields },
 ];
 
 const wizard = ref(createWizardState(steps));
@@ -127,13 +128,15 @@ function stepState(index: number) {
     </ol>
 
     <div v-if="submitted" class="demo-notice">
-      <strong>Hoàn tất!</strong>
+      <strong>{{ t('Done!') }}</strong>
       <pre class="demo-panel">{{ JSON.stringify(data, null, 2) }}</pre>
     </div>
 
     <template v-else>
       <h2>
-        Bước {{ wizard.currentStepIndex + 1 }}/{{ wizard.totalSteps }}:
+        {{ t('Step') }} {{ wizard.currentStepIndex + 1 }}/{{
+          wizard.totalSteps
+        }}:
         {{ wizard.currentStep.title }}
       </h2>
 
@@ -162,7 +165,7 @@ function stepState(index: number) {
           :disabled="!canGoPrev(wizard)"
           @click="prev"
         >
-          ← Quay lại
+          {{ t('← Back') }}
         </button>
         <button
           v-if="wizard.isLastStep"
@@ -170,10 +173,10 @@ function stepState(index: number) {
           class="btn btn--primary"
           @click="finish"
         >
-          Hoàn tất
+          {{ t('Finish') }}
         </button>
         <button v-else type="button" class="btn btn--primary" @click="next">
-          Tiếp theo →
+          {{ t('Next →') }}
         </button>
       </div>
     </template>
