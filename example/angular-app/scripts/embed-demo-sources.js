@@ -14,7 +14,7 @@ const fs = require('fs');
 const path = require('path');
 
 const APP_DIR = path.resolve(__dirname, '..', 'src', 'app');
-const DEMOS = ['enterprise', 'wizard'];
+const DEMOS = ['enterprise', 'wizard', 'schema'];
 const OUT = path.join(APP_DIR, 'demo-sources.ts');
 
 const entries = DEMOS.map((name) => {

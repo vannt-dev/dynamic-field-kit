@@ -10,11 +10,13 @@ import './lib/fieldRegistry';
 
 import EnterpriseDemo from './demos/EnterpriseDemo.vue';
 import WizardDemo from './demos/WizardDemo.vue';
+import SchemaFormDemo from './demos/SchemaFormDemo.vue';
 // Vite resolves `?raw` natively, so the panel shows the file that is running.
 import enterpriseSource from './demos/EnterpriseDemo.vue?raw';
 import wizardSource from './demos/WizardDemo.vue?raw';
+import schemaSource from './demos/SchemaFormDemo.vue?raw';
 
-type Tab = 'legacy' | 'new' | 'enterprise' | 'wizard';
+type Tab = 'legacy' | 'new' | 'enterprise' | 'wizard' | 'schema';
 
 const activeTab = ref<Tab>('legacy');
 const showCode = ref(false);
@@ -62,6 +64,15 @@ const TABS: {
       'createWizardState, validateStep, goNext / goPrev. State là bất biến — mỗi lần điều hướng trả về một state mới.',
     source: wizardSource,
     sourcePath: 'src/demos/WizardDemo.vue',
+  },
+  {
+    id: 'schema',
+    label: 'JSON Schema + Undo',
+    title: 'JSON Schema, bản nháp và Undo / Redo',
+    intro:
+      'fieldsFromJsonSchema dựng form từ một JSON Schema, createFormDraft giữ dữ liệu qua lần tải lại trang, createFormHistory cho undo / redo.',
+    source: schemaSource,
+    sourcePath: 'src/demos/SchemaFormDemo.vue',
   },
 ];
 
@@ -310,7 +321,8 @@ const handleValidate = async () => {
         </template>
 
         <EnterpriseDemo v-else-if="activeTab === 'enterprise'" />
-        <WizardDemo v-else />
+        <WizardDemo v-else-if="activeTab === 'wizard'" />
+        <SchemaFormDemo v-else />
       </section>
 
       <aside v-if="showCode && hasSource" class="demo-code">
