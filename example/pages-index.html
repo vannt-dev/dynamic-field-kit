@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Dynamic Field Kit — live demos</title>
+    <title>Dynamic Field Kit — handbook and live demos</title>
     <meta
       name="description"
-      content="Live demos of dynamic-field-kit: one schema-driven form engine running in React, Vue and Angular."
+      content="dynamic-field-kit: one schema-driven form engine for React, Vue and Angular. Read the handbook or try the live demos."
     />
     <style>
       :root {
@@ -16,7 +16,8 @@
         --muted: #5b6673;
         --line: #e2e8f0;
         --card: #f8fafc;
-        --accent: #0066cc;
+        --accent: #1d4ed8;
+        --accent-fg: #ffffff;
       }
       @media (prefers-color-scheme: dark) {
         :root {
@@ -25,7 +26,8 @@
           --muted: #94a3b8;
           --line: #23324a;
           --card: #16213a;
-          --accent: #52a8ff;
+          --accent: #7aa2ff;
+          --accent-fg: #0f172a;
         }
       }
       * {
@@ -53,8 +55,49 @@
         letter-spacing: -0.02em;
       }
       .sub {
-        margin: 0 0 28px;
+        margin: 0 0 20px;
         color: var(--muted);
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 0 0 20px;
+      }
+      a.btn {
+        display: inline-block;
+        padding: 9px 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--card);
+        color: var(--fg);
+        font-size: 15px;
+        font-weight: 600;
+        text-decoration: none;
+      }
+      a.btn:hover {
+        border-color: var(--accent);
+      }
+      a.btn.primary {
+        border-color: var(--accent);
+        background: var(--accent);
+        color: var(--accent-fg);
+      }
+      pre.install {
+        margin: 0 0 32px;
+        padding: 12px 14px;
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--card);
+        font:
+          13px/1.5 ui-monospace,
+          Consolas,
+          Menlo,
+          monospace;
+      }
+      a {
+        color: var(--accent);
       }
       .grid {
         display: grid;
@@ -84,7 +127,7 @@
         color: var(--muted);
       }
       h3 {
-        margin: 32px 0 10px;
+        margin: 32px 0 12px;
         font-size: 15px;
         text-transform: uppercase;
         letter-spacing: 0.06em;
@@ -121,26 +164,59 @@
     <div class="wrap">
       <h1>Dynamic Field Kit</h1>
       <p class="sub">
-        One schema-driven form engine, three frameworks. The same
-        <code>FieldDescription[]</code> renders below in React, Vue and Angular.
-        New here? Read the <a href="./handbook/">handbook</a>.
+        One schema-driven form engine, three frameworks. Describe the fields
+        once as a <code>FieldDescription[]</code> and render them in React, Vue
+        or Angular with your own components.
       </p>
 
+      <div class="actions">
+        <a class="btn primary" href="./handbook/">Read the handbook</a>
+        <a class="btn" href="https://github.com/vannt-dev/dynamic-field-kit"
+          >GitHub</a
+        >
+        <a class="btn" href="https://www.npmjs.com/org/dynamic-field-kit"
+          >npm</a
+        >
+      </div>
+
+      <pre class="install">
+npm install @dynamic-field-kit/core @dynamic-field-kit/react   # or /vue, /angular</pre>
+
+      <h3>Handbook</h3>
+      <div class="grid">
+        <a class="card" href="./handbook/guide/getting-started">
+          <h2>Getting started →</h2>
+          <p>Install, the core idea, and registering your first field type.</p>
+        </a>
+        <a class="card" href="./handbook/guide/validation">
+          <h2>Guides →</h2>
+          <p>
+            Validation, repeatable groups, wizards, JSON Schema, drafts, undo
+            and redo.
+          </p>
+        </a>
+        <a class="card" href="./handbook/frameworks/react">
+          <h2>Per framework →</h2>
+          <p>The adapter reference for React, Vue 3 and Angular.</p>
+        </a>
+      </div>
+
+      <h3>Live demos</h3>
       <div class="grid">
         <a class="card" href="./react/">
           <h2>React →</h2>
           <p>
-            Full demo set: form state hook, extended renderers, DevTools and the
-            multi-step wizard.
+            Basics, form state, the multi-step wizard, and a form built from a
+            JSON Schema with drafts and undo.
           </p>
         </a>
         <a class="card" href="./vue/">
           <h2>Vue 3 →</h2>
-          <p>Composable, registry and layouts running on the same core.</p>
+          <p>Basics, validation, the form state composable and the wizard.</p>
         </a>
         <a class="card" href="./angular/">
           <h2>Angular →</h2>
-          <p>Standalone components and a signal-based form store.</p>
+          <p>Basics, validation, the signal-based form store and the wizard.</p>
         </a>
       </div>
 
@@ -148,14 +224,13 @@
       <ul class="pages">
         <li>
           <a href="./react/">Basics</a> — registering renderers,
-          <code>MultiFieldInput</code>, layouts, conditional fields, repeatable
+          <code>MultiFieldInput</code>, layouts, computed fields, repeatable
           groups
         </li>
         <li>
-          <a href="./react/new-features/">Enterprise features</a> —
-          <code>useDynamicForm</code>, the extended HTML5 renderers, blur
-          wiring,
-          <code>DynamicFormDevTools</code>
+          <a href="./react/new-features/">Form state</a> —
+          <code>useDynamicForm</code>, a renderer per input type, validation on
+          blur and submit, <code>DynamicFormDevTools</code>
         </li>
         <li>
           <a href="./react/wizard/">Multi-step wizard</a> —
@@ -171,11 +246,10 @@
       </ul>
 
       <footer>
-        <a href="./handbook/">Handbook</a> · Built from the
+        Built from the
         <a href="https://github.com/vannt-dev/dynamic-field-kit">repository</a>
-        on every push — these demos compile against the packages in the same
-        commit. Packages on
-        <a href="https://www.npmjs.com/org/dynamic-field-kit">npm</a>.
+        on every push: the demos compile against the packages in the same
+        commit, and the handbook is generated from its READMEs.
       </footer>
     </div>
   </body>
