@@ -12,7 +12,7 @@ const fields: FieldDescription[] = [
   {
     name: 'country',
     type: 'select',
-    label: '1. Quốc gia (Dynamic Options)',
+    label: 'Quốc gia',
     options: [
       { label: 'Việt Nam', value: 'VN' },
       { label: 'Hoa Kỳ (USA)', value: 'US' },
@@ -22,7 +22,7 @@ const fields: FieldDescription[] = [
   {
     name: 'gender',
     type: 'radio',
-    label: '2. Giới tính (Extended HTML5 Radio)',
+    label: 'Giới tính',
     options: [
       { label: 'Nam', value: 'male' },
       { label: 'Nữ', value: 'female' },
@@ -31,7 +31,7 @@ const fields: FieldDescription[] = [
   {
     name: 'satisfaction',
     type: 'range',
-    label: '3. Mức độ hài lòng (Range Slider)',
+    label: 'Mức độ hài lòng',
     min: 1,
     max: 10,
     step: 1,
@@ -39,15 +39,15 @@ const fields: FieldDescription[] = [
   {
     name: 'email',
     type: 'email',
-    label: '4. Email (Built-in Validators)',
+    label: 'Email',
     placeholder: 'example@domain.com',
     validate: validators.compose(
       validators.required('Email bắt buộc'),
       validators.email('Định dạng email không hợp lệ'),
     ),
   },
-  { name: 'birthDate', type: 'date', label: '5. Ngày sinh' },
-  { name: 'subscribeNewsletter', type: 'switch', label: '6. Nhận bản tin' },
+  { name: 'birthDate', type: 'date', label: 'Ngày sinh' },
+  { name: 'subscribeNewsletter', type: 'switch', label: 'Nhận bản tin' },
 ];
 
 @Component({
@@ -56,41 +56,35 @@ const fields: FieldDescription[] = [
   imports: [CommonModule, MultiFieldInput, DynamicFormDevToolsComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <form (ngSubmit)="onSubmit()">
+    <form (submit)="onSubmit($event)">
       <dfk-multi-field-input
         [fieldDescriptions]="fields"
         [properties]="store.data()"
+        [errors]="store.errors()"
+        [touched]="store.touched()"
+        [layout]="layout"
         (onChange)="store.handleChange($event)"
         (onBlurField)="store.handleBlur($event)"
-        [layout]="{ type: 'grid', columns: 2, gap: 16 }"
       ></dfk-multi-field-input>
 
-      <div style="margin-top: 20px; display: flex; gap: 12px;">
+      <div class="demo-actions">
         <button
           type="submit"
+          class="btn btn--primary"
           [disabled]="store.isSubmitting()"
-          style="padding: 10px 18px; background: #0066cc; color: #fff; border: none; border-radius: 6px; cursor: pointer;"
         >
           {{ store.isSubmitting() ? 'Đang gửi…' : 'Gửi đăng ký' }}
         </button>
-        <button
-          type="button"
-          (click)="store.reset()"
-          style="padding: 10px 18px; cursor: pointer;"
-        >
-          Reset
-        </button>
+        <button type="button" class="btn" (click)="store.reset()">Reset</button>
       </div>
 
-      <div
-        style="margin-top: 24px; padding: 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;"
-      >
-        <h3 style="margin: 0 0 8px; font-size: 15px;">Form State (signals)</h3>
-        <p style="margin: 0 0 8px; font-size: 13px; color: #64748b;">
+      <div class="demo-panel">
+        <h3>Form state (signals)</h3>
+        <p class="demo-note" style="margin: 0 0 8px">
           isDirty: {{ store.isDirty() }} · isValid: {{ store.isValid() }} ·
           isSubmitted: {{ store.isSubmitted() }}
         </p>
-        <pre style="margin: 0; font-size: 12px;">{{ store.data() | json }}</pre>
+        <pre>{{ store.data() | json }}</pre>
       </div>
 
       <dfk-dev-tools
@@ -105,6 +99,12 @@ const fields: FieldDescription[] = [
 })
 export class EnterpriseDemoComponent {
   fields = fields;
+
+  layout = {
+    type: 'responsive' as const,
+    mobile: 'column' as const,
+    desktop: { type: 'grid' as const, columns: 2, gap: 16 },
+  };
 
   // Signal-based store: the Angular counterpart of useDynamicForm.
   store = createDynamicFormStore({

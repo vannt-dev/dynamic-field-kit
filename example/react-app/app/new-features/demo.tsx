@@ -12,7 +12,7 @@ const fields: FieldDescription[] = [
   {
     name: 'country',
     type: 'select',
-    label: '1. Quốc gia (Dynamic Options)',
+    label: 'Quốc gia',
     options: [
       { label: 'Việt Nam', value: 'VN' },
       { label: 'Hoa Kỳ (USA)', value: 'US' },
@@ -20,27 +20,9 @@ const fields: FieldDescription[] = [
     validate: validators.required('Vui lòng chọn quốc gia'),
   },
   {
-    name: 'gender',
-    type: 'radio',
-    label: '2. Giới tính (Extended HTML5 Radio)',
-    options: [
-      { label: 'Nam', value: 'male' },
-      { label: 'Nữ', value: 'female' },
-      { label: 'Khác', value: 'other' },
-    ],
-  },
-  {
-    name: 'satisfaction',
-    type: 'range',
-    label: '3. Mức độ hài lòng (Extended Range Slider)',
-    min: 1,
-    max: 10,
-    step: 1,
-  },
-  {
     name: 'email',
     type: 'email',
-    label: '4. Email (Built-in Validators)',
+    label: 'Email',
     placeholder: 'example@domain.com',
     validate: validators.compose(
       validators.required('Email bắt buộc'),
@@ -48,14 +30,32 @@ const fields: FieldDescription[] = [
     ),
   },
   {
+    name: 'gender',
+    type: 'radio',
+    label: 'Giới tính',
+    options: [
+      { label: 'Nam', value: 'male' },
+      { label: 'Nữ', value: 'female' },
+      { label: 'Khác', value: 'other' },
+    ],
+  },
+  {
     name: 'birthDate',
     type: 'date',
-    label: '5. Ngày sinh (Native Date Picker)',
+    label: 'Ngày sinh',
+  },
+  {
+    name: 'satisfaction',
+    type: 'range',
+    label: 'Mức độ hài lòng',
+    min: 1,
+    max: 10,
+    step: 1,
   },
   {
     name: 'subscribeNewsletter',
     type: 'switch',
-    label: '6. Nhận bản tin ưu đãi (Switch Toggle)',
+    label: 'Nhận bản tin ưu đãi',
   },
 ];
 
@@ -77,11 +77,10 @@ export default function NewFeaturesDemo() {
           alert(`Submit thành công:\n${JSON.stringify(validData, null, 2)}`),
         )}
       >
+        {/* `form` wires the data, change, blur and touched state in one prop */}
         <MultiFieldInput
           fieldDescriptions={fields}
-          properties={form.data}
-          onChange={form.handleChange}
-          onBlurField={form.handleBlur}
+          form={form}
           layout={{
             type: 'responsive',
             mobile: 'column',
@@ -89,60 +88,19 @@ export default function NewFeaturesDemo() {
           }}
         />
 
-        <div
-          style={{
-            marginTop: '20px',
-            display: 'flex',
-            gap: '12px',
-            alignItems: 'center',
-          }}
-        >
-          <button
-            type="submit"
-            style={{
-              padding: '10px 20px',
-              backgroundColor: '#0066cc',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontWeight: 600,
-            }}
-          >
+        <div className="demo-actions">
+          <button type="submit" className="btn btn--primary">
             Submit Form
           </button>
-
-          <button
-            type="button"
-            onClick={() => form.reset()}
-            style={{
-              padding: '10px 16px',
-              backgroundColor: '#e2e8f0',
-              color: '#1e293b',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontWeight: 600,
-            }}
-          >
+          <button type="button" className="btn" onClick={() => form.reset()}>
             Reset Form
           </button>
         </div>
       </form>
 
-      <div
-        style={{
-          marginTop: '24px',
-          padding: '16px',
-          backgroundColor: '#f8fafc',
-          borderRadius: '8px',
-          border: '1px solid #e2e8f0',
-        }}
-      >
-        <h3 style={{ margin: '0 0 8px 0', fontSize: '16px' }}>
-          Form State (useDynamicForm):
-        </h3>
-        <pre style={{ margin: 0, fontSize: '13px' }}>
+      <div className="demo-panel">
+        <h3>Form state (useDynamicForm)</h3>
+        <pre>
           {JSON.stringify(
             {
               data: form.data,

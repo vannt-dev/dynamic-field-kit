@@ -606,6 +606,7 @@ cd example/react-app && npm install && npm run dev
 | `/` (react, vue, angular) | Registering renderers, `MultiFieldInput`, layouts, conditions, repeatable groups                                 |
 | `/new-features` (react)   | `useDynamicForm`, the extended HTML5 renderers, blur wiring via `onBlurField`, `DynamicFormDevTools`             |
 | `/wizard` (react)         | The wizard engine end to end: step indicator from `completedSteps`, per-step `validateStep`, `goNext` / `goPrev` |
+| `/schema-form` (react)    | A form built by `fieldsFromJsonSchema`, kept across reloads by `createFormDraft`, with undo and redo             |
 
 CI builds all three example apps on every PR, so the code above is guaranteed
 to compile against the current packages.
