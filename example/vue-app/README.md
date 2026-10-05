@@ -8,14 +8,16 @@ https://vannt-dev.github.io/dynamic-field-kit/vue/
 `src/App.vue` holds four tabs. The last two show the demo's own source beside the
 running form.
 
-| Tab                  | Source                         | Shows                                                                                                                             |
-| -------------------- | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
-| Demo Cơ Bản (Legacy) | `src/App.vue` (`legacyFields`) | `firstName` / `lastName`, a computed `fullName`, `age`, a repeatable `contacts` group                                             |
-| Demo Tính Năng Mới   | `src/App.vue` (`newFields`)    | options that depend on another field, the built-in validators, async validation, `appearCondition` and `disabledCondition`        |
-| Enterprise           | `src/demos/EnterpriseDemo.vue` | `useDynamicForm`, the HTML5 renderers (`select`, `radio`, `range`, `email`, `date`, `switch`), blur wiring, `DynamicFormDevTools` |
-| Wizard               | `src/demos/WizardDemo.vue`     | the multi-step engine: `createWizardState`, `validateStep`, `goNext` / `goPrev`                                                   |
+| Tab        | Source                         | Shows                                                                                                                             |
+| ---------- | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| Cơ bản     | `src/App.vue` (`legacyFields`) | `firstName` / `lastName`, a computed `fullName`, `age`, a repeatable `contacts` group                                             |
+| Validation | `src/App.vue` (`newFields`)    | options that depend on another field, the built-in validators, async validation, `appearCondition` and `disabledCondition`        |
+| Form state | `src/demos/EnterpriseDemo.vue` | `useDynamicForm`, the HTML5 renderers (`select`, `radio`, `range`, `email`, `date`, `switch`), blur wiring, `DynamicFormDevTools` |
+| Wizard     | `src/demos/WizardDemo.vue`     | the multi-step engine: `createWizardState`, `validateStep`, `goNext` / `goPrev`                                                   |
 
-Custom field renderers are registered in `src/lib/fieldRegistry.ts`.
+Every field type the demos use has a renderer registered in
+`src/lib/fieldRegistry.ts`. The look comes from `../shared/demo.css`, shared by
+the three example apps.
 
 ## Run
 

@@ -1,5 +1,38 @@
 # @dynamic-field-kit/core
 
+## 1.8.0
+
+### Minor Changes
+
+- Core adds form drafts, fields from a JSON Schema, and undo/redo; the adapters are republished unchanged on the same version line.
+- b9e7b67: `fieldsFromJsonSchema(schema, { overrides })` builds a field list from a JSON
+  Schema object and returns it with the schema's default values and a list of
+  warnings for anything it could not map.
+
+  It reads property order, `required`, `title`, `description`, `default`,
+  `readOnly`, `enum` and constant `oneOf`/`anyOf`, string formats and limits,
+  numeric bounds, arrays of objects (repeatable groups), arrays of enums
+  (multi-select), local `$ref`, `allOf` and nullable types. The generated
+  validators are the built-in ones, so their messages go through the form's
+  message catalog. Nested objects, tuples, free-form arrays, remote `$ref` and
+  exclusive bounds are reported in `warnings` rather than guessed at.
+
+- 4f5d1db: `createFormDraft` keeps a form's data in storage between visits: `load()` for
+  the initial values, `save(data)` on change (debounced), `flush()` and
+  `clear()`. A draft carries a version and a timestamp, so one saved for an older
+  form shape or past `maxAgeMs` is discarded rather than loaded. Storage that is
+  missing or throws makes the draft do nothing instead of failing the form.
+
+  `draftExclusions(fields)` lists the top-level `password` and `file` fields, for
+  the `exclude` option.
+
+- 84e271c: `createFormHistory(initial, options)` adds undo and redo for a form's data:
+  `push(data)` on change, `undo()` and `redo()` return the data to put back,
+  `canUndo()`, `canRedo()`, `current()` and `reset(data)`. Edits to the same
+  fields within `coalesceMs` (default 500) become one step, the oldest steps go
+  past `limit` (default 100), and pushing the data it already holds is ignored,
+  so restoring a step does not record a new one.
+
 ## 1.7.0
 
 ### Minor Changes

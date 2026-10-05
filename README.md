@@ -5,6 +5,10 @@
 [![npm](https://img.shields.io/npm/v/@dynamic-field-kit/react?label=react)](https://www.npmjs.com/package/@dynamic-field-kit/react)
 [![npm](https://img.shields.io/npm/v/@dynamic-field-kit/vue?label=vue)](https://www.npmjs.com/package/@dynamic-field-kit/vue)
 [![npm](https://img.shields.io/npm/v/@dynamic-field-kit/angular?label=angular)](https://www.npmjs.com/package/@dynamic-field-kit/angular)
+[![core downloads](https://img.shields.io/npm/d18m/@dynamic-field-kit/core?label=core%20downloads)](https://www.npmjs.com/package/@dynamic-field-kit/core)
+[![react downloads](https://img.shields.io/npm/d18m/@dynamic-field-kit/react?label=react%20downloads)](https://www.npmjs.com/package/@dynamic-field-kit/react)
+[![vue downloads](https://img.shields.io/npm/d18m/@dynamic-field-kit/vue?label=vue%20downloads)](https://www.npmjs.com/package/@dynamic-field-kit/vue)
+[![angular downloads](https://img.shields.io/npm/d18m/@dynamic-field-kit/angular?label=angular%20downloads)](https://www.npmjs.com/package/@dynamic-field-kit/angular)
 
 **[▶ Live demos](https://vannt-dev.github.io/dynamic-field-kit/)** — the same
 schema rendered by [React](https://vannt-dev.github.io/dynamic-field-kit/react/),
@@ -35,8 +39,11 @@ A lightweight, extensible **dynamic form engine** for React, Angular, and Vue, b
 
 - **Form State Hook / Composable / Signal Store**: `useDynamicForm` for React & Vue 3, `createDynamicFormStore` for Angular Signals. All three expose the same surface — including `isSubmitting` / `isSubmitted` — and `handleSubmit(onValid, onInvalid)` returns a submit handler in every framework.
 - **Extended HTML5 Renderers**: Built-in support for `radio`, `range`, `file`, `date`, `time`, `datetime-local`, and `switch`.
+- **Fields from JSON Schema**: `fieldsFromJsonSchema(schema)` builds the field list, the default values and the validators from a JSON Schema object, and reports what it could not map. See the [core README](packages/core/README.md#fields-from-a-json-schema).
 - **Schema Validation Adapters**: Integrated `zodValidator`, `yupValidator`, `valibotValidator`, and Standard Schema adapters.
 - **Multi-Step Form Wizard Engine**: `createWizardState`, `validateStep`, `canGoNext`, `canGoPrev`, `goNext`, `goPrev`, `goToStep`, `markStepCompleted`, `isStepCompleted`. State is immutable — every navigation returns a new state, and `goNext` records the step it leaves in `completedSteps`.
+- **Draft Persistence**: `createFormDraft` keeps form data in `localStorage` (or any storage) with debounced writes, a version and an age limit, and never writes the fields you exclude. See the [core README](packages/core/README.md#saving-a-draft).
+- **Undo and Redo**: `createFormHistory` records the form's data, groups typing into one step and ignores the data it just restored. See the [core README](packages/core/README.md#undo-and-redo).
 - **Interactive Form DevTools**: Floating overlay component (`<DynamicFormDevTools />`) for realtime debugging.
 - **Blur wiring**: `MultiFieldInput` reports blur via `onBlurField` (an `@Output` in Angular), so a form store's `handleBlur` / `touched` / `validateOnBlur` can be connected to it. Pass `touched` back in to make the store its single source of truth.
 - **Unique field ids**: ids are namespaced per `MultiFieldInput` instance, so two forms holding a field of the same name do not collide. Override with `idPrefix`, or `FieldDescription.id` per field.
@@ -599,6 +606,7 @@ cd example/react-app && npm install && npm run dev
 | `/` (react, vue, angular) | Registering renderers, `MultiFieldInput`, layouts, conditions, repeatable groups                                 |
 | `/new-features` (react)   | `useDynamicForm`, the extended HTML5 renderers, blur wiring via `onBlurField`, `DynamicFormDevTools`             |
 | `/wizard` (react)         | The wizard engine end to end: step indicator from `completedSteps`, per-step `validateStep`, `goNext` / `goPrev` |
+| `/schema-form` (react)    | A form built by `fieldsFromJsonSchema`, kept across reloads by `createFormDraft`, with undo and redo             |
 
 CI builds all three example apps on every PR, so the code above is guaranteed
 to compile against the current packages.
@@ -682,13 +690,21 @@ All packages share the same `fieldRegistry` instance, so registrations are visib
 
 ## 🚫 Non-Goals
 
-This library intentionally does not include:
+Form state, validation and a set of HTML renderers used to be out of scope; they
+are all in the kit now (see above). What it still leaves to you:
 
-- Built-in UI components (bring your own renderers)
-- Form state management
-- Validation logic
+- **A design system.** The built-in React and Vue renderers are plain HTML
+  inputs that take a `className` and nothing more, and Angular ships none.
+  Styling, and wiring in a component library, happen in your renderers.
+- **A form builder UI.** The kit renders a form from a field list; it has no
+  editor for writing one. It is meant to sit under a builder, not be one.
+- **Sending the data.** `handleSubmit` hands you the values; there is no HTTP
+  client, retry or submission transport.
+- **A full schema language.** The built-in validators cover the common rules.
+  For anything richer, write the schema in Zod, Yup, Valibot or any Standard
+  Schema library and plug it in through the adapters.
 
-It is a **form engine**, not a full form framework.
+It is a **form engine**, not a UI kit.
 
 ## 🚀 Releasing
 

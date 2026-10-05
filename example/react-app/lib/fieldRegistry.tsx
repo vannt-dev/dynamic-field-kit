@@ -1,142 +1,158 @@
 'use client';
 
 import { fieldRegistry } from '@dynamic-field-kit/react';
-import type { CSSProperties } from 'react';
+import type { FieldRendererProps } from '@dynamic-field-kit/core';
 
-const inputStyle: CSSProperties = {
-  padding: '8px',
-  marginBottom: '4px',
-  border: '1px solid #ccc',
-  borderRadius: '4px',
-  display: 'block',
-  width: '100%',
-  boxSizing: 'border-box',
-};
+// One set of renderers serves every value type, so the props stay loose here.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Props = FieldRendererProps<any>;
+import type { ReactNode } from 'react';
 
-fieldRegistry.register(
-  'text',
-  ({
-    value,
-    onValueChange,
-    label,
-    disabled,
-    readOnly,
-    error,
-    onBlur,
-    placeholder,
-  }) => (
-    <label style={{ display: 'block', marginBottom: '12px' }}>
-      {label && (
-        <span
-          style={{ fontWeight: 500, display: 'block', marginBottom: '4px' }}
-        >
-          {label}
-        </span>
-      )}
-      <input
-        value={value ?? ''}
-        placeholder={placeholder}
-        disabled={disabled}
-        readOnly={readOnly}
-        style={{
-          ...inputStyle,
-          backgroundColor: disabled ? '#f0f0f0' : readOnly ? '#fafafa' : '#fff',
-          borderColor: error ? '#ef4444' : '#ccc',
-        }}
-        onChange={(e) => onValueChange?.(e.target.value)}
-        onBlur={onBlur}
-      />
-      {error && (
-        <span style={{ color: '#ef4444', fontSize: '12px', display: 'block' }}>
-          {Array.isArray(error) ? error.join(', ') : error}
-        </span>
-      )}
+// The renderers this app draws its fields with. The kit's built-in renderers
+// are bare inputs with no label and no styling, so an application registers
+// its own for every type it uses - these are plain HTML styled by
+// `example/shared/demo.css`.
+
+type Option = { label?: string; value: string | number } | string;
+
+const optionValue = (opt: Option) =>
+  typeof opt === 'string' ? opt : opt.value;
+const optionLabel = (opt: Option) =>
+  typeof opt === 'string' ? opt : (opt.label ?? String(opt.value));
+
+/** An error is shown once the field has been visited, not while it is pristine. */
+function shownError({ error, touched }: Props) {
+  if (!touched || !error) return undefined;
+  return Array.isArray(error) ? error.join(', ') : error;
+}
+
+function Field({ props, children }: { props: Props; children: ReactNode }) {
+  const error = shownError(props);
+  return (
+    <label className={`field${error ? ' field--invalid' : ''}`}>
+      {props.label && <span className="field__label">{props.label}</span>}
+      {children}
+      {error && <span className="field__error">{error}</span>}
     </label>
-  ),
-);
+  );
+}
 
-fieldRegistry.register(
-  'number',
-  ({ value, onValueChange, label, disabled, readOnly, error, onBlur }) => (
-    <label style={{ display: 'block', marginBottom: '12px' }}>
-      {label && (
-        <span
-          style={{ fontWeight: 500, display: 'block', marginBottom: '4px' }}
-        >
-          {label}
-        </span>
-      )}
-      <input
-        type="number"
-        value={value ?? ''}
-        disabled={disabled}
-        readOnly={readOnly}
-        style={{
-          ...inputStyle,
-          backgroundColor: disabled ? '#f0f0f0' : readOnly ? '#fafafa' : '#fff',
-          borderColor: error ? '#ef4444' : '#ccc',
-        }}
-        onChange={(e) =>
-          onValueChange?.(
-            e.target.value === '' ? ('' as any) : Number(e.target.value),
-          )
-        }
-        onBlur={onBlur}
-      />
-      {error && (
-        <span style={{ color: '#ef4444', fontSize: '12px', display: 'block' }}>
-          {Array.isArray(error) ? error.join(', ') : error}
-        </span>
-      )}
-    </label>
-  ),
-);
+const input = (type: string) =>
+  function InputRenderer(props: Props) {
+    const { value, onValueChange, onBlur, disabled, readOnly, placeholder } =
+      props;
+    return (
+      <Field props={props}>
+        <input
+          type={type}
+          className="field__control"
+          value={(value as string | number | undefined) ?? ''}
+          placeholder={placeholder}
+          disabled={disabled}
+          readOnly={readOnly}
+          onChange={(e) =>
+            onValueChange?.(
+              type === 'number'
+                ? e.target.value === ''
+                  ? undefined
+                  : Number(e.target.value)
+                : e.target.value,
+            )
+          }
+          onBlur={onBlur}
+        />
+      </Field>
+    );
+  };
 
-fieldRegistry.register(
-  'select',
-  ({
-    value,
-    onValueChange,
-    label,
-    options,
-    disabled,
-    readOnly,
-    error,
-    onBlur,
-  }) => (
-    <label style={{ display: 'block', marginBottom: '12px' }}>
-      {label && (
-        <span
-          style={{ fontWeight: 500, display: 'block', marginBottom: '4px' }}
-        >
-          {label}
-        </span>
-      )}
+for (const type of ['text', 'email', 'password', 'number', 'date'] as const) {
+  fieldRegistry.register(type, input(type));
+}
+
+fieldRegistry.register('select', (props: Props) => {
+  const { value, onValueChange, onBlur, disabled, readOnly, options } = props;
+  return (
+    <Field props={props}>
       <select
-        value={value ?? ''}
+        className="field__control"
+        value={(value as string | undefined) ?? ''}
         disabled={disabled || readOnly}
-        style={{
-          ...inputStyle,
-          backgroundColor: disabled ? '#f0f0f0' : '#fff',
-          borderColor: error ? '#ef4444' : '#ccc',
-        }}
         onChange={(e) => onValueChange?.(e.target.value)}
         onBlur={onBlur}
       >
         <option value="">-- Chọn --</option>
-        {(options || []).map((opt: any) => (
-          <option key={opt.value ?? opt} value={opt.value ?? opt}>
-            {opt.label ?? opt.value ?? opt}
+        {((options as Option[]) || []).map((opt) => (
+          <option key={optionValue(opt)} value={optionValue(opt)}>
+            {optionLabel(opt)}
           </option>
         ))}
       </select>
-      {error && (
-        <span style={{ color: '#ef4444', fontSize: '12px', display: 'block' }}>
-          {Array.isArray(error) ? error.join(', ') : error}
-        </span>
-      )}
-    </label>
-  ),
-);
+    </Field>
+  );
+});
 
-export {};
+fieldRegistry.register('radio', (props: Props) => {
+  const { value, onValueChange, onBlur, disabled, options, id } = props;
+  const error = shownError(props);
+  return (
+    <fieldset className={`field${error ? ' field--invalid' : ''}`}>
+      {props.label && <legend className="field__label">{props.label}</legend>}
+      <div className="field__options">
+        {((options as Option[]) || []).map((opt) => (
+          <label key={optionValue(opt)}>
+            <input
+              type="radio"
+              name={id}
+              checked={value === optionValue(opt)}
+              disabled={disabled}
+              onChange={() => onValueChange?.(optionValue(opt))}
+              onBlur={onBlur}
+            />
+            {optionLabel(opt)}
+          </label>
+        ))}
+      </div>
+      {error && <span className="field__error">{error}</span>}
+    </fieldset>
+  );
+});
+
+fieldRegistry.register('range', (props: Props) => {
+  const { value, onValueChange, onBlur, disabled, min, max, step } = props;
+  return (
+    <Field props={props}>
+      <span className="field__range">
+        <input
+          type="range"
+          min={min as number | undefined}
+          max={max as number | undefined}
+          step={step as number | undefined}
+          value={(value as number | undefined) ?? (min as number) ?? 0}
+          disabled={disabled}
+          onChange={(e) => onValueChange?.(Number(e.target.value))}
+          onBlur={onBlur}
+        />
+        <output>{String(value ?? '')}</output>
+      </span>
+    </Field>
+  );
+});
+
+function CheckRenderer(props: Props) {
+  const { value, onValueChange, onBlur, disabled, readOnly, label } = props;
+  return (
+    <label className="field field--inline">
+      <input
+        type="checkbox"
+        checked={Boolean(value)}
+        disabled={disabled || readOnly}
+        onChange={(e) => onValueChange?.(e.target.checked)}
+        onBlur={onBlur}
+      />
+      {label}
+    </label>
+  );
+}
+
+fieldRegistry.register('checkbox', CheckRenderer);
+fieldRegistry.register('switch', CheckRenderer);

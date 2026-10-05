@@ -15,8 +15,11 @@ that is running.
 | `/`             | `app/demo.tsx`              | `firstName` / `lastName`, a computed `fullName`, `age`, a repeatable `contacts` group, responsive layout             |
 | `/new-features` | `app/new-features/demo.tsx` | `useDynamicForm`, the HTML5 renderers (`select`, `radio`, `range`, `email`, `date`, `switch`), `DynamicFormDevTools` |
 | `/wizard`       | `app/wizard/demo.tsx`       | `createWizardState`, `validateStep`, `goNext` / `goPrev` across three steps                                          |
+| `/schema-form`  | `app/schema-form/demo.tsx`  | `fieldsFromJsonSchema`, a draft kept with `createFormDraft`, undo and redo with `createFormHistory`                  |
 
-Custom field renderers are registered in `lib/fieldRegistry.tsx`.
+Every field type the demos use has a renderer registered in
+`lib/fieldRegistry.tsx`. The look comes from `../shared/demo.css`, shared by the
+three example apps.
 
 ## Run
 
@@ -44,8 +47,8 @@ unset for local builds.
 
 ## Main Files
 
-- `app/page.tsx`, `app/new-features/page.tsx`, `app/wizard/page.tsx` — the routes
-- `app/demo.tsx`, `app/new-features/demo.tsx`, `app/wizard/demo.tsx` — the demos themselves
+- `app/page.tsx`, `app/new-features/page.tsx`, `app/wizard/page.tsx`, `app/schema-form/page.tsx` — the routes
+- `app/demo.tsx`, `app/new-features/demo.tsx`, `app/wizard/demo.tsx`, `app/schema-form/demo.tsx` — the demos themselves
 - `app/DemoNav.tsx`, `app/DemoShell.tsx`, `app/lib/readDemoSource.ts` — nav and source panel
 - `lib/fieldRegistry.tsx` — the custom renderers
 - `app/layout.tsx`, `app/globals.css`
