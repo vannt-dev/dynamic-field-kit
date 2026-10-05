@@ -11,7 +11,8 @@
 [![angular downloads](https://img.shields.io/npm/d18m/@dynamic-field-kit/angular?label=angular%20downloads)](https://www.npmjs.com/package/@dynamic-field-kit/angular)
 
 **[📘 Handbook](https://vannt-dev.github.io/dynamic-field-kit/handbook/)** — guides
-for every feature, per framework, with search.
+for every feature, per framework, with search. Also in
+[Tiếng Việt](https://vannt-dev.github.io/dynamic-field-kit/handbook/vi/).
 
 **[▶ Live demos](https://vannt-dev.github.io/dynamic-field-kit/)** — the same
 schema rendered by [React](https://vannt-dev.github.io/dynamic-field-kit/react/),
