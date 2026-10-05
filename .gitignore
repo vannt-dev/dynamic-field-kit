@@ -35,3 +35,10 @@ yarn-error.log*
 # scratch/planning docs, not subject to version control
 .superpowers/
 docs/superpowers/
+
+# handbook: pages generated from the READMEs by handbook/scripts/sync.mjs
+handbook/guide/
+handbook/frameworks/
+handbook/more/
+handbook/.vitepress/dist/
+handbook/.vitepress/cache/
