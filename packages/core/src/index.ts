@@ -27,3 +27,4 @@ export * from './pathMaps';
 export * from './messages';
 export * from './optionsLoader';
 export * from './jsonSchema';
+export * from './jsonSchemaExport';
