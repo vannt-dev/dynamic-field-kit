@@ -606,6 +606,35 @@ Not turned into fields, and reported in `warnings` instead: nested objects, tupl
 
 `overrides` is keyed by the same path the warnings use and is merged over the generated field. Use it to choose an application-specific `type` (`textarea`, a custom picker), or to attach hooks a schema cannot express.
 
+### A JSON Schema from fields
+
+`fieldsToJsonSchema` goes the other way: it describes the data a field list collects, for an API contract, a validator on the server, or documentation.
+
+```ts
+import { fieldsToJsonSchema } from '@dynamic-field-kit/core';
+
+const { schema, warnings } = fieldsToJsonSchema(fields, {
+  title: 'Sign-up',
+  defaults: { plan: 'free' },
+  types: { rating: { type: 'integer', minimum: 1, maximum: 5 } },
+  overrides: { username: { minLength: 3, pattern: '^[a-z]+$' } },
+});
+```
+
+| Field                                                        | Schema                                                                                            |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------- |
+| `text`, `textarea`, `search`, `tel`, `color`, `hidden`       | `string`, with `maxLength` from `props.maxLength`                                                 |
+| `email`, `url`, `password`, `date`, `time`, `datetime-local` | `string` with the matching `format` (`uri`, `date-time`)                                          |
+| `number`, `range`                                            | `number` with `minimum` / `maximum` / `multipleOf`; `integer` when the step and minimum are whole |
+| `checkbox`, `switch`                                         | `boolean`                                                                                         |
+| `select`, `radio`, or any field with static `options`        | `enum`, or `oneOf` of `const` + `title` when a label differs from its value                       |
+| the same with `multiple`                                     | array of that, with `uniqueItems`                                                                 |
+| a repeatable group (`fields`)                                | array of objects, with `minItems` / `maxItems` and the `defaultItem` values as `default`s         |
+
+`label` becomes `title`, a string `description` the description, `required` the `required` list, and a field with `computeValue` is `readOnly`. `defaults` takes form data and records it as `default`; `strict: true` adds `additionalProperties: false`.
+
+A schema cannot hold a function, so `validate`, `appearCondition`, `readOnlyCondition` and option loaders are listed in `warnings` rather than guessed at; put the rules they enforce in `overrides`, keyed by the same paths (`username`, `contacts[].phone`). A field type the kit does not know accepts any value until `types` describes it, and a `file` field is left out.
+
 ## Multi-step wizard
 
 A framework-agnostic state machine over grouped fields. State is immutable:
