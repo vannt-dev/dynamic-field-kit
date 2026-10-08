@@ -10,6 +10,11 @@ This package provides Svelte components that render `FieldDescription[]` and
 resolve field renderers through the shared registry used by
 `dynamic-field-kit`.
 
+Live demo: https://vannt-dev.github.io/dynamic-field-kit/svelte/ — tabs for the basic schema,
+validation and conditions, form state (`createDynamicForm`), the multi-step
+wizard, and a form built from a JSON Schema with drafts and undo. Its source is
+[`example/svelte-app`](https://github.com/vannt-dev/dynamic-field-kit/tree/develop/example/svelte-app).
+
 ## Install
 
 ```bash
@@ -308,10 +313,9 @@ declare module '@dynamic-field-kit/core' {
 
 - **DevTools.** The React and Vue adapters have a `DynamicFormDevTools` panel;
   this one does not.
-- **A live demo and a peer-range check in CI.** The other adapters have an
-  example app and a script that runs their packed tarballs under the oldest
-  supported framework version. For Svelte the floor was checked by hand
-  (the test suite under 5.0.0), not by CI.
+- **A peer-range check in CI.** The other adapters have a script that runs
+  their packed tarballs under the oldest supported framework version. For
+  Svelte the floor was checked by hand (the test suite under 5.0.0), not by CI.
 - **Mutating `properties` in place.** Hand `MultiFieldInput` a new object when
   the values change, as `createDynamicForm` does; an object that is mutated in
   place after the user has typed is not picked up.
