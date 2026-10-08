@@ -20,7 +20,7 @@
             "allowedCommonJsDependencies": ["@dynamic-field-kit/core"],
             "polyfills": ["zone.js"],
             "tsConfig": "tsconfig.app.json",
-            "assets": ["src/favicon.ico", "src/assets"],
+            "assets": ["src/favicon.ico"],
             "styles": ["src/styles.css", "../shared/demo.css"],
             "scripts": []
           },
