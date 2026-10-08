@@ -131,22 +131,32 @@
 
   // What the fields show: the properties handed in, with computed values
   // applied - or, once the user has changed something, that change. A change
-  // is kept for as long as the properties it was made on are still the ones
-  // handed in: an owner that answers `onChange` with new properties replaces
-  // it, and a form used without `properties` keeps its own values.
+  // is kept until the owner hands in other properties: an owner that answers
+  // `onChange` with new properties replaces it, and a form used without
+  // `properties` keeps its own values.
+  //
+  // "Other properties" is remembered, not compared again later: an undo hands
+  // back the very object an edit was made on, and that edit must not return
+  // with it. `superseded` is a plain field, written while `data` is computed,
+  // so that it survives the properties coming back.
   let edited = $state.raw<{
     on: Properties | undefined;
     data: Properties;
+    superseded: boolean;
   }>();
-  const data = $derived(
-    edited && edited.on === effectiveProperties
-      ? edited.data
-      : applyComputedValues(
-          fieldDescriptions,
-          { ...effectiveProperties },
-          rootData,
-        ),
-  );
+  const data = $derived.by(() => {
+    if (edited && !edited.superseded) {
+      if (edited.on === effectiveProperties) {
+        return edited.data;
+      }
+      edited.superseded = true;
+    }
+    return applyComputedValues(
+      fieldDescriptions,
+      { ...effectiveProperties },
+      rootData,
+    );
+  });
 
   // Baseline for the `dirty` flag. Tracks the first non-undefined properties
   // rather than `{}` at mount: values that arrive from a fetch after mount
@@ -226,8 +236,14 @@
 
   function commitData(next: Properties) {
     const computed = applyComputedValues(fieldDescriptions, next, rootData);
-    edited = { on: effectiveProperties, data: computed };
+    const before = effectiveProperties;
+    edited = { on: before, data: computed, superseded: false };
     emitChange({ ...computed });
+    // An owner that took the change has already handed in new properties,
+    // and from here on those are what the fields show.
+    if (effectiveProperties !== before) {
+      edited = undefined;
+    }
   }
 
   function handleValueChange(value: unknown, key: string) {

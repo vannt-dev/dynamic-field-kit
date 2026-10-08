@@ -321,6 +321,41 @@ describe('MultiFieldInput', () => {
       expect(shown('dirty')).toBe('false');
     });
 
+    it('an undo that hands back the very object an edit was made on shows that object', () => {
+      // No computed field, so the form keeps the object it is given - which is
+      // what an undo history hands back.
+      const plain: FieldDescription[] = [
+        { name: 'a', type: 'probe' },
+        { name: 'b', type: 'probe' },
+      ];
+      const { target, instance } = render(
+        FormHarness,
+        { fields: plain, initialValues: { a: 'one' } },
+        probeRegistry(),
+      );
+      const form = (
+        instance as unknown as {
+          getForm: () => {
+            data: Properties;
+            handleChange: (data: Properties) => void;
+          };
+        }
+      ).getForm();
+
+      type(input(target, 'f-b'), 'first edit');
+      const afterFirst = form.data;
+      type(input(target, 'f-b'), 'second edit');
+      expect(input(target, 'f-b').value).toBe('second edit');
+
+      act(() => form.handleChange(afterFirst));
+      expect(form.data).toBe(afterFirst);
+      expect(input(target, 'f-b').value).toBe('first edit');
+
+      // And typing after the undo starts from what is shown.
+      type(input(target, 'f-a'), 'two');
+      expect(form.data).toEqual({ a: 'two', b: 'first edit' });
+    });
+
     it('a submit of an untouched, invalid form shows the errors', async () => {
       const onSubmitted = vi.fn();
       const { target } = render(
