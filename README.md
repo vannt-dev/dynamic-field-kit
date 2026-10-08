@@ -92,6 +92,7 @@ every keystroke.
 | `@dynamic-field-kit/react`   | React components (FieldInput, MultiFieldInput, DynamicInput) |
 | `@dynamic-field-kit/angular` | Angular components and module (standalone + NgModule)        |
 | `@dynamic-field-kit/vue`     | Vue 3 components and module                                  |
+| `@dynamic-field-kit/svelte`  | Svelte 5 components and form state (`createDynamicForm`)     |
 
 ---
 
@@ -115,7 +116,13 @@ npm install @dynamic-field-kit/core @dynamic-field-kit/angular
 npm install @dynamic-field-kit/core @dynamic-field-kit/vue
 ```
 
-> **`@dynamic-field-kit/core` is a peer dependency of every adapter** (as is your framework: `react` + `react-dom`, `vue`, or `@angular/*`). Install it explicitly, as shown above — the adapters no longer pull it in automatically. Keeping a single shared `core` version means all adapters resolve the same field registry.
+**For Svelte 5:**
+
+```bash
+npm install @dynamic-field-kit/core @dynamic-field-kit/svelte
+```
+
+> **`@dynamic-field-kit/core` is a peer dependency of every adapter** (as is your framework: `react` + `react-dom`, `vue`, `svelte`, or `@angular/*`). Install it explicitly, as shown above — the adapters no longer pull it in automatically. Keeping a single shared `core` version means all adapters resolve the same field registry.
 
 ---
 
@@ -625,6 +632,7 @@ For detailed setup and component API:
 - **React**: See [`packages/react/README.md`](packages/react/README.md)
 - **Angular**: See [`packages/angular/README.md`](packages/angular/README.md)
 - **Vue**: See [`packages/vue/README.md`](packages/vue/README.md)
+- **Svelte**: See [`packages/svelte/README.md`](packages/svelte/README.md) (the newest adapter; it has no DevTools panel and no demo app yet)
 - **Core concepts**: See [`packages/core/README.md`](packages/core/README.md)
 
 ---
@@ -684,7 +692,8 @@ dynamic-field-kit (monorepo)
 │  ├─ core        # Framework-agnostic types and registry
 │  ├─ react       # React components & DynamicInput
 │  ├─ angular     # Angular components & DynamicFieldKitModule
-│  └─ vue         # Vue 3 components
+│  ├─ vue         # Vue 3 components
+│  └─ svelte      # Svelte 5 components
 ├─ example/       # Demo apps and integration guides
 └─ .github/       # Copilot AI agent instructions
 ```
@@ -719,7 +728,7 @@ run it on `develop`, and fill in:
 | Input      | Meaning                                                                |
 | ---------- | ---------------------------------------------------------------------- |
 | `bump`     | `patch`, `minor` or `major`                                            |
-| `packages` | `core,react,vue,angular` — leave empty to bump all of them             |
+| `packages` | `core,react,vue,angular,svelte` — leave empty to bump all of them      |
 | `message`  | The CHANGELOG entry for this release                                   |
 | `dry_run`  | Version and print the result without committing, tagging or publishing |
 

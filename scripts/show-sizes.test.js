@@ -129,7 +129,7 @@ describe('collectBundleSizes', () => {
     ]);
   });
 
-  it('covers every published package by default', () => {
+  it('covers every package that ships a bundle by default', () => {
     const root = path.resolve(__dirname, '..');
     const reported = new Set(
       collectBundleSizes(root).map((entry) => entry.pkg),

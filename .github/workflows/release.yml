@@ -20,7 +20,7 @@ on:
         default: patch
         required: true
       packages:
-        description: 'Packages to bump, comma separated (core,react,vue,angular). Leave empty for all.'
+        description: 'Packages to bump, comma separated (core,react,vue,angular,svelte). Leave empty for all.'
         type: string
         default: ''
         required: false
@@ -93,7 +93,7 @@ jobs:
 
       - name: Show resulting versions
         run: |
-          for pkg in core react vue angular; do
+          for pkg in core react vue angular svelte; do
             echo "$pkg -> $(node -p "require('./packages/$pkg/package.json').version")"
           done
 
@@ -122,7 +122,7 @@ jobs:
           npx changeset publish --no-git-tag
 
           version=$(node -p "require('./packages/core/package.json').version")
-          published=$(for pkg in core react vue angular; do
+          published=$(for pkg in core react vue angular svelte; do
             echo "@dynamic-field-kit/$pkg@$(node -p "require('./packages/$pkg/package.json').version")"
           done)
 
@@ -151,9 +151,9 @@ jobs:
           fi
 
           {
-            echo 'All four packages ship at this version with npm provenance:'
+            echo 'All five packages ship at this version with npm provenance:'
             echo
-            for pkg in core react vue angular; do
+            for pkg in core react vue angular svelte; do
               echo "- \`@dynamic-field-kit/$pkg@$(node -p "require('./packages/$pkg/package.json').version")\`"
             done
             echo

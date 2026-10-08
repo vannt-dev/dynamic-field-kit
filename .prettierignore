@@ -35,3 +35,6 @@ Thumbs.db
 
 # Scratch/planning docs, not subject to formatting
 .superpowers/
+
+# svelte-package's working copy of the Svelte adapter's source
+.svelte-kit/

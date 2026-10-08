@@ -103,6 +103,12 @@ const PAGES = [
     drop: ['License'],
   },
   {
+    out: 'frameworks/svelte.md',
+    title: 'Svelte 5',
+    source: 'packages/svelte/README.md',
+    drop: ['License'],
+  },
+  {
     out: 'more/ui-kit-recipes.md',
     title: 'UI kit recipes',
     source: 'docs/ui-kit-recipes.md',

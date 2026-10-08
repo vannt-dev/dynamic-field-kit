@@ -8,7 +8,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const PACKAGES = ['core', 'react', 'vue', 'angular'];
+const PACKAGES = ['core', 'react', 'vue', 'angular', 'svelte'];
 
 // Fields whose value is a single path into the build output.
 const PATH_FIELDS = ['main', 'module', 'types', 'typings', 'browser'];
