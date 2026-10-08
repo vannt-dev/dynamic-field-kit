@@ -1,5 +1,11 @@
 # @dynamic-field-kit/vue
 
+## 1.9.0
+
+### Minor Changes
+
+- Released together with core 1.9.0, which adds fieldsToJsonSchema.
+
 ## 1.8.0
 
 ### Minor Changes
