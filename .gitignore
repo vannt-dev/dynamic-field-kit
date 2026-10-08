@@ -42,3 +42,6 @@ handbook/frameworks/
 handbook/more/
 handbook/.vitepress/dist/
 handbook/.vitepress/cache/
+
+# svelte-package's working copy of the Svelte adapter's source
+.svelte-kit/

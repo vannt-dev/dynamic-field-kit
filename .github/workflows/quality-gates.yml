@@ -32,6 +32,7 @@ jobs:
           npm run build --workspace=@dynamic-field-kit/react
           npm run build --workspace=@dynamic-field-kit/vue
           npm run build --workspace=@dynamic-field-kit/angular
+          npm run build --workspace=@dynamic-field-kit/svelte
 
       # Share the built dist with the verify and examples jobs so they don't
       # rebuild all four packages (ng-packagr's Angular build especially).
@@ -46,6 +47,7 @@ jobs:
             packages/react/dist
             packages/vue/dist
             packages/angular/dist
+            packages/svelte/dist
           retention-days: 1
           if-no-files-found: error
 
@@ -89,6 +91,11 @@ jobs:
             test-cmd: npm run test --workspace=@dynamic-field-kit/angular -- --coverage
             coverage-file: packages/angular/coverage/lcov.info
             coverage-name: angular
+          - package: svelte
+            build-cmd: npm run build --workspace=@dynamic-field-kit/core
+            test-cmd: npm run test --workspace=@dynamic-field-kit/svelte -- --coverage
+            coverage-file: packages/svelte/coverage/lcov.info
+            coverage-name: svelte
     steps:
       - uses: actions/checkout@v7
 

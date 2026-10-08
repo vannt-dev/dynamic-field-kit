@@ -12,7 +12,7 @@ function makeWorkspace(files) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cross-imports-'));
   tempRoots.push(root);
 
-  for (const pkg of ['react', 'vue', 'angular']) {
+  for (const pkg of ['react', 'vue', 'angular', 'svelte']) {
     fs.mkdirSync(path.join(root, 'packages', pkg, 'src'), { recursive: true });
   }
 

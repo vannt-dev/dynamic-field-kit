@@ -6,7 +6,8 @@
 // keys across its own component boundary: React through DynamicInput's Props
 // interface, Vue through its declared `props` (an undeclared key becomes a
 // fallthrough attribute, not a prop) and its forwarding call, Angular through
-// KNOWN_PROPS plus a matching @Input on BaseInputComponent.
+// KNOWN_PROPS plus a matching @Input on BaseInputComponent, Svelte through
+// DynamicInput's Props interface and the attributes it puts on the renderer.
 //
 // Those three lists silently drifted apart before 1.6: React dropped
 // `placeholder`, `min`, `max`, `step`, `accept` and `multiple`; Vue dropped
@@ -84,6 +85,13 @@ function probes() {
   );
   const angularBase = read('packages/angular/src/components/BaseInput.ts');
 
+  const svelteSrc = read('packages/svelte/src/components/DynamicInput.svelte');
+  const svelteProps = blockAfter(svelteSrc, 'interface Props');
+  const svelteForwarded = svelteSrc.slice(
+    svelteSrc.indexOf('<Renderer'),
+    svelteSrc.indexOf('/>', svelteSrc.indexOf('<Renderer')),
+  );
+
   const vueName = (key) => VUE_ALIASES[key] ?? key;
 
   return {
@@ -106,6 +114,17 @@ function probes() {
         what: 'DynamicInput renderer forwarding',
         has: (key) =>
           new RegExp(`\\b${vueName(key)}: props\\.`).test(vueForwarded),
+      },
+    ],
+    svelte: [
+      {
+        what: 'DynamicInput Props interface',
+        has: (key) => new RegExp(`\\b${key}\\?:`).test(svelteProps),
+      },
+      {
+        what: 'DynamicInput renderer forwarding',
+        has: (key) =>
+          new RegExp(`\\b${key}=\\{${key}\\}`).test(svelteForwarded),
       },
     ],
     angular: [
@@ -153,6 +172,6 @@ if (require.main === module) {
     process.exit(1);
   }
   console.log(
-    `Renderer prop parity OK: ${keys.length} props forwarded by react, vue and angular.`,
+    `Renderer prop parity OK: ${keys.length} props forwarded by react, vue, svelte and angular.`,
   );
 }

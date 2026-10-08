@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-// Verify that each framework package (react, vue, angular) depends only on core,
+// Verify that each framework package (react, vue, angular, svelte) depends only on core,
 // and that it dev-installs every framework it peer-depends on.
 
 const fs = require('fs');
 const path = require('path');
 
-const FRAMEWORK_PACKAGES = ['react', 'vue', 'angular'];
+const FRAMEWORK_PACKAGES = ['react', 'vue', 'angular', 'svelte'];
 
 function readJson(p) {
   const data = fs.readFileSync(p, 'utf8');
@@ -70,7 +70,7 @@ if (require.main === module) {
   }
 
   console.log(
-    'OK: react/vue/angular depend only on core and dev-install their own peers.',
+    'OK: react/vue/angular/svelte depend only on core and dev-install their own peers.',
   );
 }
 
