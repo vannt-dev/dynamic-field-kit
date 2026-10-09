@@ -116,11 +116,17 @@ jobs:
       - name: Build packages
         run: npm run build
 
-      - name: Commit the release
-        if: ${{ !inputs.dry_run && !inputs.resume }}
+      # Its own step, not part of the commit: the annotated tag needs an identity
+      # too, and a resumed release makes the tag without making the commit.
+      - name: Set the git identity
+        if: ${{ !inputs.dry_run }}
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+      - name: Commit the release
+        if: ${{ !inputs.dry_run && !inputs.resume }}
+        run: |
           git add -A
           git commit -m 'chore(release): version packages'
           git push origin HEAD:${{ github.ref_name }}
