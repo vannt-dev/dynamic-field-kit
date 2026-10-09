@@ -7,6 +7,11 @@ name: Release
 # Run it on `develop`. master requires status checks, and those apply to direct
 # pushes too, so the release commit cannot be pushed there by the Actions bot.
 # The version bump reaches master through the normal develop -> master PR.
+#
+# If the publish step fails part way (a token without access to one package,
+# for example), do not run it again as it is: that bumps every package a second
+# time. Fix the cause and run it with `resume` ticked. It skips the version
+# bump, publishes the packages npm does not have yet, then tags and releases.
 on:
   workflow_dispatch:
     inputs:
@@ -31,6 +36,11 @@ on:
         required: false
       dry_run:
         description: 'Version and print what would be published, but do not publish'
+        type: boolean
+        default: false
+        required: false
+      resume:
+        description: 'Finish a release whose publish failed: no version bump, publish what npm does not have yet, then tag and release'
         type: boolean
         default: false
         required: false
@@ -76,7 +86,11 @@ jobs:
       # Turns the dispatch inputs into a real changeset. Any changesets already
       # committed are consumed in the same pass, and the largest bump per
       # package wins.
+      # With `resume` the four versioning steps are skipped: the version commit
+      # of the failed release is already on the branch, and bumping again would
+      # put every package one version further than the one being finished.
       - name: Create changeset from inputs
+        if: ${{ !inputs.resume }}
         run: |
           node scripts/create-changeset.js \
             --bump "${{ inputs.bump }}" \
@@ -84,11 +98,13 @@ jobs:
             --message "${{ inputs.message }}"
 
       - name: Apply versions and changelogs
+        if: ${{ !inputs.resume }}
         run: npx changeset version
 
       # changeset version rewrites the workspace package.json versions, which
       # the lockfile records too - without this the next `npm ci` fails.
       - name: Sync lockfile
+        if: ${{ !inputs.resume }}
         run: npm install --package-lock-only --no-audit --no-fund
 
       - name: Show resulting versions
@@ -101,7 +117,7 @@ jobs:
         run: npm run build
 
       - name: Commit the release
-        if: ${{ !inputs.dry_run }}
+        if: ${{ !inputs.dry_run && !inputs.resume }}
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
@@ -126,8 +142,13 @@ jobs:
             echo "@dynamic-field-kit/$pkg@$(node -p "require('./packages/$pkg/package.json').version")"
           done)
 
-          git tag -a "v$version" -m "Release v$version" -m "$published"
-          git push origin "v$version"
+          # A resumed release may find the tag already made by the run it finishes.
+          if git rev-parse -q --verify "refs/tags/v$version" >/dev/null; then
+            echo "Tag v$version already exists - leaving it alone."
+          else
+            git tag -a "v$version" -m "Release v$version" -m "$published"
+            git push origin "v$version"
+          fi
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
