@@ -1,6 +1,6 @@
 {
   "name": "@dynamic-field-kit/svelte",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "description": "Svelte 5 renderer for dynamic-field-kit",
   "license": "MIT",
   "type": "module",
@@ -24,7 +24,7 @@
     "svelte": "^5.0.0"
   },
   "devDependencies": {
-    "@dynamic-field-kit/core": "^1.9.0",
+    "@dynamic-field-kit/core": "^1.10.0",
     "@sveltejs/package": "^2.5.8",
     "@sveltejs/vite-plugin-svelte": "^6.2.4",
     "@vitest/coverage-v8": "^4.1.11",
