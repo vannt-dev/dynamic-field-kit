@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 const { execSync } = require('child_process');
-const packages = ['core', 'react', 'vue', 'angular'];
+const packages = ['core', 'react', 'vue', 'angular', 'svelte'];
 
 console.log('Hoisting diagnosis: showing core resolution per package...');
 packages.forEach((p) => {

@@ -17,8 +17,8 @@ hero:
       link: https://github.com/vannt-dev/dynamic-field-kit
 
 features:
-  - title: One schema, three frameworks
-    details: A framework-agnostic core holds the field list, conditions, validation and layout. Thin adapters render it in React, Vue 3 and Angular.
+  - title: One schema, four frameworks
+    details: A framework-agnostic core holds the field list, conditions, validation and layout. Thin adapters render it in React, Vue 3, Angular and Svelte 5.
     link: /guide/fields
   - title: Your components, not ours
     details: The kit ships no design system. Register a renderer per field type and every form in the app uses it.

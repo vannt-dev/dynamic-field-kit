@@ -1,6 +1,6 @@
 name: Deploy demos and handbook to Pages
 
-# Publishes the three example apps and the handbook to GitHub Pages so there is
+# Publishes the example apps and the handbook to GitHub Pages so there is
 # a link to hand people. The demos consume the packages through `file:` paths,
 # so whatever is on this branch is exactly what the demos are built against.
 on:
@@ -65,6 +65,14 @@ jobs:
           npm install --no-audit --no-fund
           npm run build
 
+      - name: Build svelte demo
+        working-directory: example/svelte-app
+        env:
+          PAGES_BASE_PATH: ${{ env.SITE_BASE }}/svelte/
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
+
       # `npm run build --`, not `npx ng build`: the app's `prebuild` hook
       # generates src/app/demo-sources.ts, which is gitignored and so absent
       # from a fresh checkout. Calling the binary directly skips the hook and
@@ -93,6 +101,7 @@ jobs:
           cp -r handbook/.vitepress/dist       _site/handbook
           cp -r example/react-app/out          _site/react
           cp -r example/vue-app/dist           _site/vue
+          cp -r example/svelte-app/dist        _site/svelte
           cp -r example/angular-app/dist/example-angular-app _site/angular
           # Pages runs the output through Jekyll otherwise, which drops
           # directories starting with an underscore - _next among them.

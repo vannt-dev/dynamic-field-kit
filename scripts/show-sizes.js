@@ -1,6 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 
+// The packages that ship a bundle. The Svelte adapter is not one of them: it
+// ships its components as source for the consumer's own compiler, so it has no
+// single file whose size would mean anything here.
 const DEFAULT_PACKAGES = ['core', 'react', 'vue', 'angular'];
 
 const stripDotSlash = (entry) => entry.replace(/^\.\//, '');

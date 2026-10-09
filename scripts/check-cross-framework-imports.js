@@ -1,15 +1,16 @@
 #!/usr/bin/env node
-// Lint check: ensure each framework package (react, vue, angular) does not import
+// Lint check: ensure each framework package (react, vue, angular, svelte) does not import
 // from other framework packages. Only core should be the cross-package dependency.
 
 const fs = require('fs');
 const path = require('path');
 
-const FRAMEWORK_PACKAGES = ['react', 'vue', 'angular'];
+const FRAMEWORK_PACKAGES = ['react', 'vue', 'angular', 'svelte'];
 
-const IMPORT_PATTERN = /from\s+['"]@dynamic-field-kit\/(vue|angular|react)['"]/;
+const IMPORT_PATTERN =
+  /from\s+['"]@dynamic-field-kit\/(vue|angular|react|svelte)['"]/;
 const REQUIRE_PATTERN =
-  /require\(['"]@dynamic-field-kit\/(vue|angular|react)['"]\)/;
+  /require\(['"]@dynamic-field-kit\/(vue|angular|react|svelte)['"]\)/;
 
 function walk(dir, cb) {
   if (!fs.existsSync(dir)) {
@@ -27,7 +28,7 @@ function walk(dir, cb) {
 }
 
 function isSourceFile(p) {
-  return /\.(ts|tsx|js|jsx)$/.test(p);
+  return /\.(ts|tsx|js|jsx|svelte)$/.test(p);
 }
 
 function findCrossFrameworkImports(root = path.resolve(__dirname, '..')) {
@@ -67,7 +68,7 @@ if (require.main === module) {
   }
 
   console.log(
-    'OK: No cross-framework imports found in src of react/vue/angular packages.',
+    'OK: No cross-framework imports found in src of react/vue/angular/svelte packages.',
   );
 }
 

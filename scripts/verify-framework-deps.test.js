@@ -7,7 +7,7 @@ import { findFrameworkDepProblems } from './verify-framework-deps.js';
 
 const tempRoots = [];
 
-const FRAMEWORKS = ['react', 'vue', 'angular'];
+const FRAMEWORKS = ['react', 'vue', 'angular', 'svelte'];
 
 /** A manifest that satisfies every rule, so each test can break one thing. */
 function healthyManifest(pkg, overrides = {}) {

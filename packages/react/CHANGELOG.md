@@ -1,5 +1,11 @@
 # @dynamic-field-kit/react
 
+## 1.10.0
+
+### Minor Changes
+
+- Add the Svelte 5 adapter, @dynamic-field-kit/svelte, with its demo app
+
 ## 1.9.0
 
 ### Minor Changes
