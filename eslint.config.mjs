@@ -18,6 +18,8 @@ export default tseslint.config(
       '**/dist/**',
       '**/node_modules/**',
       '**/coverage/**',
+      // svelte-package's working copy of the Svelte adapter's source
+      '**/.svelte-kit/**',
       '**/.nyc_output/**',
       '**/*.d.ts',
       '**/*.log',
@@ -100,6 +102,30 @@ export default tseslint.config(
       'import-x/no-unresolved': [
         'error',
         { ignore: ['^@angular', '^vue', '^vitest', '^@dynamic-field-kit'] },
+      ],
+    },
+  },
+
+  // The Svelte adapter is packaged file by file, not bundled, so its relative
+  // imports name the file as it will be emitted: `./x.js` for `x.ts`, and
+  // `./X.svelte` for a component. Neither is a path the resolver can follow
+  // from the source tree; the package's own type check (svelte-check) is what
+  // verifies them.
+  {
+    files: ['packages/svelte/**/*.ts'],
+    rules: {
+      'import-x/no-unresolved': [
+        'error',
+        {
+          ignore: [
+            '^@angular',
+            '^vue',
+            '^vitest',
+            '^@dynamic-field-kit',
+            '\\.js$',
+            '\\.svelte$',
+          ],
+        },
       ],
     },
   },

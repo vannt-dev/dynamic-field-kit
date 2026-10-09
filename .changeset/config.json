@@ -8,7 +8,8 @@
       "@dynamic-field-kit/core",
       "@dynamic-field-kit/react",
       "@dynamic-field-kit/vue",
-      "@dynamic-field-kit/angular"
+      "@dynamic-field-kit/angular",
+      "@dynamic-field-kit/svelte"
     ]
   ],
   "access": "public",

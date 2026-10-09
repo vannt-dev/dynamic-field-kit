@@ -1,4 +1,4 @@
-// Two languages for the three example apps. The demos are written in English;
+// Two languages for the example apps. The demos are written in English;
 // `t('English text')` returns the Vietnamese text when that language is chosen.
 //
 // The language is read once, when the page loads, and switching reloads the
@@ -72,6 +72,9 @@ const VI: Record<string, string> = {
   'Built-in validators (required, email, compose), options that depend on another field, appearCondition / disabledCondition and async validation.':
     'Built-in validators (required, email, compose), options phụ thuộc trường khác, appearCondition / disabledCondition và async validation.',
   'Form state with useDynamicForm': 'Form state với useDynamicForm',
+  'Form state with createDynamicForm': 'Form state với createDynamicForm',
+  'The form owns data, errors, touched and submit state, read as plain properties that the markup follows.':
+    'Form giữ data, errors, touched và trạng thái submit; đọc như thuộc tính thường và giao diện tự cập nhật theo.',
   'Form state with createDynamicFormStore':
     'Form state với createDynamicFormStore',
   'The hook owns data, errors, touched and submit state; DynamicFormDevTools sits in the corner.':

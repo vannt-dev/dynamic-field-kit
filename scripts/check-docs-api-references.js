@@ -12,7 +12,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const PACKAGES = ['core', 'react', 'vue', 'angular'];
+const PACKAGES = ['core', 'react', 'vue', 'angular', 'svelte'];
 
 const DOC_GLOBS = [
   'README.md',
@@ -28,6 +28,8 @@ const CODE_LANGS = new Set([
   'jsx',
   'typescript',
   'javascript',
+  // a component's script block holds the same import statements
+  'svelte',
 ]);
 
 // [^{}] rather than [\s\S] so the span cannot run from one import statement

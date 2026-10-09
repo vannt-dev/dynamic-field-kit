@@ -4,7 +4,7 @@ layout: home
 hero:
   name: Dynamic Field Kit
   text: Dựng form từ danh sách field
-  tagline: Mô tả field một lần. Render bằng React, Vue hoặc Angular với chính component của bạn.
+  tagline: Mô tả field một lần. Render bằng React, Vue, Angular hoặc Svelte với chính component của bạn.
   actions:
     - theme: brand
       text: Bắt đầu
@@ -18,7 +18,7 @@ hero:
 
 features:
   - title: Một schema, ba framework
-    details: Phần core không phụ thuộc framework giữ danh sách field, điều kiện, validation và layout. Adapter mỏng render nó trong React, Vue 3 và Angular.
+    details: Phần core không phụ thuộc framework giữ danh sách field, điều kiện, validation và layout. Adapter mỏng render nó trong React, Vue 3, Angular và Svelte 5.
     link: /vi/guide/fields
   - title: Component của bạn, không phải của thư viện
     details: Thư viện không kèm design system. Đăng ký một renderer cho mỗi loại field, và mọi form trong ứng dụng đều dùng nó.
