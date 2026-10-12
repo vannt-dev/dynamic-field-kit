@@ -11,6 +11,14 @@ import {
   validateFieldsAsync,
 } from '@dynamic-field-kit/core';
 import { computed, getCurrentScope, onScopeDispose, ref } from 'vue';
+import {
+  type FieldErrors,
+  mergeFieldErrors,
+  type ServerErrorsInput,
+  toFieldErrors,
+  withoutChangedFields,
+  withoutField,
+} from './serverErrors';
 
 export interface UseDynamicFormOptions {
   fields: FieldDescription[];
@@ -41,7 +49,18 @@ export function useDynamicForm({
   // reset(newValues) replaces it. Distinct from that option, which never
   // changes. See the React adapter for the full rationale.
   const baselineValues = ref<Properties>({ ...data.value });
-  const errors = ref<Record<string, string[]>>({});
+  const ownErrors = ref<Record<string, string[]>>({});
+  // What the server refused, by field path. Shown through `errors`, after a
+  // field's own errors.
+  const serverErrors = ref<FieldErrors>({});
+  // Still writable, as the plain ref it used to be: a write sets the form's
+  // own errors and leaves the server's alone.
+  const errors = computed<Record<string, string[]>>({
+    get: () => mergeFieldErrors(ownErrors.value, serverErrors.value),
+    set: (value) => {
+      ownErrors.value = value;
+    },
+  });
   const isDirty = ref<boolean>(false);
   const touched = ref<Record<string, boolean>>({});
   const isSubmitting = ref<boolean>(false);
@@ -123,6 +142,12 @@ export function useDynamicForm({
 
   function handleChange(newData: Properties) {
     const next = applyComputedValues(fields, newData);
+    // The server judged the old value: its verdict goes with it.
+    serverErrors.value = withoutChangedFields(
+      serverErrors.value,
+      data.value,
+      next,
+    );
     data.value = next;
     isDirty.value = true;
     validationController?.abort();
@@ -175,6 +200,33 @@ export function useDynamicForm({
     touched.value = {};
   }
 
+  /**
+   * Shows the errors a backend answered with, and marks their fields touched
+   * so they are displayed. An error stays until the value it was about
+   * changes, until `clearServerErrors` or `reset`, or until the next submit.
+   * `isValid` is not affected: it speaks for the form's own rules. Core's
+   * `serverErrorsFrom(body)` turns the usual response shapes into this map.
+   */
+  function setServerErrors(input: ServerErrorsInput) {
+    const next = toFieldErrors(input);
+    serverErrors.value = next;
+    touched.value = {
+      ...touched.value,
+      ...Object.fromEntries(Object.keys(next).map((path) => [path, true])),
+    };
+  }
+
+  /** Removes the server errors of one field, or all of them. */
+  function clearServerErrors(name?: string) {
+    if (name === undefined) {
+      serverErrors.value = {};
+      return;
+    }
+    if (name in serverErrors.value) {
+      serverErrors.value = withoutField(serverErrors.value, name);
+    }
+  }
+
   function handleBlur(fieldName: string) {
     setFieldTouched(fieldName, true);
     if (validateOnBlur) {
@@ -195,6 +247,7 @@ export function useDynamicForm({
     data.value = next;
     baselineValues.value = { ...next };
     errors.value = {};
+    serverErrors.value = {};
     isDirty.value = false;
     touched.value = {};
     isSubmitting.value = false;
@@ -216,6 +269,8 @@ export function useDynamicForm({
         e.preventDefault();
       }
       isSubmitting.value = true;
+      // A new attempt: what the server said about the last one is history.
+      serverErrors.value = {};
       const thisSubmit = ++submitRun;
       try {
         // Touch everything before validating: a submit is the user asserting
@@ -293,6 +348,9 @@ export function useDynamicForm({
     reset,
     validate,
     validateAsync,
+    serverErrors,
+    setServerErrors,
+    clearServerErrors,
     handleSubmit,
   };
 }

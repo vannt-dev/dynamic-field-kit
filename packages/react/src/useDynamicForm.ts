@@ -10,7 +10,21 @@ import {
   validateFields,
   validateFieldsAsync,
 } from '@dynamic-field-kit/core';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import {
+  type FieldErrors,
+  mergeFieldErrors,
+  type ServerErrorsInput,
+  toFieldErrors,
+  withoutChangedFields,
+  withoutField,
+} from './serverErrors';
 
 export interface UseDynamicFormOptions {
   fields: FieldDescription[];
@@ -68,6 +82,21 @@ export interface UseDynamicFormResult {
   validate: () => boolean;
   /** Validate all fields and await Promise-based rules. */
   validateAsync: () => Promise<boolean>;
+  /**
+   * What the server refused, by field path. Already part of `errors`, after a
+   * field's own errors; here on their own for a summary or a retry decision.
+   */
+  serverErrors: Record<string, string[]>;
+  /**
+   * Shows the errors a backend answered with, and marks their fields touched
+   * so they are displayed. An error stays until the value it was about
+   * changes, until `clearServerErrors` or `reset`, or until the next submit.
+   * `isValid` is not affected: it speaks for the form's own rules. Core's
+   * `serverErrorsFrom(body)` turns the usual response shapes into this map.
+   */
+  setServerErrors: (errors: ServerErrorsInput) => void;
+  /** Removes the server errors of one field, or all of them. */
+  clearServerErrors: (name?: string) => void;
   handleSubmit: (
     onValid: (data: Properties) => void | Promise<void>,
     onInvalid?: (errors: Record<string, string[]>) => void,
@@ -120,6 +149,7 @@ export function useDynamicForm({
     applyComputedValues(fields, initialValues),
   );
   const [errors, setErrors] = useState<Record<string, string[]>>({});
+  const [serverErrors, setServerErrorsState] = useState<FieldErrors>({});
   const [isDirty, setIsDirty] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -229,8 +259,13 @@ export function useDynamicForm({
   const handleChange = useCallback(
     (newData: Properties) => {
       const next = applyComputedValues(fields, newData);
+      const previous = dataRef.current;
       setData(next);
       dataRef.current = next;
+      // The server judged the old value: its verdict goes with it.
+      setServerErrorsState((current) =>
+        withoutChangedFields(current, previous, next),
+      );
       setIsDirty(true);
       validationAbortRef.current?.abort();
       validationRunRef.current += 1;
@@ -273,6 +308,28 @@ export function useDynamicForm({
 
   const resetTouched = useCallback(() => setTouched({}), []);
 
+  const setServerErrors = useCallback((input: ServerErrorsInput) => {
+    const next = toFieldErrors(input);
+    setServerErrorsState(next);
+    // An error on a field nobody touched would not be displayed.
+    setTouched((prev) => ({
+      ...prev,
+      ...Object.fromEntries(Object.keys(next).map((path) => [path, true])),
+    }));
+  }, []);
+
+  const clearServerErrors = useCallback((name?: string) => {
+    setServerErrorsState((current) => {
+      if (name === undefined) {
+        return Object.keys(current).length === 0 ? current : {};
+      }
+      if (!(name in current)) {
+        return current;
+      }
+      return withoutField(current, name);
+    });
+  }, []);
+
   const getDirtyValues = useCallback((): Properties => {
     const baseline = baselineRef.current;
     const current = dataRef.current;
@@ -311,6 +368,7 @@ export function useDynamicForm({
       baselineRef.current = next;
       setBaselineValues(next);
       setErrors({});
+      setServerErrorsState({});
       setIsDirty(false);
       setTouched({});
       setIsSubmitting(false);
@@ -332,6 +390,8 @@ export function useDynamicForm({
           e.preventDefault();
         }
         setIsSubmitting(true);
+        // A new attempt: what the server said about the last one is history.
+        setServerErrorsState({});
         const submitRun = ++submitRunRef.current;
         try {
           // Touch everything before validating: a submit is the user asserting
@@ -394,9 +454,14 @@ export function useDynamicForm({
     [fields, data, touchAll, commitSyncResult],
   );
 
+  const shownErrors = useMemo(
+    () => mergeFieldErrors(errors, serverErrors),
+    [errors, serverErrors],
+  );
+
   return {
     data,
-    errors,
+    errors: shownErrors,
     isValid: validationResult.valid,
     isValidating,
     // Matches Vue and Angular: a run still in flight is not complete, whatever
@@ -420,6 +485,9 @@ export function useDynamicForm({
     reset,
     validate,
     validateAsync,
+    serverErrors,
+    setServerErrors,
+    clearServerErrors,
     handleSubmit,
   };
 }
