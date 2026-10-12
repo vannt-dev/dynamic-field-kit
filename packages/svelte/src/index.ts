@@ -54,3 +54,4 @@ export {
   makeErrorId,
   FIELD_RENDERER_PROP_KEYS,
 } from '@dynamic-field-kit/core';
+export type { ServerErrorsInput } from './serverErrors.js';

@@ -44,3 +44,4 @@ export {
 } from '@dynamic-field-kit/core';
 
 export type { LayoutConfig } from './types/layout';
+export type { ServerErrorsInput } from './serverErrors';

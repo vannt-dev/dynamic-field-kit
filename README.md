@@ -49,6 +49,7 @@ A lightweight, extensible **dynamic form engine** for React, Angular, Vue, and S
 - **Multi-Step Form Wizard Engine**: `createWizardState`, `validateStep`, `canGoNext`, `canGoPrev`, `goNext`, `goPrev`, `goToStep`, `markStepCompleted`, `isStepCompleted`. State is immutable — every navigation returns a new state, and `goNext` records the step it leaves in `completedSteps`.
 - **Draft Persistence**: `createFormDraft` keeps form data in `localStorage` (or any storage) with debounced writes, a version and an age limit, and never writes the fields you exclude. See the [core README](packages/core/README.md#saving-a-draft).
 - **Undo and Redo**: `createFormHistory` records the form's data, groups typing into one step and ignores the data it just restored. See the [core README](packages/core/README.md#undo-and-redo).
+- **Errors from the server**: `setServerErrors` on every form store shows what a backend refused under the fields it names, until the user changes them; `serverErrorsFrom(body)` in core reads the usual response shapes into that map. See [Errors from the server](#errors-from-the-server).
 - **Interactive Form DevTools**: Floating overlay component (`<DynamicFormDevTools />`) for realtime debugging.
 - **Blur wiring**: `MultiFieldInput` reports blur via `onBlurField` (an `@Output` in Angular), so a form store's `handleBlur` / `touched` / `validateOnBlur` can be connected to it. Pass `touched` back in to make the store its single source of truth.
 - **Unique field ids**: ids are namespaced per `MultiFieldInput` instance, so two forms holding a field of the same name do not collide. Override with `idPrefix`, or `FieldDescription.id` per field.
@@ -503,6 +504,52 @@ store.isSubmitting();
 `handleSubmit` returns a **handler** in every framework, so Angular binds it the
 same way: `onSubmit = this.store.handleSubmit((data) => …)` then
 `(ngSubmit)="onSubmit($event)"`.
+
+### Errors from the server
+
+A form's own rules cannot know that an email is already registered. When the
+backend refuses a submit, hand its answer to the form:
+
+```tsx
+import { collectFieldPaths, serverErrorsFrom } from '@dynamic-field-kit/core';
+
+const onSubmit = form.handleSubmit(async (data) => {
+  const response = await fetch('/api/users', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  if (response.status === 400 || response.status === 422) {
+    form.setServerErrors(
+      serverErrorsFrom(await response.json(), {
+        paths: collectFieldPaths(fields, data),
+      }),
+    );
+  }
+});
+```
+
+`setServerErrors` takes a message or a list of messages by field path
+(`{ email: 'Already registered', 'contacts[1].phone': ['Not a phone number'] }`).
+The errors appear in `errors`, after the field's own, and their fields are
+marked touched so they are displayed. An error stays until the value it was
+about changes; `clearServerErrors(name?)`, `reset()` and the next submit remove
+them too. `serverErrors` holds them on their own. `isValid` is not affected: it
+speaks for the form's own rules, so a submit button bound to it stays usable
+for another try.
+
+`serverErrorsFrom` reads what backends commonly send: a map of field to
+messages, that map under `errors` (ASP.NET, Laravel) or `fieldErrors` (a
+flattened Zod error), and a list under `errors` or `issues` whose items name
+their field (`field`, `path`, `name`, `property`, `param`, `pointer`,
+`source.pointer`) and carry a `message`, `detail`, `msg` or `constraints`. JSON
+Pointers and dotted paths become the kit's `contacts[1].phone`. With `paths`, a
+key that differs from a form field only by case (`Email`) lands on that field.
+What names no field is kept under `FORM_ERROR_KEY`, for a message above the
+form.
+
+The same three members exist on `useDynamicForm` (React, Vue),
+`createDynamicForm` (Svelte) and `createDynamicFormStore` (Angular, where
+`serverErrors` is a signal).
 
 ## 🧭 Multi-Step Wizard
 

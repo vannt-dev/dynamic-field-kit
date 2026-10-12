@@ -786,6 +786,43 @@ Things to know:
 - **Typing is grouped.** Typing a word into one field is undone in one go; a pause longer than `coalesceMs`, a change to another field, or an undo starts a new step.
 - **Steps are kept by reference.** Plain objects and arrays are compared by content; other values (`Date`, `File`) by identity. Replace form data instead of mutating it, as the adapters already do.
 
+## Errors from the server
+
+`serverErrorsFrom(body, options?)` turns the answer of a backend that refused a
+submit into errors by field path, ready for a form store's `setServerErrors`:
+
+```ts
+import {
+  collectFieldPaths,
+  FORM_ERROR_KEY,
+  serverErrorsFrom,
+} from '@dynamic-field-kit/core';
+
+serverErrorsFrom(
+  { errors: { Email: ['Already registered'] } },
+  { paths: collectFieldPaths(fields, data) },
+);
+// { email: ['Already registered'] }
+
+serverErrorsFrom({
+  errors: [
+    { pointer: '/contacts/1/phone', detail: 'Not a phone number' },
+    { message: 'The order is closed' },
+  ],
+});
+// { 'contacts[1].phone': ['Not a phone number'], [FORM_ERROR_KEY]: ['The order is closed'] }
+```
+
+It reads a map of field to message or messages; that map under `errors` or
+`fieldErrors` (with `formErrors` beside it); and a list under `errors` or
+`issues` whose items name their field as `field`, `path`, `name`, `property`,
+`param`, `pointer` or `source.pointer` and carry a `message`, `detail`, `msg` or
+`constraints`. A JSON Pointer, a dotted path, a JSONPath and a list of segments
+all become the path the kit uses (`contacts[1].phone`). With `paths`, a key that
+differs from a form field only by case takes that field's spelling. Errors that
+name no field are kept under `FORM_ERROR_KEY`. A body that is not a set of
+field errors answers an empty object.
+
 ## Group array helpers
 
 Every adapter's `MultiFieldInput` renders add/remove controls itself. These
