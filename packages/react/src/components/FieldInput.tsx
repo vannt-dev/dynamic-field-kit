@@ -9,8 +9,14 @@ import {
   Properties,
 } from '@dynamic-field-kit/core';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  isSectionDisabled,
+  sectionFieldsOf,
+  sectionValuesOf,
+} from '../section';
 import DynamicInput from './DynamicInput';
 import FieldGroupInput from './FieldGroupInput';
+import FieldSectionInput from './FieldSectionInput';
 
 interface Props {
   fieldDescription: FieldDescription;
@@ -88,10 +94,21 @@ const FieldInputInner = ({
     [ensureLoader],
   );
 
+  // A masked field shows formatted text; this turns what its renderer reports
+  // back into the value to store. Assigned below, once the props are built,
+  // and read through a ref so the handler keeps its identity. Never set for a
+  // group, whose handler passes its items through untouched.
+  const parseInputRef = useRef<((input: unknown) => unknown) | undefined>(
+    undefined,
+  );
+
   // Stable per-field handler so DynamicInput's memoization isn't defeated
   // by a freshly-allocated closure on every parent render.
   const handleChange = useCallback(
-    (v: unknown) => onValueChangeField(v, name),
+    (v: unknown) => {
+      const parseInput = parseInputRef.current;
+      onValueChangeField(parseInput ? parseInput(v) : v, name);
+    },
     [onValueChangeField, name],
   );
 
@@ -99,6 +116,28 @@ const FieldInputInner = ({
     () => onBlurField?.(name),
     [onBlurField, name],
   );
+
+  const section = sectionFieldsOf(fieldDescription);
+  if (fields || section) {
+    // A group or a section hands its own data on as it is.
+    parseInputRef.current = undefined;
+  }
+
+  if (section) {
+    return (
+      <FieldSectionInput
+        fieldDescription={fieldDescription}
+        fields={section}
+        values={sectionValuesOf(renderInfos, name)}
+        rootData={rootData}
+        errors={errors}
+        touched={touchedMap}
+        disabled={isSectionDisabled(fieldDescription, renderInfos, rootData)}
+        onBlurField={onBlurField}
+        onChange={handleChange}
+      />
+    );
+  }
 
   if (fields) {
     const items = Array.isArray(renderInfos[name])
@@ -118,7 +157,9 @@ const FieldInputInner = ({
     );
   }
 
-  const rendererProps = buildFieldRendererProps({
+  // `parseInput` stays here: DynamicInput spreads everything else on to the
+  // renderer.
+  const { parseInput, ...rendererProps } = buildFieldRendererProps({
     fieldDescription,
     data: renderInfos,
     rootData,
@@ -127,7 +168,9 @@ const FieldInputInner = ({
     dirty,
     validationErrors: errors === undefined ? undefined : (errors[name] ?? []),
     optionsState,
+    applyMask: true,
   });
+  parseInputRef.current = parseInput;
 
   return (
     <DynamicInput

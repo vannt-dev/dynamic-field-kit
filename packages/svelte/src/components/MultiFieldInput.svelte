@@ -36,8 +36,15 @@
     type ValidationResult,
   } from '@dynamic-field-kit/core';
   import { layoutRegistry } from '../layout/layoutRegistry.js';
+  import {
+    isSectionDisabled,
+    sectionFieldsOf,
+    sectionPathMap,
+    sectionValuesOf,
+  } from '../section.js';
   import FieldInput from './FieldInput.svelte';
-  // Repeatable field groups render a nested MultiFieldInput per item.
+  // Repeatable field groups render a nested MultiFieldInput per item, and a
+  // section renders one.
   import Self from './MultiFieldInput.svelte';
 
   interface Props {
@@ -315,6 +322,7 @@
 {#if Layout}
   <Layout type={layoutInfo.type} config={layoutInfo.config}>
     {#each visibleFields as field (field.name)}
+      {@const section = sectionFieldsOf(field)}
       {#if field.fields}
         {@const items = getItems(field)}
         {@const groupName = field.label ?? field.name}
@@ -363,6 +371,30 @@
             {addText}
           </button>
         </div>
+      {:else if section}
+        <!--
+          A titled section: one nested form over the object `data[name]`, with
+          the errors, touched flags and blur of its fields keyed
+          `${name}.${childName}`. A fieldset names the group through its
+          legend and disables every control inside it natively.
+        -->
+        <fieldset
+          class={field.className}
+          disabled={isSectionDisabled(field, data, rootData ?? data)}
+        >
+          {#if field.label}<legend>{field.label}</legend>{/if}
+          <Self
+            fieldDescriptions={section}
+            properties={sectionValuesOf(data, field.name)}
+            rootData={rootData ?? data}
+            errors={sectionPathMap(effectiveErrors, field.name)}
+            touched={controlledTouched === undefined
+              ? undefined
+              : sectionPathMap(effectiveTouched, field.name)}
+            onBlurField={(key) => handleBlurField(`${field.name}.${key}`)}
+            onChange={(next) => handleValueChange(next, field.name)}
+          />
+        </fieldset>
       {:else}
         <FieldInput
           fieldDescription={field}

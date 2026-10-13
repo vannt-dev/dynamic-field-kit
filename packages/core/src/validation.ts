@@ -1,4 +1,4 @@
-import { isFieldGroup } from './fieldGroup';
+import { isFieldGroup, isFieldSection, sectionDataOf } from './fieldGroup';
 import { isAsyncOptions } from './optionsLoader';
 import type { FieldDescription, Properties, ValidationContext } from './types';
 
@@ -228,7 +228,8 @@ export async function validateFieldAsync(
  * Recursively validate `fields` against `data`, descending into repeatable
  * groups. Skips fields hidden by `appearCondition` or disabled (see
  * resolveDisabled); readOnly fields are still validated. Group error keys use
- * `${name}[${index}].${childName}`. `rootData` defaults to `data`.
+ * `${name}[${index}].${childName}`, section keys `${name}.${childName}`.
+ * `rootData` defaults to `data`.
  */
 export function validateFields(
   fields: FieldDescription[],
@@ -260,6 +261,22 @@ export function validateFields(
           pending.push(`${field.name}[${index}].${key}`);
         }
       });
+      continue;
+    }
+
+    if (isFieldSection(field)) {
+      const sub = validateFields(
+        field.section,
+        sectionDataOf(data, field.name),
+        rootData,
+        context,
+      );
+      for (const [key, messages] of Object.entries(sub.errors)) {
+        errors[`${field.name}.${key}`] = messages;
+      }
+      for (const key of sub.pending ?? []) {
+        pending.push(`${field.name}.${key}`);
+      }
       continue;
     }
 
@@ -334,6 +351,19 @@ export async function validateFieldsAsync(
         return itemEntries.flat();
       }
 
+      if (isFieldSection(field)) {
+        const sub = await validateFieldsAsync(
+          field.section,
+          sectionDataOf(data, field.name),
+          rootData,
+          options,
+        );
+        return Object.entries(sub.errors).map(
+          ([key, messages]) =>
+            [`${field.name}.${key}`, messages] as [string, string[]],
+        );
+      }
+
       if (options.signal?.aborted) {
         return [] as Array<[string, string[]]>;
       }
@@ -402,6 +432,13 @@ export function collectFieldPaths(
           (key) => `${field.name}[${index}].${key}`,
         ),
       );
+    }
+    if (isFieldSection(field)) {
+      return collectFieldPaths(
+        field.section,
+        sectionDataOf(data, field.name),
+        rootData,
+      ).map((key) => `${field.name}.${key}`);
     }
     return [field.name];
   });

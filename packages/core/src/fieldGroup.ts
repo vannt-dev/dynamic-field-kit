@@ -6,6 +6,24 @@ export function isFieldGroup(
   return Array.isArray(field.fields);
 }
 
+/**
+ * A titled section: `data[name]` is one object shaped by `field.section`.
+ * A field that also has `fields` is a repeatable group, not a section.
+ */
+export function isFieldSection(
+  field: FieldDescription,
+): field is FieldDescription & { section: FieldDescription[] } {
+  return Array.isArray(field.section) && !isFieldGroup(field);
+}
+
+/** The data of a section: the object under its name, or an empty one. */
+export function sectionDataOf(data: Properties, name: string): Properties {
+  const value = data[name];
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? (value as Properties)
+    : {};
+}
+
 export function createGroupItem(field: FieldDescription): Properties {
   return field.defaultItem ? { ...field.defaultItem } : {};
 }

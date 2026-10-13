@@ -8,7 +8,7 @@
     type OptionsState,
     type Properties,
   } from '@dynamic-field-kit/core';
-  import { onDestroy, untrack } from 'svelte';
+  import { onDestroy, tick, untrack } from 'svelte';
   import DynamicInput from './DynamicInput.svelte';
 
   interface Props {
@@ -61,7 +61,9 @@
     onDestroy(() => loader.dispose());
   }
 
-  const rendererProps = $derived(
+  // `parseInput` stays here: a masked field shows formatted text, and this
+  // turns what its renderer reports back into the value to store.
+  const { parseInput, ...rendererProps } = $derived(
     buildFieldRendererProps({
       fieldDescription,
       data: renderInfos,
@@ -72,13 +74,43 @@
       validationErrors:
         errors === undefined ? undefined : (errors[fieldDescription.name] ?? []),
       optionsState,
+      applyMask: true,
     }),
   );
+
+  // What a renderer just reported, for the one update in which it has to be
+  // told that this is not the text to show.
+  let refused = $state.raw<{ text: string } | undefined>(undefined);
+
+  function handleChange(input: unknown) {
+    const shown = rendererProps.value;
+    onValueChangeField(
+      parseInput ? parseInput(input) : input,
+      fieldDescription.name,
+    );
+    // The mask took nothing from what was typed (a letter where a digit
+    // belongs, a character past the last place), so the text to show is what
+    // it was. No prop changes then, and nothing writes the element again: the
+    // refused character would stay on screen. Hand the renderer the text it
+    // reported, then the text to show, so that it sees a change.
+    if (
+      parseInput &&
+      typeof input === 'string' &&
+      input !== shown &&
+      rendererProps.value === shown
+    ) {
+      refused = { text: input };
+      void tick().then(() => {
+        refused = undefined;
+      });
+    }
+  }
 </script>
 
 <DynamicInput
   {...rendererProps}
-  onChange={(value) => onValueChangeField(value, fieldDescription.name)}
+  value={refused ? refused.text : rendererProps.value}
+  onChange={handleChange}
   onBlur={() => onBlurField?.(fieldDescription.name)}
   onOptionsQuery={loader ? (query) => loader.setQuery(query) : undefined}
 />

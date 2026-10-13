@@ -244,18 +244,17 @@ describe('fieldsFromJsonSchema', () => {
     ).toEqual([
       ['email', 'email', true],
       ['kind', 'select', undefined],
+      ['address', 'text', undefined],
+    ]);
+    // An object inside an item is a section of that item.
+    expect(contacts.fields?.[2]?.section?.map((item) => item.name)).toEqual([
+      'city',
     ]);
     expect(contacts.defaultItem).toEqual({ kind: 'work' });
     expect(defaults).toEqual({ contacts: [{ kind: 'work' }] });
     expect(field(fields, 'tags').defaultItem).toBeUndefined();
     expect(field(fields, 'tags').minItems).toBeUndefined();
-    expect(warnings).toEqual([
-      {
-        path: 'contacts[].address',
-        message:
-          'nested objects have no field; flatten the schema or describe the object as an array of one item',
-      },
-    ]);
+    expect(warnings).toEqual([]);
   });
 
   it('turns an array of enums into a multi-select with length checks', () => {
@@ -327,7 +326,7 @@ describe('fieldsFromJsonSchema', () => {
       properties: {
         ok: true,
         never: false,
-        address: { type: 'object', properties: { city: { type: 'string' } } },
+        address: { type: 'object' },
         nothing: { type: 'null' },
         untyped: {},
         mixed: { anyOf: [{ type: 'string' }, { type: 'number' }] },
@@ -364,6 +363,7 @@ describe('fieldsFromJsonSchema', () => {
     const message = (path: string) =>
       warnings.find((item) => item.path === path)?.message;
     expect(message('never')).toContain('never valid');
+    expect(message('address')).toContain('without "properties"');
     expect(message('nothing')).toBe('type "null" has no field');
     expect(message('remote')).toContain('is not local');
     expect(message('missing')).toContain('does not resolve');
