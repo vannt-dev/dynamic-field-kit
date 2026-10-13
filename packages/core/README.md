@@ -599,10 +599,11 @@ const { fields, defaults, warnings } = fieldsFromJsonSchema(
 | `enum`, or `oneOf` / `anyOf` made only of `const` | `select`; a `const` member's `title` is the option label                                                |
 | array of enums                                    | `select` with `multiple`                                                                                |
 | array of objects                                  | repeatable group, with `minItems` / `maxItems` and a `defaultItem` from the item defaults               |
+| nested object                                     | section, with the defaults of its properties as the section's default                                   |
 
 `title` becomes the label (a readable form of the property name otherwise), `description` the description, `readOnly` a `readOnlyCondition`. `required`, `minLength`, `maxLength`, `pattern`, `minimum`, `maximum` and the `email` format become `validate` hooks built from `validators`, so their messages go through the form's [message catalog](#validation-messages). Local `$ref` (`#/...`), `allOf`, and nullable types (`type: ['string', 'null']`, or `anyOf` with a `null` branch) are followed.
 
-Not turned into fields, and reported in `warnings` instead: nested objects, tuples, arrays of free-form values, remote `$ref`, and `exclusiveMinimum` / `exclusiveMaximum`. Conditional keywords (`if` / `then`, `dependentRequired`) are ignored; express those with `appearCondition` through `overrides`.
+Not turned into fields, and reported in `warnings` instead: objects without `properties`, tuples, arrays of free-form values, remote `$ref`, and `exclusiveMinimum` / `exclusiveMaximum`. Conditional keywords (`if` / `then`, `dependentRequired`) are ignored; express those with `appearCondition` through `overrides`.
 
 `overrides` is keyed by the same path the warnings use and is merged over the generated field. Use it to choose an application-specific `type` (`textarea`, a custom picker), or to attach hooks a schema cannot express.
 
@@ -630,6 +631,7 @@ const { schema, warnings } = fieldsToJsonSchema(fields, {
 | `select`, `radio`, or any field with static `options`        | `enum`, or `oneOf` of `const` + `title` when a label differs from its value                       |
 | the same with `multiple`                                     | array of that, with `uniqueItems`                                                                 |
 | a repeatable group (`fields`)                                | array of objects, with `minItems` / `maxItems` and the `defaultItem` values as `default`s         |
+| a section (`section`)                                        | nested object, with its own `properties` and `required`; its defaults go to its properties        |
 
 `label` becomes `title`, a string `description` the description, `required` the `required` list, and a field with `computeValue` is `readOnly`. `defaults` takes form data and records it as `default`; `strict: true` adds `additionalProperties: false`.
 
@@ -943,6 +945,39 @@ const fields: FieldDescription[] = [
 Set `keyField` to an item property (e.g. an `id`) so each item keeps a stable list identity; without it the array index is used, which reassociates item state when an item is reordered or removed from the middle.
 
 The `isFieldGroup`, `createGroupItem`, `canAddGroupItem`, and `canRemoveGroupItem` helpers back this feature and are exported for adapters (or apps) that need to replicate the same add/remove bounds logic outside of `MultiFieldInput`.
+
+## Sections
+
+A `FieldDescription` with `section` is a titled section instead of a registry-rendered leaf field: `data[name]` is one object shaped by the nested fields. It is the non-repeating sibling of a group, and every adapter's `MultiFieldInput` renders it as a `<fieldset>` with `label` as its `<legend>`.
+
+```ts
+const fields: FieldDescription[] = [
+  {
+    name: 'address',
+    type: 'section', // any type key works; only `section` matters
+    label: 'Ship to',
+    section: [
+      { name: 'street', type: 'text', validate: validators.required() },
+      { name: 'city', type: 'text' },
+    ],
+  },
+];
+
+validateFields(fields, { address: { city: 'Hue' } }).errors;
+// { 'address.street': ['Field is required'] }
+collectFieldPaths(fields, {});
+// ['address.street', 'address.city']
+```
+
+- **Paths.** Errors, pending rules and touched flags of the fields inside are keyed `${name}.${childName}`; inside a group item that reads `contacts[0].address.street`. `serverErrorsFrom` already answers in these paths.
+- **Conditions.** `appearCondition`, `disabled` and `disabledCondition` on the section take all of it out of validation. Inside it, a rule or condition receives the section's object as `data` and the form as `rootData`.
+- **Data that is not there yet.** A section whose value is missing, or is not an object, is read as an empty one.
+- **JSON Schema.** `fieldsFromJsonSchema` turns a nested object into a section and `fieldsToJsonSchema` writes a section as a nested object, with its own `properties` and `required`.
+- **A key of its own.** A section is marked by `section`, not by a flag beside `fields`: an adapter that does not know sections then reports an unknown field type instead of rendering a list. When both keys are set, `fields` wins.
+
+`isFieldSection` tells a section from the rest, and `sectionPathMap(map, name)` cuts an error or touched map down to one section, keyed from inside it - what an adapter hands the nested form.
+
+Sections need core and the adapter at 1.11 or newer. With an older core the adapter still renders the section, but the form's validation does not look inside it.
 
 ## Scoped registries
 

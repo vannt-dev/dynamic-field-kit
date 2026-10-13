@@ -342,11 +342,9 @@ class Generator {
         return undefined;
       }
     } else if (type === 'object') {
-      this.warn(
-        path,
-        'nested objects have no field; flatten the schema or describe the object as an array of one item',
-      );
-      return undefined;
+      if (!this.sectionField(field, schema, path, checks, defaults)) {
+        return undefined;
+      }
     } else {
       this.warn(
         path,
@@ -428,6 +426,38 @@ class Generator {
         );
       }
     }
+  }
+
+  /** Returns false when the object has no field; a warning has been recorded. */
+  sectionField(
+    field: FieldDescription,
+    schema: SchemaObject,
+    path: string,
+    checks: ValidatorFn[],
+    defaults: Properties,
+  ): boolean {
+    if (
+      !isObject(schema.properties) ||
+      Object.keys(schema.properties).length === 0
+    ) {
+      this.warn(
+        path,
+        'an object without "properties" has no field; list its properties or leave it out',
+      );
+      return false;
+    }
+    const nested = this.fieldsOf(schema, path);
+    field.section = nested.fields;
+    // A section has no value of its own to check: the rules of the fields
+    // inside it are the ones that speak.
+    checks.length = 0;
+    if (
+      schema.default === undefined &&
+      Object.keys(nested.defaults).length > 0
+    ) {
+      defaults[field.name] = nested.defaults;
+    }
+    return true;
   }
 
   /** Returns false when the array has no field; a warning has been recorded. */
@@ -512,9 +542,9 @@ class Generator {
  * `description`, `default`, `readOnly`, `enum`, constant `oneOf`/`anyOf`,
  * string `format` and length/pattern limits, numeric bounds and `multipleOf`,
  * arrays of objects (repeatable groups) and arrays of enums (multi-select),
- * local `$ref` and `allOf`.
+ * nested objects (sections), local `$ref` and `allOf`.
  *
- * What is not: nested objects, tuples, conditional keywords (`if`/`then`,
+ * What is not: tuples, conditional keywords (`if`/`then`,
  * `dependentRequired`) and remote references. Those are reported in
  * `warnings` rather than guessed at.
  *

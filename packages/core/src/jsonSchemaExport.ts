@@ -1,3 +1,4 @@
+import { isFieldSection } from './fieldGroup';
 import type { JsonSchemaWarning } from './jsonSchema';
 import type { FieldDescription, Properties } from './types';
 
@@ -60,6 +61,10 @@ const NUMBER_TYPES = new Set(['number', 'range']);
 const BOOLEAN_TYPES = new Set(['checkbox', 'switch']);
 const CHOICE_TYPES = new Set(['select', 'radio']);
 
+function isPlainObject(value: unknown): value is Properties {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 function asNumber(value: unknown): number | undefined {
   if (typeof value === 'number') {
     return Number.isFinite(value) ? value : undefined;
@@ -105,12 +110,14 @@ class Exporter {
         );
         continue;
       }
-      const property = this.propertyOf(field, path);
+      const value = defaults?.[field.name];
+      const property = this.propertyOf(field, path, value);
       if (!property) {
         continue;
       }
-      const value = defaults?.[field.name];
-      if (value !== undefined && !('default' in property)) {
+      // A section hands its defaults on to the properties inside it.
+      const handedOn = isFieldSection(field) && isPlainObject(value);
+      if (value !== undefined && !('default' in property) && !handedOn) {
         property.default = value;
       }
       const override = this.options.overrides?.[path];
@@ -175,7 +182,11 @@ class Exporter {
     };
   }
 
-  propertyOf(field: FieldDescription, path: string): SchemaObject | undefined {
+  propertyOf(
+    field: FieldDescription,
+    path: string,
+    defaults?: unknown,
+  ): SchemaObject | undefined {
     const type = String(field.type);
     const property: SchemaObject = {};
     if (typeof field.label === 'string' && field.label !== '') {
@@ -190,6 +201,15 @@ class Exporter {
       Object.assign(property, custom);
     } else if (Array.isArray(field.fields)) {
       this.groupOf(field, path, property);
+    } else if (isFieldSection(field)) {
+      Object.assign(
+        property,
+        this.objectOf(
+          field.section,
+          path,
+          isPlainObject(defaults) ? defaults : undefined,
+        ),
+      );
     } else if (
       CHOICE_TYPES.has(type) ||
       (field.options !== undefined && !(type in STRING_TYPES))
@@ -306,7 +326,8 @@ class Exporter {
  * built-in field types; `min` / `max` / `step` of numbers; static `options`
  * as `enum`, or as `oneOf` of titled constants when the labels differ from
  * the values; `multiple` as an array; repeatable groups as arrays of objects
- * with `minItems` / `maxItems`; `defaults` as `default`.
+ * with `minItems` / `maxItems`; sections as nested objects; `defaults` as
+ * `default`.
  *
  * What cannot be: anything held in a function. `validate`, `appearCondition`,
  * `readOnlyCondition` and option loaders are reported in `warnings`, and the
