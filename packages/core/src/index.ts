@@ -8,6 +8,7 @@ export { fieldRegistry } from './FieldRegistry';
 export { applyComputedValues } from './computeValues';
 export {
   isFieldGroup,
+  isFieldSection,
   createGroupItem,
   canAddGroupItem,
   canRemoveGroupItem,
@@ -23,7 +24,9 @@ export * from './formDraft';
 export * from './formHistory';
 
 export * from './rendererProps';
+export * from './inputMask';
 export * from './pathMaps';
+export * from './serverErrors';
 export * from './messages';
 export * from './optionsLoader';
 export * from './jsonSchema';

@@ -1,5 +1,19 @@
 # @dynamic-field-kit/vue
 
+## 1.11.0
+
+### Minor Changes
+
+- Input masks, titled sections and errors from the server; the built-in controls of the Vue and Angular adapters keep the focus and stay one element.
+- b7ffb5c: Input masks. A field takes `mask`: a pattern such as `'(999) 999-9999'` (`9` a digit, `a` a letter, `*` either, anything else fixed) or a `{ format, parse }` pair. The renderer receives the formatted text as `value`, the form stores the unformatted value (`'5551234567'`), and validators, `computeValue`, drafts and `onSubmit` see that stored value. A separator appears with the character after it, a character that does not fit is neither stored nor left on screen, and Backspace on a separator removes the character before it. Renderers need no change. Core gains `createInputMask(pattern)` for the same formatting outside a form, the `InputMask` and `FieldMask` types, and `applyMask` / `parseInput` on `buildFieldRendererProps` for adapters; a mask takes effect when both core and the adapter are 1.11 or newer.
+- 4326470: Sections. A field with `section: FieldDescription[]` is a titled section: `data[name]` is one object shaped by the nested fields, the non-repeating sibling of a group. Every adapter's `MultiFieldInput` renders it as a `<fieldset>` with `label` as its `<legend>`. Errors, pending rules and touched flags of the fields inside are keyed by path (`address.street`), `appearCondition` and `disabled` / `disabledCondition` on the section apply to all of it, and sections nest in groups and in each other. `validateFields`, `validateFieldsAsync` and `collectFieldPaths` look inside sections; `fieldsFromJsonSchema` now turns a nested object into a section instead of reporting it, and `fieldsToJsonSchema` writes a section as a nested object. Core gains `isFieldSection` and `sectionPathMap`. Sections need core and the adapter at 1.11 or newer.
+- 5eaa3ca: Errors from the server. Every form store (`useDynamicForm` in React and Vue, `createDynamicForm` in Svelte, `createDynamicFormStore` in Angular) gains `setServerErrors(errors)`, `clearServerErrors(name?)` and `serverErrors`: what a backend refused is shown in `errors` after a field's own errors, its fields are marked touched, and an error stays until the value it was about changes, until it is cleared or the form is reset, or until the next submit. `isValid` keeps speaking for the form's own rules. Core gains `serverErrorsFrom(body, { paths })`, which reads the usual response shapes (a field map, `errors` as a map or a list, Zod's `issues` and flattened error, JSON Pointers) into that map, and `FORM_ERROR_KEY` for errors that name no field.
+
+### Patch Changes
+
+- 739b150: The built-in renderers no longer put what a form says about a field on the element as attributes. An input used to be rendered as `<input label="Name" touched="true" dirty="false" error="Field is required" description="…">`, because the renderers did not declare those props and Vue hands an undeclared prop on to the root element. `label`, `description`, `error`, `touched`, `dirty`, `options`, `optionsStatus` and `optionsError` are now declared on every built-in renderer. What is an attribute of the control still reaches it: `min`, `max`, `step`, `accept`, `multiple`, and a field's own `props` such as `maxlength`.
+- 9f4811a: Typing in a field that shows an error no longer loses the focus. With a built-in renderer, the input was built again whenever its error message appeared or went away, so with `validateOnChange` only the first character of what was typed arrived. `DynamicInput` now keeps the control mounted, and attributes given to it (`class`, `data-*`, listeners) reach the control whether or not an error is shown; before, they were dropped while one was.
+
 ## 1.10.0
 
 ### Minor Changes

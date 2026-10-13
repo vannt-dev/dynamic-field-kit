@@ -17,6 +17,7 @@ import React, {
 } from 'react';
 
 import { layoutRegistry, LayoutConfig } from '../layout';
+import { sectionFieldsOf } from '../section';
 import FieldInput from './FieldInput';
 
 /**
@@ -294,10 +295,12 @@ const MultiFieldInputInner = (
           rootData={effectiveRoot}
           idPrefix={effectiveIdPrefix}
           touched={Boolean(effectiveTouched[f.name])}
-          // Only a repeatable group needs the whole map; handing it to every
-          // field would make each blur re-render all of them, since the map
-          // gets a new identity on every touch.
-          touchedMap={isFieldGroup(f) ? effectiveTouched : undefined}
+          // Only a repeatable group or a section needs the whole map; handing
+          // it to every field would make each blur re-render all of them,
+          // since the map gets a new identity on every touch.
+          touchedMap={
+            isFieldGroup(f) || sectionFieldsOf(f) ? effectiveTouched : undefined
+          }
           errors={effectiveErrors}
           dirty={!Object.is(data[f.name], baseline[f.name])}
           onBlurField={handleBlurField}

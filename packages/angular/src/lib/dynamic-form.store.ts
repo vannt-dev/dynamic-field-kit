@@ -11,6 +11,14 @@ import {
   validateFields,
   validateFieldsAsync,
 } from '@dynamic-field-kit/core';
+import {
+  type FieldErrors,
+  mergeFieldErrors,
+  type ServerErrorsInput,
+  toFieldErrors,
+  withoutChangedFields,
+  withoutField,
+} from './server-errors';
 
 export interface DynamicFormOptions {
   fields: FieldDescription[];
@@ -41,6 +49,22 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
   // changes. See the React adapter for the full rationale.
   const baselineValues = signal<Properties>({ ...data() });
   const errors = signal<Record<string, string[]>>({});
+  // `errors` stays the writable signal it was, holding what is shown: the
+  // form's own errors with the server's after them. The two parts are kept
+  // apart here so that either can change without losing the other.
+  let ownErrors: Record<string, string[]> = {};
+  const serverErrors = signal<FieldErrors>({});
+  function showErrors(own: Record<string, string[]>) {
+    ownErrors = own;
+    errors.set(mergeFieldErrors(own, serverErrors()));
+  }
+  function showServerErrors(server: FieldErrors) {
+    if (server === serverErrors()) {
+      return;
+    }
+    serverErrors.set(server);
+    errors.set(mergeFieldErrors(ownErrors, server));
+  }
   const isDirty = signal<boolean>(false);
   const touched = signal<Record<string, boolean>>({});
   const isSubmitting = signal<boolean>(false);
@@ -71,7 +95,7 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
 
   function validate(): boolean {
     const res = validateFields(fields, data(), undefined, validationContext);
-    errors.set(res.errors);
+    showErrors(res.errors);
     return commitSyncResult(res);
   }
 
@@ -90,7 +114,7 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
       if (run !== validationRun || data() !== snapshot) {
         return res.valid;
       }
-      errors.set(res.errors);
+      showErrors(res.errors);
       validationResult.set(res);
       return res.valid;
     } finally {
@@ -102,6 +126,8 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
 
   function handleChange(newData: Properties) {
     const next = applyComputedValues(fields, newData);
+    // The server judged the old value: its verdict goes with it.
+    showServerErrors(withoutChangedFields(serverErrors(), data(), next));
     data.set(next);
     isDirty.set(true);
     validationController?.abort();
@@ -112,7 +138,7 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
     commitSyncResult(res);
 
     if (validateOnChange) {
-      errors.set(res.errors);
+      showErrors(res.errors);
     }
   }
 
@@ -154,11 +180,38 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
     touched.set({});
   }
 
+  /**
+   * Shows the errors a backend answered with, and marks their fields touched
+   * so they are displayed. An error stays until the value it was about
+   * changes, until `clearServerErrors` or `reset`, or until the next submit.
+   * `isValid` is not affected: it speaks for the form's own rules. Core's
+   * `serverErrorsFrom(body)` turns the usual response shapes into this map.
+   */
+  function setServerErrors(input: ServerErrorsInput) {
+    const next = toFieldErrors(input);
+    showServerErrors(next);
+    touched.set({
+      ...touched(),
+      ...Object.fromEntries(Object.keys(next).map((path) => [path, true])),
+    });
+  }
+
+  /** Removes the server errors of one field, or all of them. */
+  function clearServerErrors(name?: string) {
+    if (name === undefined) {
+      showServerErrors({});
+      return;
+    }
+    if (name in serverErrors()) {
+      showServerErrors(withoutField(serverErrors(), name));
+    }
+  }
+
   function handleBlur(fieldName: string) {
     setFieldTouched(fieldName, true);
     if (validateOnBlur) {
       const res = validateFields(fields, data(), undefined, validationContext);
-      errors.set(res.errors);
+      showErrors(res.errors);
       commitSyncResult(res);
     }
   }
@@ -168,7 +221,8 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
     const next = applyComputedValues(fields, seed);
     data.set(next);
     baselineValues.set({ ...next });
-    errors.set({});
+    serverErrors.set({});
+    showErrors({});
     isDirty.set(false);
     touched.set({});
     isSubmitting.set(false);
@@ -195,6 +249,8 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
         e.preventDefault();
       }
       isSubmitting.set(true);
+      // A new attempt: what the server said about the last one is history.
+      showServerErrors({});
       const thisSubmit = ++submitRun;
       try {
         // Touch everything before validating: a submit is the user asserting
@@ -223,7 +279,7 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
         // still has to describe the data on screen, so when it moved on, the
         // displayed state is re-derived instead of showing the old pass.
         if (data() === snapshot && run === validationRun) {
-          errors.set(res.errors);
+          showErrors(res.errors);
           validationResult.set(res);
         } else {
           const live = validateFields(
@@ -232,7 +288,7 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
             undefined,
             validationContext,
           );
-          errors.set(live.errors);
+          showErrors(live.errors);
           validationResult.set(live);
         }
         isSubmitted.set(true);
@@ -272,6 +328,10 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
     reset,
     validate,
     validateAsync,
+    /** What the server refused, by field path; already part of `errors`. */
+    serverErrors: serverErrors.asReadonly(),
+    setServerErrors,
+    clearServerErrors,
     handleSubmit,
   };
 }

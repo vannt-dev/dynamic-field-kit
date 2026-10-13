@@ -599,10 +599,11 @@ const { fields, defaults, warnings } = fieldsFromJsonSchema(
 | `enum`, or `oneOf` / `anyOf` made only of `const` | `select`; a `const` member's `title` is the option label                                                |
 | array of enums                                    | `select` with `multiple`                                                                                |
 | array of objects                                  | repeatable group, with `minItems` / `maxItems` and a `defaultItem` from the item defaults               |
+| nested object                                     | section, with the defaults of its properties as the section's default                                   |
 
 `title` becomes the label (a readable form of the property name otherwise), `description` the description, `readOnly` a `readOnlyCondition`. `required`, `minLength`, `maxLength`, `pattern`, `minimum`, `maximum` and the `email` format become `validate` hooks built from `validators`, so their messages go through the form's [message catalog](#validation-messages). Local `$ref` (`#/...`), `allOf`, and nullable types (`type: ['string', 'null']`, or `anyOf` with a `null` branch) are followed.
 
-Not turned into fields, and reported in `warnings` instead: nested objects, tuples, arrays of free-form values, remote `$ref`, and `exclusiveMinimum` / `exclusiveMaximum`. Conditional keywords (`if` / `then`, `dependentRequired`) are ignored; express those with `appearCondition` through `overrides`.
+Not turned into fields, and reported in `warnings` instead: objects without `properties`, tuples, arrays of free-form values, remote `$ref`, and `exclusiveMinimum` / `exclusiveMaximum`. Conditional keywords (`if` / `then`, `dependentRequired`) are ignored; express those with `appearCondition` through `overrides`.
 
 `overrides` is keyed by the same path the warnings use and is merged over the generated field. Use it to choose an application-specific `type` (`textarea`, a custom picker), or to attach hooks a schema cannot express.
 
@@ -630,6 +631,7 @@ const { schema, warnings } = fieldsToJsonSchema(fields, {
 | `select`, `radio`, or any field with static `options`        | `enum`, or `oneOf` of `const` + `title` when a label differs from its value                       |
 | the same with `multiple`                                     | array of that, with `uniqueItems`                                                                 |
 | a repeatable group (`fields`)                                | array of objects, with `minItems` / `maxItems` and the `defaultItem` values as `default`s         |
+| a section (`section`)                                        | nested object, with its own `properties` and `required`; its defaults go to its properties        |
 
 `label` becomes `title`, a string `description` the description, `required` the `required` list, and a field with `computeValue` is `readOnly`. `defaults` takes form data and records it as `default`; `strict: true` adds `additionalProperties: false`.
 
@@ -786,6 +788,110 @@ Things to know:
 - **Typing is grouped.** Typing a word into one field is undone in one go; a pause longer than `coalesceMs`, a change to another field, or an undo starts a new step.
 - **Steps are kept by reference.** Plain objects and arrays are compared by content; other values (`Date`, `File`) by identity. Replace form data instead of mutating it, as the adapters already do.
 
+## Input masks
+
+A field's `mask` shows its value formatted while it is typed; the form keeps
+the unformatted value.
+
+```ts
+import { createInputMask } from '@dynamic-field-kit/core';
+import type { FieldDescription, InputMask } from '@dynamic-field-kit/core';
+
+const phone: FieldDescription = {
+  name: 'phone',
+  type: 'text',
+  mask: '(999) 999-9999',
+};
+
+// The same mask outside a form, for a table cell or a summary.
+const mask = createInputMask('(999) 999-9999');
+mask.format('5551234567'); // '(555) 123-4567'
+mask.format('555'); // '(555'
+mask.parse('(555) 123-4567'); // '5551234567'
+
+// What a pattern cannot say: a pair of functions.
+const upper: InputMask = {
+  format: (value) => String(value ?? ''),
+  parse: (text) => text.toUpperCase(),
+};
+```
+
+**Patterns.** `9` is a digit, `a` a letter (of any alphabet), `*` either. Any
+other character is fixed, and a backslash makes the next character fixed
+(`'\\9'`). The stored value is the characters typed into those places, without
+the fixed ones.
+
+**What is shown.** A fixed character is shown once the character after it
+exists, and the ones that close the pattern once every place is filled, so the
+text never ends in a separator that Backspace would have to fight. A stored
+value that does not fit is shown as far as it does: characters that fit no
+place are left out, and so is what is past the last place.
+
+**What is stored.** `parse(text, previous)` reads the text of the input back.
+A character that does not fit its place is dropped; fixed characters are
+matched, not stored (the `1` of `'+1 (999) 999-9999'` is never taken for a
+typed digit). `previous` is the value the form held while the text was edited.
+With it, a deleted separator is told apart from text that was merely re-typed,
+and the typed character before the separator is removed, as Backspace means
+to. A `{ format, parse }` pair receives the same second argument.
+
+**Validation** runs on the stored value. A pattern does not make a partial
+value invalid by itself: `validators.minLength(10)` or `validators.pattern`
+says when the value is whole.
+
+**The caret.** The kit rewrites the text and leaves the caret to the browser:
+typing and deleting at the end behave as expected, and an edit in the middle
+that makes the mask rewrite the text sends the caret to the end.
+
+**Renderers** need no change. They receive the formatted text as `value` and
+report the edited text through `onValueChange`. A renderer has to show `value`
+whenever it is handed one, as a controlled input does.
+
+**Adapters.** `buildFieldRendererProps` applies a mask only when asked to, with
+`applyMask: true`. It then returns the formatted text as `value` and a
+`parseInput` function, which the adapter keeps for itself and puts between the
+renderer and the form: `onChange(parseInput ? parseInput(input) : input)`.
+Without `applyMask` the field is built as if it had no mask, which is what an
+adapter that knows nothing of masks needs: it would show the formatted text
+and then store that text as the value.
+
+## Errors from the server
+
+`serverErrorsFrom(body, options?)` turns the answer of a backend that refused a
+submit into errors by field path, ready for a form store's `setServerErrors`:
+
+```ts
+import {
+  collectFieldPaths,
+  FORM_ERROR_KEY,
+  serverErrorsFrom,
+} from '@dynamic-field-kit/core';
+
+serverErrorsFrom(
+  { errors: { Email: ['Already registered'] } },
+  { paths: collectFieldPaths(fields, data) },
+);
+// { email: ['Already registered'] }
+
+serverErrorsFrom({
+  errors: [
+    { pointer: '/contacts/1/phone', detail: 'Not a phone number' },
+    { message: 'The order is closed' },
+  ],
+});
+// { 'contacts[1].phone': ['Not a phone number'], [FORM_ERROR_KEY]: ['The order is closed'] }
+```
+
+It reads a map of field to message or messages; that map under `errors` or
+`fieldErrors` (with `formErrors` beside it); and a list under `errors` or
+`issues` whose items name their field as `field`, `path`, `name`, `property`,
+`param`, `pointer` or `source.pointer` and carry a `message`, `detail`, `msg` or
+`constraints`. A JSON Pointer, a dotted path, a JSONPath and a list of segments
+all become the path the kit uses (`contacts[1].phone`). With `paths`, a key that
+differs from a form field only by case takes that field's spelling. Errors that
+name no field are kept under `FORM_ERROR_KEY`. A body that is not a set of
+field errors answers an empty object.
+
 ## Group array helpers
 
 Every adapter's `MultiFieldInput` renders add/remove controls itself. These
@@ -839,6 +945,39 @@ const fields: FieldDescription[] = [
 Set `keyField` to an item property (e.g. an `id`) so each item keeps a stable list identity; without it the array index is used, which reassociates item state when an item is reordered or removed from the middle.
 
 The `isFieldGroup`, `createGroupItem`, `canAddGroupItem`, and `canRemoveGroupItem` helpers back this feature and are exported for adapters (or apps) that need to replicate the same add/remove bounds logic outside of `MultiFieldInput`.
+
+## Sections
+
+A `FieldDescription` with `section` is a titled section instead of a registry-rendered leaf field: `data[name]` is one object shaped by the nested fields. It is the non-repeating sibling of a group, and every adapter's `MultiFieldInput` renders it as a `<fieldset>` with `label` as its `<legend>`.
+
+```ts
+const fields: FieldDescription[] = [
+  {
+    name: 'address',
+    type: 'section', // any type key works; only `section` matters
+    label: 'Ship to',
+    section: [
+      { name: 'street', type: 'text', validate: validators.required() },
+      { name: 'city', type: 'text' },
+    ],
+  },
+];
+
+validateFields(fields, { address: { city: 'Hue' } }).errors;
+// { 'address.street': ['Field is required'] }
+collectFieldPaths(fields, {});
+// ['address.street', 'address.city']
+```
+
+- **Paths.** Errors, pending rules and touched flags of the fields inside are keyed `${name}.${childName}`; inside a group item that reads `contacts[0].address.street`. `serverErrorsFrom` already answers in these paths.
+- **Conditions.** `appearCondition`, `disabled` and `disabledCondition` on the section take all of it out of validation. Inside it, a rule or condition receives the section's object as `data` and the form as `rootData`.
+- **Data that is not there yet.** A section whose value is missing, or is not an object, is read as an empty one.
+- **JSON Schema.** `fieldsFromJsonSchema` turns a nested object into a section and `fieldsToJsonSchema` writes a section as a nested object, with its own `properties` and `required`.
+- **A key of its own.** A section is marked by `section`, not by a flag beside `fields`: an adapter that does not know sections then reports an unknown field type instead of rendering a list. When both keys are set, `fields` wins.
+
+`isFieldSection` tells a section from the rest, and `sectionPathMap(map, name)` cuts an error or touched map down to one section, keyed from inside it - what an adapter hands the nested form.
+
+Sections need core and the adapter at 1.11 or newer. With an older core the adapter still renders the section, but the form's validation does not look inside it.
 
 ## Scoped registries
 

@@ -22,6 +22,12 @@ import {
   watch,
 } from 'vue';
 import { layoutRegistry } from '../layout';
+import {
+  isSectionDisabled,
+  sectionFieldsOf,
+  sectionPathMap,
+  sectionValuesOf,
+} from '../section';
 import { LayoutConfig } from '../types/layout';
 import FieldInput from './FieldInput';
 
@@ -458,27 +464,69 @@ const MultiFieldInput = /* @__PURE__ */ defineComponent({
       ]);
     };
 
+    // A titled section: one nested form over the object `data[name]`, with
+    // the errors, touched flags and blur of its fields keyed
+    // `${name}.${childName}`. A fieldset names the group through its legend
+    // and disables every control inside it natively.
+    const renderSectionField = (
+      field: FieldDescription,
+      fields: FieldDescription[],
+    ) => {
+      const root = props.rootData ?? data;
+      return h(
+        'fieldset',
+        {
+          key: field.name,
+          class: field.className,
+          disabled: isSectionDisabled(field, data, root),
+        },
+        [
+          field.label ? h('legend', field.label) : null,
+          h(selfRef(), {
+            fieldDescriptions: fields,
+            properties: sectionValuesOf(data, field.name),
+            rootData: root,
+            errors: sectionPathMap(effectiveErrors.value, field.name),
+            // Absent stays absent, or the nested input would take an
+            // uncontrolled form for a controlled one.
+            touched:
+              controlledTouched.value === undefined
+                ? undefined
+                : sectionPathMap(effectiveTouched.value, field.name),
+            onBlurField: (key: string) =>
+              handleBlurField(`${field.name}.${key}`),
+            onChange: (next: Properties) => handleValueChange(next, field.name),
+          }),
+        ],
+      );
+    };
+
     return () => {
       if (!Layout.value) {
         return h('div', `Unknown layout: ${layoutInfo.value.type}`);
       }
 
-      const children = visibleFields.value.map((f) =>
-        f.fields
-          ? renderGroupField(f)
-          : h(FieldInput, {
-              key: f.name,
-              fieldDescription: f,
-              renderInfos: data,
-              rootData: props.rootData ?? data,
-              idPrefix: effectiveIdPrefix.value,
-              touched: Boolean(effectiveTouched.value[f.name]),
-              errors: effectiveErrors.value,
-              dirty: !Object.is(data[f.name], baseline.value[f.name]),
-              onValueChangeField: handleValueChange,
-              onBlurField: handleBlurField,
-            }),
-      );
+      const children = visibleFields.value.map((f) => {
+        if (f.fields) {
+          return renderGroupField(f);
+        }
+        const section = sectionFieldsOf(f);
+        if (section) {
+          return renderSectionField(f, section);
+        }
+        return h(FieldInput, {
+          key: f.name,
+          fieldDescription: f,
+          renderInfos: data,
+          rootData: props.rootData ?? data,
+          idPrefix: effectiveIdPrefix.value,
+          touched: Boolean(effectiveTouched.value[f.name]),
+          errors: effectiveErrors.value,
+          dirty: !Object.is(data[f.name], baseline.value[f.name]),
+          onValueChangeField: handleValueChange,
+          onBlurField: handleBlurField,
+        });
+      });
 
       return Layout.value({
         config: layoutInfo.value.config,

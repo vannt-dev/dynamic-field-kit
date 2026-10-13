@@ -22,6 +22,12 @@ import {
   Properties,
 } from '@dynamic-field-kit/core';
 import type { ValidationResult } from '@dynamic-field-kit/core';
+import {
+  isSectionDisabled,
+  sectionFieldsOf,
+  sectionPathMap,
+  sectionValuesOf,
+} from '../lib/section';
 import { BaseLayoutConfig, LayoutConfig } from '../types/layout';
 import { FieldInput } from './FieldInput';
 
@@ -69,7 +75,7 @@ function nextInstanceId(): number {
     >
       <ng-container *ngFor="let field of visibleFields; trackBy: trackByFn">
         <dfk-field-input
-          *ngIf="!field.fields"
+          *ngIf="!field.fields && !sectionOf(field)"
           [fieldDescription]="field"
           [data]="data"
           [rootData]="rootData"
@@ -81,6 +87,29 @@ function nextInstanceId(): number {
           (onValueChangeField)="onFieldChange($event)"
           (onBlurField)="handleBlurField($event)"
         ></dfk-field-input>
+
+        <!--
+          A titled section: one nested form over the object data[name], with
+          the errors, touched flags and blur of its fields keyed
+          name.childName. A fieldset names the group through its legend and
+          disables every control inside it natively.
+        -->
+        <fieldset
+          *ngIf="!field.fields && sectionOf(field) as section"
+          [class]="field.className"
+          [disabled]="isSectionDisabled(field)"
+        >
+          <legend *ngIf="field.label">{{ field.label }}</legend>
+          <dfk-multi-field-input
+            [fieldDescriptions]="section"
+            [properties]="sectionValues(field.name)"
+            [rootData]="rootData ?? data"
+            [errors]="errorsForSection(field.name)"
+            [touched]="touchedForSection(field.name)"
+            (onBlurField)="handleBlurField(field.name + '.' + $event)"
+            (onChange)="onFieldChange({ value: $event, key: field.name })"
+          ></dfk-multi-field-input>
+        </fieldset>
 
         <div *ngIf="field.fields" [class]="field.className">
           <div *ngIf="field.label">{{ field.label }}</div>
@@ -189,6 +218,13 @@ export class MultiFieldInput implements OnInit, OnChanges {
     string,
     Record<number, Record<string, boolean>> | undefined
   >();
+  private sectionErrorsSource?: Record<string, string[]>;
+  private sectionErrors = new Map<
+    string,
+    Record<string, string[]> | undefined
+  >();
+  private sectionTouchedSource?: Record<string, boolean>;
+  private sectionTouched = new Map<string, Record<string, boolean>>();
 
   get effectiveIdPrefix(): string {
     return this.idPrefix ?? `dfk-${this.instanceId}`;
@@ -261,6 +297,46 @@ export class MultiFieldInput implements OnInit, OnChanges {
 
   handleGroupBlur(fieldName: string, index: number, key: string): void {
     this.handleBlurField(`${fieldName}[${index}].${key}`);
+  }
+
+  /** The fields of a titled section, or undefined for any other field. */
+  sectionOf(field: FieldDescription): FieldDescription[] | undefined {
+    return sectionFieldsOf(field);
+  }
+
+  sectionValues(fieldName: string): Properties {
+    return sectionValuesOf(this.data, fieldName);
+  }
+
+  isSectionDisabled(field: FieldDescription): boolean {
+    return isSectionDisabled(field, this.data, this.rootData ?? this.data);
+  }
+
+  // Cached per source map for the reason given at `touchedForItem`: a fresh
+  // object in a template binding is a new identity on every pass.
+  errorsForSection(fieldName: string): Record<string, string[]> | undefined {
+    if (this.sectionErrorsSource !== this.errors) {
+      this.sectionErrorsSource = this.errors;
+      this.sectionErrors.clear();
+    }
+    if (!this.sectionErrors.has(fieldName)) {
+      this.sectionErrors.set(fieldName, sectionPathMap(this.errors, fieldName));
+    }
+    return this.sectionErrors.get(fieldName);
+  }
+
+  touchedForSection(fieldName: string): Record<string, boolean> {
+    const current = this.effectiveTouched;
+    if (this.sectionTouchedSource !== current) {
+      this.sectionTouchedSource = current;
+      this.sectionTouched.clear();
+    }
+    let scoped = this.sectionTouched.get(fieldName);
+    if (!scoped) {
+      scoped = sectionPathMap(current, fieldName) ?? EMPTY_TOUCHED;
+      this.sectionTouched.set(fieldName, scoped);
+    }
+    return scoped;
   }
 
   /**

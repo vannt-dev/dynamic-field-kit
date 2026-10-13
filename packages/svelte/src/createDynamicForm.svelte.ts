@@ -11,6 +11,14 @@ import {
   validateFieldsAsync,
 } from '@dynamic-field-kit/core';
 import { onDestroy } from 'svelte';
+import {
+  type FieldErrors,
+  mergeFieldErrors,
+  type ServerErrorsInput,
+  toFieldErrors,
+  withoutChangedFields,
+  withoutField,
+} from './serverErrors.js';
 
 export interface CreateDynamicFormOptions {
   fields: FieldDescription[];
@@ -56,6 +64,10 @@ export function createDynamicForm({
   // changes. See the React adapter for the full rationale.
   let baselineValues = $state.raw<Properties>({ ...initial });
   let errors = $state.raw<Record<string, string[]>>({});
+  // What the server refused, by field path. Shown through `form.errors`,
+  // after a field's own errors.
+  let serverErrors = $state.raw<FieldErrors>({});
+  const shownErrors = $derived(mergeFieldErrors(errors, serverErrors));
   let isDirty = $state(false);
   let touched = $state.raw<Record<string, boolean>>({});
   let isSubmitting = $state(false);
@@ -124,6 +136,8 @@ export function createDynamicForm({
 
   function handleChange(newData: Properties) {
     const next = applyComputedValues(fields, newData);
+    // The server judged the old value: its verdict goes with it.
+    serverErrors = withoutChangedFields(serverErrors, data, next);
     data = next;
     isDirty = true;
     validationController?.abort();
@@ -172,6 +186,33 @@ export function createDynamicForm({
     touched = {};
   }
 
+  /**
+   * Shows the errors a backend answered with, and marks their fields touched
+   * so they are displayed. An error stays until the value it was about
+   * changes, until `clearServerErrors` or `reset`, or until the next submit.
+   * `isValid` is not affected: it speaks for the form's own rules. Core's
+   * `serverErrorsFrom(body)` turns the usual response shapes into this map.
+   */
+  function setServerErrors(input: ServerErrorsInput) {
+    const next = toFieldErrors(input);
+    serverErrors = next;
+    touched = {
+      ...touched,
+      ...Object.fromEntries(Object.keys(next).map((path) => [path, true])),
+    };
+  }
+
+  /** Removes the server errors of one field, or all of them. */
+  function clearServerErrors(name?: string) {
+    if (name === undefined) {
+      serverErrors = {};
+      return;
+    }
+    if (name in serverErrors) {
+      serverErrors = withoutField(serverErrors, name);
+    }
+  }
+
   function handleBlur(fieldName: string) {
     setFieldTouched(fieldName, true);
     if (validateOnBlur) {
@@ -186,6 +227,7 @@ export function createDynamicForm({
     data = next;
     baselineValues = { ...next };
     errors = {};
+    serverErrors = {};
     isDirty = false;
     touched = {};
     isSubmitting = false;
@@ -207,6 +249,8 @@ export function createDynamicForm({
         e.preventDefault();
       }
       isSubmitting = true;
+      // A new attempt: what the server said about the last one is history.
+      serverErrors = {};
       const thisSubmit = ++submitRun;
       try {
         // Touch everything before validating: a submit is the user asserting
@@ -267,7 +311,11 @@ export function createDynamicForm({
       return data;
     },
     get errors() {
-      return errors;
+      return shownErrors;
+    },
+    /** What the server refused, by field path; already part of `errors`. */
+    get serverErrors() {
+      return serverErrors;
     },
     get isValid() {
       return validationResult.valid;
@@ -306,6 +354,8 @@ export function createDynamicForm({
     reset,
     validate,
     validateAsync,
+    setServerErrors,
+    clearServerErrors,
     handleSubmit,
     destroy,
   };

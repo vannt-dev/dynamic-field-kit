@@ -1,3 +1,5 @@
+import type { FieldMask } from './inputMask';
+
 export type FieldTypeKey = keyof FieldTypeMap & string;
 
 // 👇 Core provides standard HTML5 input defaults; apps can extend via declaration merging
@@ -182,6 +184,17 @@ export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {
   accept?: string;
   multiple?: boolean;
   /**
+   * Shows the value formatted while it is typed: a pattern such as
+   * `'(999) 999-9999'` (`9` a digit, `a` a letter, `*` either, anything else
+   * fixed), or a `{ format, parse }` pair. The renderer receives the formatted
+   * text as `value`; the form stores what `parse` returns - for a pattern, the
+   * typed characters without the fixed ones - and that is what validators see.
+   *
+   * Meant for renderers that show text. Needs an adapter from 1.11 on; an
+   * older one renders the field as if it had no mask.
+   */
+  mask?: FieldMask;
+  /**
    * Debounce for the async options loader, in milliseconds. Rapid `update` or
    * `onOptionsQuery` calls inside the window collapse into one fetch.
    *
@@ -204,6 +217,18 @@ export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {
    * going through fieldRegistry.
    */
   fields?: FieldDescription[];
+  /**
+   * Declares this field as a titled section instead of a registry-rendered
+   * leaf field: `data[name]` becomes an object shaped by `section`, shown
+   * under `label`. The non-repeating sibling of `fields` - no "add" or
+   * "remove", one set of values. Errors and touched flags of the fields inside
+   * are keyed `${name}.${childName}`.
+   *
+   * A key of its own rather than a flag beside `fields`: an adapter that does
+   * not know sections then reports an unknown field type instead of rendering
+   * a list. When both are set, `fields` wins.
+   */
+  section?: FieldDescription[];
   /** Values to seed a newly-added item with. Defaults to `{}`. */
   defaultItem?: Properties;
   /**

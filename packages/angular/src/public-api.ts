@@ -54,3 +54,4 @@ export {
 // Scoped registry: provide FIELD_REGISTRY on a component/route to give that
 // subtree an isolated set of renderers.
 export { FIELD_REGISTRY } from './fieldRegistryToken';
+export type { ServerErrorsInput } from './lib/server-errors';

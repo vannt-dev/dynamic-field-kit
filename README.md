@@ -35,6 +35,7 @@ A lightweight, extensible **dynamic form engine** for React, Angular, Vue, and S
 - Runtime conditional fields (`appearCondition`)
 - Derived/computed fields (`computeValue`)
 - Repeatable field groups (`fields`) - "add another item" without leaving the schema
+- Titled sections (`section`) - a nested object under a heading, validated by path
 - Responsive layouts (mobile/desktop) with custom breakpoints
 - Clean TypeScript declarations (DTS-safe)
 - Framework-agnostic core (works with React, Angular, Vue, Svelte, or vanilla JS)
@@ -49,6 +50,7 @@ A lightweight, extensible **dynamic form engine** for React, Angular, Vue, and S
 - **Multi-Step Form Wizard Engine**: `createWizardState`, `validateStep`, `canGoNext`, `canGoPrev`, `goNext`, `goPrev`, `goToStep`, `markStepCompleted`, `isStepCompleted`. State is immutable — every navigation returns a new state, and `goNext` records the step it leaves in `completedSteps`.
 - **Draft Persistence**: `createFormDraft` keeps form data in `localStorage` (or any storage) with debounced writes, a version and an age limit, and never writes the fields you exclude. See the [core README](packages/core/README.md#saving-a-draft).
 - **Undo and Redo**: `createFormHistory` records the form's data, groups typing into one step and ignores the data it just restored. See the [core README](packages/core/README.md#undo-and-redo).
+- **Errors from the server**: `setServerErrors` on every form store shows what a backend refused under the fields it names, until the user changes them; `serverErrorsFrom(body)` in core reads the usual response shapes into that map. See [Errors from the server](#errors-from-the-server).
 - **Interactive Form DevTools**: Floating overlay component (`<DynamicFormDevTools />`) for realtime debugging.
 - **Blur wiring**: `MultiFieldInput` reports blur via `onBlurField` (an `@Output` in Angular), so a form store's `handleBlur` / `touched` / `validateOnBlur` can be connected to it. Pass `touched` back in to make the store its single source of truth.
 - **Unique field ids**: ids are namespaced per `MultiFieldInput` instance, so two forms holding a field of the same name do not collide. Override with `idPrefix`, or `FieldDescription.id` per field.
@@ -262,6 +264,7 @@ const fields: FieldDescription[] = [
 | label           | UI label                                                                                                                                                                                                                                                                                                                                                                             |
 | value           | Default value                                                                                                                                                                                                                                                                                                                                                                        |
 | disabled        | Forwarded to the renderer as `disabled`                                                                                                                                                                                                                                                                                                                                              |
+| mask            | Shows the value formatted while it is typed and stores it unformatted: a pattern such as `'(999) 999-9999'` or a `{ format, parse }` pair. See **Input masks** below                                                                                                                                                                                                                 |
 | props           | Extra, framework-agnostic props forwarded verbatim to the renderer (e.g. `acceptFile`, `maxLength`) - keeps domain-specific inputs out of the adapter layer                                                                                                                                                                                                                          |
 | appearCondition | Runtime visibility condition. Called as `(data, rootData)`: `data` is this field's own level (the group item, inside a repeatable group), `rootData` is always the top-level form data                                                                                                                                                                                               |
 | computeValue    | Derives this field's value from the rest of the form data (e.g. a total or full name) whenever any field changes. Called as `(data, rootData)` like `appearCondition`. Evaluated once per change, not to a fixed point, so avoid chaining `computeValue` fields into a cycle, and return a primitive or a stable reference (a fresh object/array each call defeats render-skipping). |
@@ -294,6 +297,92 @@ const fields: FieldDescription[] = [
 | keyField               | Property on each item to use as its stable list key (React key / Vue key / Angular trackBy). Falls back to the array index, which is unsafe if items can be reordered or removed from the middle. |
 | minItems / maxItems    | Bounds enforced on the "Remove" / "Add" controls. Unbounded when omitted.                                                                                                                         |
 | addLabel / removeLabel | Custom button text (defaults to "Add" / "Remove").                                                                                                                                                |
+
+**Sections**
+
+A field with `section` is a titled section: `data[name]` is one object shaped
+by the nested fields, shown under `label`. It is the non-repeating sibling of a
+group - no "Add" or "Remove", one set of values.
+
+```ts
+const fields: FieldDescription[] = [
+  { name: 'name', type: 'text', label: 'Name' },
+  {
+    name: 'address',
+    type: 'section', // any type key works; only `section` matters
+    label: 'Ship to',
+    section: [
+      { name: 'street', type: 'text', label: 'Street' },
+      { name: 'city', type: 'text', label: 'City' },
+    ],
+  },
+];
+// data: { name: 'Ada', address: { street: '1 Le Loi', city: 'Hue' } }
+```
+
+`MultiFieldInput` renders it as a `<fieldset>` with the label as its
+`<legend>`, and `className` on the fieldset. Errors and touched flags of the
+fields inside are keyed by path (`address.street`), which is also the path
+`setServerErrors` takes. `appearCondition` hides the whole section, and
+`disabled` / `disabledCondition` disable every control in it and take it out
+of validation. Inside the section a condition receives the section's object
+as `data` and the form as `rootData`, as it does inside a group item. Sections
+nest in groups and in each other.
+
+Like a group's array, the section's object is replaced on every edit inside
+it, so the section itself reads as dirty after the first one.
+
+**Input masks**
+
+`mask` shows a value formatted while it is typed and keeps the unformatted
+value in the form:
+
+```ts
+import { validators } from '@dynamic-field-kit/core';
+
+const fields: FieldDescription[] = [
+  // Shown as (555) 123-4567, stored as '5551234567'.
+  {
+    name: 'phone',
+    type: 'text',
+    mask: '(999) 999-9999',
+    validate: validators.minLength(10, 'Enter all ten digits'),
+  },
+  { name: 'expires', type: 'text', mask: '99/99' },
+  // What a pattern cannot say: a pair of functions.
+  {
+    name: 'amount',
+    type: 'text',
+    mask: {
+      format: (value) =>
+        value === undefined || value === ''
+          ? ''
+          : Number(value).toLocaleString('en-US'),
+      parse: (text) => {
+        const digits = text.replace(/\D/g, '');
+        return digits ? Number(digits) : undefined;
+      },
+    },
+  },
+];
+```
+
+In a pattern `9` is a digit, `a` a letter, `*` either, and any other character
+is fixed (`\\9` in a string literal for a fixed 9). The form stores only what
+was typed into those places, so validators, `computeValue`, drafts and
+`onSubmit` all see `'5551234567'`. The renderer receives the formatted text as
+`value` and reports the edited text as it always did; nothing in it changes.
+
+While typing, a separator appears together with the character after it, a
+character that does not fit its place is dropped, and Backspace on a separator
+removes the character before it. When an edit in the middle makes the mask
+rewrite the text, the caret goes to the end, as it does for any input whose
+text is rewritten under it. A mask is meant for renderers that show text: an
+`<input type="number">` or `type="date"` refuses formatted text.
+
+All four adapters apply it (from 1.11 on; an older adapter renders the field
+as if it had no mask). `createInputMask(pattern)` gives the same `format` and
+`parse` outside a form, for a table cell or a summary.
 
 **Validation & conditions**
 
@@ -503,6 +592,52 @@ store.isSubmitting();
 `handleSubmit` returns a **handler** in every framework, so Angular binds it the
 same way: `onSubmit = this.store.handleSubmit((data) => …)` then
 `(ngSubmit)="onSubmit($event)"`.
+
+### Errors from the server
+
+A form's own rules cannot know that an email is already registered. When the
+backend refuses a submit, hand its answer to the form:
+
+```tsx
+import { collectFieldPaths, serverErrorsFrom } from '@dynamic-field-kit/core';
+
+const onSubmit = form.handleSubmit(async (data) => {
+  const response = await fetch('/api/users', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  if (response.status === 400 || response.status === 422) {
+    form.setServerErrors(
+      serverErrorsFrom(await response.json(), {
+        paths: collectFieldPaths(fields, data),
+      }),
+    );
+  }
+});
+```
+
+`setServerErrors` takes a message or a list of messages by field path
+(`{ email: 'Already registered', 'contacts[1].phone': ['Not a phone number'] }`).
+The errors appear in `errors`, after the field's own, and their fields are
+marked touched so they are displayed. An error stays until the value it was
+about changes; `clearServerErrors(name?)`, `reset()` and the next submit remove
+them too. `serverErrors` holds them on their own. `isValid` is not affected: it
+speaks for the form's own rules, so a submit button bound to it stays usable
+for another try.
+
+`serverErrorsFrom` reads what backends commonly send: a map of field to
+messages, that map under `errors` (ASP.NET, Laravel) or `fieldErrors` (a
+flattened Zod error), and a list under `errors` or `issues` whose items name
+their field (`field`, `path`, `name`, `property`, `param`, `pointer`,
+`source.pointer`) and carry a `message`, `detail`, `msg` or `constraints`. JSON
+Pointers and dotted paths become the kit's `contacts[1].phone`. With `paths`, a
+key that differs from a form field only by case (`Email`) lands on that field.
+What names no field is kept under `FORM_ERROR_KEY`, for a message above the
+form.
+
+The same three members exist on `useDynamicForm` (React, Vue),
+`createDynamicForm` (Svelte) and `createDynamicFormStore` (Angular, where
+`serverErrors` is a signal).
 
 ## 🧭 Multi-Step Wizard
 

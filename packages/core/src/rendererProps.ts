@@ -1,3 +1,4 @@
+import { resolveInputMask } from './inputMask';
 import type { OptionsState } from './optionsLoader';
 import type { FieldDescription, FieldRendererProps, Properties } from './types';
 import {
@@ -100,13 +101,23 @@ function warnOnReservedProps(
 }
 
 /**
- * A fully resolved renderer prop bag, plus the two keys the adapter layer needs
- * but the renderer never sees as-is: `type` (which renderer to look up) and
- * `extraProps` (spread verbatim ahead of the standard props).
+ * A fully resolved renderer prop bag, plus the keys the adapter layer needs
+ * but the renderer never sees as-is: `type` (which renderer to look up),
+ * `extraProps` (spread verbatim ahead of the standard props) and `parseInput`.
  */
 export interface ResolvedFieldRendererProps extends FieldRendererProps {
   type: FieldDescription['type'];
   extraProps?: Properties;
+  /**
+   * Present only for a field with a `mask` whose adapter asked for it with
+   * `applyMask`. `value` is then the formatted text, and this turns what the
+   * renderer reports back into the value to store:
+   * `onChange(parseInput ? parseInput(v) : v)`.
+   *
+   * An adapter keeps it for itself. Spread on to a renderer it would end up
+   * as an attribute of whatever element the renderer spreads its props over.
+   */
+  parseInput?: (input: unknown) => unknown;
 }
 
 export interface BuildFieldRendererPropsInput {
@@ -130,6 +141,13 @@ export interface BuildFieldRendererPropsInput {
    * valid; `undefined` keeps the legacy live-validation behaviour.
    */
   validationErrors?: string[];
+  /**
+   * Set by an adapter that sends what its renderer reports back through
+   * `parseInput`. Without it a field's `mask` is left alone: an adapter that
+   * knows nothing of masks would show the formatted text and then store that
+   * text as the value.
+   */
+  applyMask?: boolean;
 }
 
 /**
@@ -171,6 +189,7 @@ export function buildFieldRendererProps({
   dirty,
   validationErrors,
   optionsState,
+  applyMask,
 }: BuildFieldRendererPropsInput): ResolvedFieldRendererProps {
   const {
     name,
@@ -205,9 +224,12 @@ export function buildFieldRendererProps({
       validateField(fieldDescription, data[name], data, rootData));
   const error = errors.length > 0 ? errors : undefined;
 
-  return {
+  const stored = data[name];
+  const mask = applyMask ? resolveInputMask(fieldDescription.mask) : undefined;
+
+  const resolved: ResolvedFieldRendererProps = {
     type,
-    value: data[name],
+    value: mask ? mask.format(stored) : stored,
     label,
     placeholder,
     required,
@@ -236,4 +258,11 @@ export function buildFieldRendererProps({
     multiple,
     extraProps,
   };
+  if (mask) {
+    // Added only here, so a field without a mask is built key for key as it
+    // was before masks existed.
+    resolved.parseInput = (input) =>
+      typeof input === 'string' ? mask.parse(input, stored) : input;
+  }
+  return resolved;
 }
