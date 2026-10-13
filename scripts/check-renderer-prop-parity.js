@@ -76,7 +76,7 @@ function probes() {
 
   const vueSrc = read('packages/vue/src/components/DynamicInput.ts');
   const vueDeclared = blockAfter(vueSrc, '  props: {');
-  const vueForwarded = blockAfter(vueSrc, 'h(Renderer.value, ');
+  const vueForwarded = blockAfter(vueSrc, 'const controlProps = ');
 
   const angularSrc = read('packages/angular/src/components/DynamicInput.ts');
   const angularKnown = angularSrc.slice(
