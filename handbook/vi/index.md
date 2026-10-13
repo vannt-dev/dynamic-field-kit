@@ -17,7 +17,7 @@ hero:
       link: https://github.com/vannt-dev/dynamic-field-kit
 
 features:
-  - title: Một schema, ba framework
+  - title: Một schema, bốn framework
     details: Phần core không phụ thuộc framework giữ danh sách field, điều kiện, validation và layout. Adapter mỏng render nó trong React, Vue 3, Angular và Svelte 5.
     link: /vi/guide/fields
   - title: Component của bạn, không phải của thư viện

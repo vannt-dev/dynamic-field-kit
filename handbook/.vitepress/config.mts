@@ -53,7 +53,9 @@ export default defineConfig({
             items: [
               { text: 'Computed fields', link: '/guide/computed-fields' },
               { text: 'Validation and conditions', link: '/guide/validation' },
+              { text: 'Input masks', link: '/guide/input-masks' },
               { text: 'Repeatable groups', link: '/guide/groups' },
+              { text: 'Sections', link: '/guide/sections' },
               { text: 'Multi-step wizard', link: '/guide/wizard' },
             ],
           },
@@ -63,6 +65,7 @@ export default defineConfig({
               { text: 'Fields from a JSON Schema', link: '/guide/json-schema' },
               { text: 'Saving a draft', link: '/guide/drafts' },
               { text: 'Undo and redo', link: '/guide/undo-redo' },
+              { text: 'Errors from the server', link: '/guide/server-errors' },
             ],
           },
           {
@@ -133,7 +136,9 @@ export default defineConfig({
             items: [
               { text: 'Field dẫn xuất', link: '/vi/guide/computed-fields' },
               { text: 'Validation và điều kiện', link: '/vi/guide/validation' },
+              { text: 'Mask nhập liệu', link: '/vi/guide/input-masks' },
               { text: 'Nhóm lặp lại', link: '/vi/guide/groups' },
+              { text: 'Section', link: '/vi/guide/sections' },
               { text: 'Wizard nhiều bước', link: '/vi/guide/wizard' },
             ],
           },
@@ -143,6 +148,7 @@ export default defineConfig({
               { text: 'Field từ JSON Schema', link: '/vi/guide/json-schema' },
               { text: 'Lưu bản nháp', link: '/vi/guide/drafts' },
               { text: 'Undo và redo', link: '/vi/guide/undo-redo' },
+              { text: 'Lỗi từ server', link: '/vi/guide/server-errors' },
             ],
           },
           {
