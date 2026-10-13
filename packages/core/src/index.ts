@@ -8,6 +8,7 @@ export { fieldRegistry } from './FieldRegistry';
 export { applyComputedValues } from './computeValues';
 export {
   isFieldGroup,
+  isFieldSection,
   createGroupItem,
   canAddGroupItem,
   canRemoveGroupItem,

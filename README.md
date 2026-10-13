@@ -35,6 +35,7 @@ A lightweight, extensible **dynamic form engine** for React, Angular, Vue, and S
 - Runtime conditional fields (`appearCondition`)
 - Derived/computed fields (`computeValue`)
 - Repeatable field groups (`fields`) - "add another item" without leaving the schema
+- Titled sections (`section`) - a nested object under a heading, validated by path
 - Responsive layouts (mobile/desktop) with custom breakpoints
 - Clean TypeScript declarations (DTS-safe)
 - Framework-agnostic core (works with React, Angular, Vue, Svelte, or vanilla JS)
@@ -296,6 +297,40 @@ const fields: FieldDescription[] = [
 | keyField               | Property on each item to use as its stable list key (React key / Vue key / Angular trackBy). Falls back to the array index, which is unsafe if items can be reordered or removed from the middle. |
 | minItems / maxItems    | Bounds enforced on the "Remove" / "Add" controls. Unbounded when omitted.                                                                                                                         |
 | addLabel / removeLabel | Custom button text (defaults to "Add" / "Remove").                                                                                                                                                |
+
+**Sections**
+
+A field with `section` is a titled section: `data[name]` is one object shaped
+by the nested fields, shown under `label`. It is the non-repeating sibling of a
+group - no "Add" or "Remove", one set of values.
+
+```ts
+const fields: FieldDescription[] = [
+  { name: 'name', type: 'text', label: 'Name' },
+  {
+    name: 'address',
+    type: 'section', // any type key works; only `section` matters
+    label: 'Ship to',
+    section: [
+      { name: 'street', type: 'text', label: 'Street' },
+      { name: 'city', type: 'text', label: 'City' },
+    ],
+  },
+];
+// data: { name: 'Ada', address: { street: '1 Le Loi', city: 'Hue' } }
+```
+
+`MultiFieldInput` renders it as a `<fieldset>` with the label as its
+`<legend>`, and `className` on the fieldset. Errors and touched flags of the
+fields inside are keyed by path (`address.street`), which is also the path
+`setServerErrors` takes. `appearCondition` hides the whole section, and
+`disabled` / `disabledCondition` disable every control in it and take it out
+of validation. Inside the section a condition receives the section's object
+as `data` and the form as `rootData`, as it does inside a group item. Sections
+nest in groups and in each other.
+
+Like a group's array, the section's object is replaced on every edit inside
+it, so the section itself reads as dirty after the first one.
 
 **Input masks**
 

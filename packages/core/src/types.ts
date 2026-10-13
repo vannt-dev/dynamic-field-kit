@@ -217,6 +217,18 @@ export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {
    * going through fieldRegistry.
    */
   fields?: FieldDescription[];
+  /**
+   * Declares this field as a titled section instead of a registry-rendered
+   * leaf field: `data[name]` becomes an object shaped by `section`, shown
+   * under `label`. The non-repeating sibling of `fields` - no "add" or
+   * "remove", one set of values. Errors and touched flags of the fields inside
+   * are keyed `${name}.${childName}`.
+   *
+   * A key of its own rather than a flag beside `fields`: an adapter that does
+   * not know sections then reports an unknown field type instead of rendering
+   * a list. When both are set, `fields` wins.
+   */
+  section?: FieldDescription[];
   /** Values to seed a newly-added item with. Defaults to `{}`. */
   defaultItem?: Properties;
   /**

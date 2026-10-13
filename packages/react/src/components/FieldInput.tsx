@@ -9,8 +9,14 @@ import {
   Properties,
 } from '@dynamic-field-kit/core';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  isSectionDisabled,
+  sectionFieldsOf,
+  sectionValuesOf,
+} from '../section';
 import DynamicInput from './DynamicInput';
 import FieldGroupInput from './FieldGroupInput';
+import FieldSectionInput from './FieldSectionInput';
 
 interface Props {
   fieldDescription: FieldDescription;
@@ -110,6 +116,28 @@ const FieldInputInner = ({
     () => onBlurField?.(name),
     [onBlurField, name],
   );
+
+  const section = sectionFieldsOf(fieldDescription);
+  if (fields || section) {
+    // A group or a section hands its own data on as it is.
+    parseInputRef.current = undefined;
+  }
+
+  if (section) {
+    return (
+      <FieldSectionInput
+        fieldDescription={fieldDescription}
+        fields={section}
+        values={sectionValuesOf(renderInfos, name)}
+        rootData={rootData}
+        errors={errors}
+        touched={touchedMap}
+        disabled={isSectionDisabled(fieldDescription, renderInfos, rootData)}
+        onBlurField={onBlurField}
+        onChange={handleChange}
+      />
+    );
+  }
 
   if (fields) {
     const items = Array.isArray(renderInfos[name])
