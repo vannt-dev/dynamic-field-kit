@@ -263,6 +263,7 @@ const fields: FieldDescription[] = [
 | label           | UI label                                                                                                                                                                                                                                                                                                                                                                             |
 | value           | Default value                                                                                                                                                                                                                                                                                                                                                                        |
 | disabled        | Forwarded to the renderer as `disabled`                                                                                                                                                                                                                                                                                                                                              |
+| mask            | Shows the value formatted while it is typed and stores it unformatted: a pattern such as `'(999) 999-9999'` or a `{ format, parse }` pair. See **Input masks** below                                                                                                                                                                                                                 |
 | props           | Extra, framework-agnostic props forwarded verbatim to the renderer (e.g. `acceptFile`, `maxLength`) - keeps domain-specific inputs out of the adapter layer                                                                                                                                                                                                                          |
 | appearCondition | Runtime visibility condition. Called as `(data, rootData)`: `data` is this field's own level (the group item, inside a repeatable group), `rootData` is always the top-level form data                                                                                                                                                                                               |
 | computeValue    | Derives this field's value from the rest of the form data (e.g. a total or full name) whenever any field changes. Called as `(data, rootData)` like `appearCondition`. Evaluated once per change, not to a fixed point, so avoid chaining `computeValue` fields into a cycle, and return a primitive or a stable reference (a fresh object/array each call defeats render-skipping). |
@@ -295,6 +296,58 @@ const fields: FieldDescription[] = [
 | keyField               | Property on each item to use as its stable list key (React key / Vue key / Angular trackBy). Falls back to the array index, which is unsafe if items can be reordered or removed from the middle. |
 | minItems / maxItems    | Bounds enforced on the "Remove" / "Add" controls. Unbounded when omitted.                                                                                                                         |
 | addLabel / removeLabel | Custom button text (defaults to "Add" / "Remove").                                                                                                                                                |
+
+**Input masks**
+
+`mask` shows a value formatted while it is typed and keeps the unformatted
+value in the form:
+
+```ts
+import { validators } from '@dynamic-field-kit/core';
+
+const fields: FieldDescription[] = [
+  // Shown as (555) 123-4567, stored as '5551234567'.
+  {
+    name: 'phone',
+    type: 'text',
+    mask: '(999) 999-9999',
+    validate: validators.minLength(10, 'Enter all ten digits'),
+  },
+  { name: 'expires', type: 'text', mask: '99/99' },
+  // What a pattern cannot say: a pair of functions.
+  {
+    name: 'amount',
+    type: 'text',
+    mask: {
+      format: (value) =>
+        value === undefined || value === ''
+          ? ''
+          : Number(value).toLocaleString('en-US'),
+      parse: (text) => {
+        const digits = text.replace(/\D/g, '');
+        return digits ? Number(digits) : undefined;
+      },
+    },
+  },
+];
+```
+
+In a pattern `9` is a digit, `a` a letter, `*` either, and any other character
+is fixed (`\\9` in a string literal for a fixed 9). The form stores only what
+was typed into those places, so validators, `computeValue`, drafts and
+`onSubmit` all see `'5551234567'`. The renderer receives the formatted text as
+`value` and reports the edited text as it always did; nothing in it changes.
+
+While typing, a separator appears together with the character after it, a
+character that does not fit its place is dropped, and Backspace on a separator
+removes the character before it. When an edit in the middle makes the mask
+rewrite the text, the caret goes to the end, as it does for any input whose
+text is rewritten under it. A mask is meant for renderers that show text: an
+`<input type="number">` or `type="date"` refuses formatted text.
+
+All four adapters apply it (from 1.11 on; an older adapter renders the field
+as if it had no mask). `createInputMask(pattern)` gives the same `format` and
+`parse` outside a form, for a table cell or a summary.
 
 **Validation & conditions**
 

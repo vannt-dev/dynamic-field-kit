@@ -786,6 +786,73 @@ Things to know:
 - **Typing is grouped.** Typing a word into one field is undone in one go; a pause longer than `coalesceMs`, a change to another field, or an undo starts a new step.
 - **Steps are kept by reference.** Plain objects and arrays are compared by content; other values (`Date`, `File`) by identity. Replace form data instead of mutating it, as the adapters already do.
 
+## Input masks
+
+A field's `mask` shows its value formatted while it is typed; the form keeps
+the unformatted value.
+
+```ts
+import { createInputMask } from '@dynamic-field-kit/core';
+import type { FieldDescription, InputMask } from '@dynamic-field-kit/core';
+
+const phone: FieldDescription = {
+  name: 'phone',
+  type: 'text',
+  mask: '(999) 999-9999',
+};
+
+// The same mask outside a form, for a table cell or a summary.
+const mask = createInputMask('(999) 999-9999');
+mask.format('5551234567'); // '(555) 123-4567'
+mask.format('555'); // '(555'
+mask.parse('(555) 123-4567'); // '5551234567'
+
+// What a pattern cannot say: a pair of functions.
+const upper: InputMask = {
+  format: (value) => String(value ?? ''),
+  parse: (text) => text.toUpperCase(),
+};
+```
+
+**Patterns.** `9` is a digit, `a` a letter (of any alphabet), `*` either. Any
+other character is fixed, and a backslash makes the next character fixed
+(`'\\9'`). The stored value is the characters typed into those places, without
+the fixed ones.
+
+**What is shown.** A fixed character is shown once the character after it
+exists, and the ones that close the pattern once every place is filled, so the
+text never ends in a separator that Backspace would have to fight. A stored
+value that does not fit is shown as far as it does: characters that fit no
+place are left out, and so is what is past the last place.
+
+**What is stored.** `parse(text, previous)` reads the text of the input back.
+A character that does not fit its place is dropped; fixed characters are
+matched, not stored (the `1` of `'+1 (999) 999-9999'` is never taken for a
+typed digit). `previous` is the value the form held while the text was edited.
+With it, a deleted separator is told apart from text that was merely re-typed,
+and the typed character before the separator is removed, as Backspace means
+to. A `{ format, parse }` pair receives the same second argument.
+
+**Validation** runs on the stored value. A pattern does not make a partial
+value invalid by itself: `validators.minLength(10)` or `validators.pattern`
+says when the value is whole.
+
+**The caret.** The kit rewrites the text and leaves the caret to the browser:
+typing and deleting at the end behave as expected, and an edit in the middle
+that makes the mask rewrite the text sends the caret to the end.
+
+**Renderers** need no change. They receive the formatted text as `value` and
+report the edited text through `onValueChange`. A renderer has to show `value`
+whenever it is handed one, as a controlled input does.
+
+**Adapters.** `buildFieldRendererProps` applies a mask only when asked to, with
+`applyMask: true`. It then returns the formatted text as `value` and a
+`parseInput` function, which the adapter keeps for itself and puts between the
+renderer and the form: `onChange(parseInput ? parseInput(input) : input)`.
+Without `applyMask` the field is built as if it had no mask, which is what an
+adapter that knows nothing of masks needs: it would show the formatted text
+and then store that text as the value.
+
 ## Errors from the server
 
 `serverErrorsFrom(body, options?)` turns the answer of a backend that refused a

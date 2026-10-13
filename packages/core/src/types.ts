@@ -1,3 +1,5 @@
+import type { FieldMask } from './inputMask';
+
 export type FieldTypeKey = keyof FieldTypeMap & string;
 
 // 👇 Core provides standard HTML5 input defaults; apps can extend via declaration merging
@@ -181,6 +183,17 @@ export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {
   step?: number | string;
   accept?: string;
   multiple?: boolean;
+  /**
+   * Shows the value formatted while it is typed: a pattern such as
+   * `'(999) 999-9999'` (`9` a digit, `a` a letter, `*` either, anything else
+   * fixed), or a `{ format, parse }` pair. The renderer receives the formatted
+   * text as `value`; the form stores what `parse` returns - for a pattern, the
+   * typed characters without the fixed ones - and that is what validators see.
+   *
+   * Meant for renderers that show text. Needs an adapter from 1.11 on; an
+   * older one renders the field as if it had no mask.
+   */
+  mask?: FieldMask;
   /**
    * Debounce for the async options loader, in milliseconds. Rapid `update` or
    * `onOptionsQuery` calls inside the window collapse into one fetch.

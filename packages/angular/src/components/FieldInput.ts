@@ -55,9 +55,7 @@ import { DynamicInput } from './DynamicInput';
       [step]="p.step"
       [accept]="p.accept"
       [multiple]="p.multiple"
-      (valueChange)="
-        onValueChangeField.emit({ value: $event, key: fieldDescription!.name })
-      "
+      (valueChange)="handleValueChange($event)"
       (focusout)="onBlurField.emit(fieldDescription!.name)"
       [extraProps]="p.extraProps"
       [onOptionsQuery]="onOptionsQuery"
@@ -118,6 +116,36 @@ export class FieldInput implements OnChanges, OnDestroy {
     this.loader?.setQuery(query);
   };
 
+  /**
+   * A masked field shows formatted text; `parseInput` turns what its renderer
+   * reports back into the value to store.
+   */
+  handleValueChange(input: unknown): void {
+    const props = this.rendererProps;
+    const parseInput = props?.parseInput;
+    if (
+      props &&
+      parseInput &&
+      typeof input === 'string' &&
+      input !== props.value
+    ) {
+      // The text on screen is no longer the text this field last handed down,
+      // and the text to show next may well be that same one: the mask takes
+      // nothing from a letter where a digit belongs, or from a character past
+      // its last place. A binding that does not change writes nothing, so the
+      // refused character would stay on screen. Tell the renderer what it
+      // holds now; whatever is shown next is then a change.
+      this.rendererProps = { ...props, value: input };
+      this.cdr.detectChanges();
+      this.rendererProps = props;
+      this.cdr.markForCheck();
+    }
+    this.onValueChangeField.emit({
+      value: parseInput ? parseInput(input) : input,
+      key: this.fieldDescription!.name,
+    });
+  }
+
   ngOnChanges(_changes: SimpleChanges): void {
     this.syncOptionsLoader();
     this.rendererProps = this.buildProps();
@@ -168,6 +196,7 @@ export class FieldInput implements OnChanges, OnDestroy {
       touched: this.touched,
       dirty: this.dirty,
       optionsState: this.optionsState,
+      applyMask: true,
     });
 
     // Explicitly bound inputs override what the field description resolves to,
