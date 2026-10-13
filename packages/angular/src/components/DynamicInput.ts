@@ -52,6 +52,9 @@ const KNOWN_PROPS = [
   'multiple',
 ] as const;
 
+type BuiltInControl =
+  HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+
 @Component({
   selector: 'dfk-dynamic-input',
   standalone: true,
@@ -85,6 +88,11 @@ export class DynamicInput
   host!: ViewContainerRef;
   private compRef?: ComponentRef<unknown>;
   private inputInstance?: unknown;
+  // The built-in control in use, the type it was built for and the options it lists. Kept so that a
+  // change updates the control where it stands.
+  private builtIn?: BuiltInControl;
+  private builtInType?: string;
+  private builtInOptions?: string;
   private subscriptions: Subscription[] = [];
   // Tracks which KNOWN_PROPS were actually supplied to DynamicInput (via
   // SimpleChanges), independent of TS class-field emit. See applyProps.
@@ -155,6 +163,22 @@ export class DynamicInput
     this.inputInstance = undefined;
   }
 
+  /**
+   * Removes what this component put into the host element itself: a built-in
+   * control, the HTML of a function renderer, an error message. `host.clear()`
+   * does not: it only knows the components it created, which sit beside the
+   * host element, not inside it.
+   */
+  private clearOwnNodes(): void {
+    const element = this.host.element.nativeElement as HTMLElement;
+    while (element.firstChild) {
+      element.removeChild(element.firstChild);
+    }
+    this.builtIn = undefined;
+    this.builtInType = undefined;
+    this.builtInOptions = undefined;
+  }
+
   /** The id `ariaDescribedBy` points at. See core's `makeErrorId`. */
   errorNodeId(): string {
     return makeErrorId(this.id ?? '');
@@ -182,8 +206,19 @@ export class DynamicInput
 
   private render(): void {
     const Renderer = this.registry.get(this.type);
+
+    // A built-in control of the same type is updated where it stands. Built
+    // again on every change, as it used to be, it would lose the focus after
+    // each character typed - and the ones built before stayed in the page.
+    if (!Renderer && this.builtIn && this.builtInType === this.type) {
+      this.syncBuiltIn(this.builtIn);
+      this.applyFallbackAria();
+      return;
+    }
+
     this.cleanup();
     this.host.clear();
+    this.clearOwnNodes();
 
     if (!Renderer) {
       if (this.renderDefaultFallbackHTML5(this.type)) {
@@ -369,7 +404,8 @@ export class DynamicInput
    *
    * `render()` re-runs on every ngOnChanges while the fallback is in use (there
    * is no component instance to sync props into), so this stays current as the
-   * field's error comes and goes.
+   * field's error comes and goes. The control is the same one from change to
+   * change, so a flag that is no longer given is taken off again.
    */
   private applyFallbackAria(): void {
     const control = (
@@ -378,20 +414,42 @@ export class DynamicInput
     if (!control) {
       return;
     }
-    if (this.ariaInvalid !== undefined) {
-      control.setAttribute('aria-invalid', String(this.ariaInvalid));
-    }
-    if (this.ariaRequired !== undefined) {
-      control.setAttribute('aria-required', String(this.ariaRequired));
-    }
-    if (this.ariaDescribedBy) {
-      control.setAttribute('aria-describedby', this.ariaDescribedBy);
-    }
+    const flag = (name: string, value: string | undefined) => {
+      if (value === undefined) {
+        control.removeAttribute(name);
+      } else {
+        control.setAttribute(name, value);
+      }
+    };
+    flag(
+      'aria-invalid',
+      this.ariaInvalid === undefined ? undefined : String(this.ariaInvalid),
+    );
+    flag(
+      'aria-required',
+      this.ariaRequired === undefined ? undefined : String(this.ariaRequired),
+    );
+    flag('aria-describedby', this.ariaDescribedBy || undefined);
   }
 
+  /**
+   * Builds the built-in control for `type` and puts it in the host element.
+   * What the control shows is set by `syncBuiltIn`, here and on every later
+   * change.
+   */
   private renderDefaultFallbackHTML5(type: string): boolean {
-    const nativeEl = this.host.element.nativeElement as HTMLElement;
+    const control = this.createBuiltIn(type);
+    if (!control) {
+      return false;
+    }
+    this.builtIn = control;
+    this.builtInType = type;
+    this.syncBuiltIn(control);
+    (this.host.element.nativeElement as HTMLElement).appendChild(control);
+    return true;
+  }
 
+  private createBuiltIn(type: string): BuiltInControl | null {
     if (
       type === 'text' ||
       type === 'password' ||
@@ -400,132 +458,125 @@ export class DynamicInput
     ) {
       const input = document.createElement('input');
       input.type = type;
-      if (this.id) {
-        input.id = this.id;
-      }
-      if (this.className) {
-        input.className = this.className;
-      }
-      if (this.placeholder) {
-        input.placeholder = this.placeholder;
-      }
-      if (this.disabled) {
-        input.disabled = true;
-      }
-      if (this.readOnly) {
-        input.readOnly = true;
-      }
-      if (this.required) {
-        input.required = true;
-      }
-      input.value = ((this.value as string | number) ?? '').toString();
-
-      input.addEventListener('input', (e) => {
-        const raw = (e.target as HTMLInputElement).value;
+      input.addEventListener('input', () => {
+        const raw = input.value;
         const val =
           type === 'number' ? (raw === '' ? undefined : Number(raw)) : raw;
         this.emitValue(val);
       });
-      nativeEl.appendChild(input);
-      return true;
+      return input;
     }
 
     if (type === 'textarea') {
       const textarea = document.createElement('textarea');
-      if (this.id) {
-        textarea.id = this.id;
-      }
-      if (this.className) {
-        textarea.className = this.className;
-      }
-      if (this.placeholder) {
-        textarea.placeholder = this.placeholder;
-      }
-      if (this.disabled) {
-        textarea.disabled = true;
-      }
-      if (this.readOnly) {
-        textarea.readOnly = true;
-      }
-      if (this.required) {
-        textarea.required = true;
-      }
-      textarea.value = (this.value as string) ?? '';
-
-      textarea.addEventListener('input', (e) => {
-        this.emitValue((e.target as HTMLTextAreaElement).value);
+      textarea.addEventListener('input', () => {
+        this.emitValue(textarea.value);
       });
-      nativeEl.appendChild(textarea);
-      return true;
+      return textarea;
     }
 
     if (type === 'checkbox') {
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
-      if (this.id) {
-        checkbox.id = this.id;
-      }
-      if (this.className) {
-        checkbox.className = this.className;
-      }
-      if (this.disabled || this.readOnly) {
-        checkbox.disabled = true;
-      }
-      if (this.required) {
-        checkbox.required = true;
-      }
-      checkbox.checked = Boolean(this.value);
-
-      checkbox.addEventListener('change', (e) => {
-        this.emitValue((e.target as HTMLInputElement).checked);
+      checkbox.addEventListener('change', () => {
+        this.emitValue(checkbox.checked);
       });
-      nativeEl.appendChild(checkbox);
-      return true;
+      return checkbox;
     }
 
     if (type === 'select') {
       const select = document.createElement('select');
-      if (this.id) {
-        select.id = this.id;
-      }
-      if (this.className) {
-        select.className = this.className;
-      }
-      if (this.disabled || this.readOnly) {
-        select.disabled = true;
-      }
-      if (this.required) {
-        select.required = true;
-      }
+      select.addEventListener('change', () => {
+        this.emitValue(select.value);
+      });
+      return select;
+    }
 
+    return null;
+  }
+
+  /** Brings a built-in control in line with the current inputs. */
+  private syncBuiltIn(control: BuiltInControl): void {
+    const attribute = (name: string, value: string | undefined) => {
+      if (value) {
+        control.setAttribute(name, value);
+      } else {
+        control.removeAttribute(name);
+      }
+    };
+    attribute('id', this.id);
+    attribute('class', this.className);
+    control.required = Boolean(this.required);
+
+    if (control instanceof HTMLSelectElement) {
+      // a select has no read-only state of its own
+      control.disabled = Boolean(this.disabled || this.readOnly);
+      this.syncBuiltInOptions(control);
+      return;
+    }
+
+    if (control instanceof HTMLInputElement && control.type === 'checkbox') {
+      // nor has a checkbox
+      control.disabled = Boolean(this.disabled || this.readOnly);
+      control.checked = Boolean(this.value);
+      return;
+    }
+
+    attribute('placeholder', this.placeholder);
+    control.disabled = Boolean(this.disabled);
+    control.readOnly = Boolean(this.readOnly);
+
+    const next = ((this.value as string | number) ?? '').toString();
+    // Written only when it says something else than the control already
+    // does: writing the text a user is in the middle of typing moves the
+    // caret to its end. For a number, "the same" is the same number: "1.50"
+    // is 1.5, and must not be rewritten to "1.5" under the caret.
+    const same =
+      control.type === 'number' && control.value !== '' && next !== ''
+        ? Number(control.value) === Number(next)
+        : control.value === next;
+    if (!same) {
+      control.value = next;
+    }
+  }
+
+  /** The options of a built-in select, rebuilt only when the list changed, and the one that is chosen. */
+  private syncBuiltInOptions(select: HTMLSelectElement): void {
+    const options = (this.options || []).map((opt) => {
+      const optObj = opt as Record<string, any>;
+      const optVal = optObj['value'] ?? optObj['id'] ?? opt;
+      const optLabel = optObj['label'] ?? optObj['name'] ?? String(optVal);
+      return { value: String(optVal), label: String(optLabel) };
+    });
+    const listed = JSON.stringify(options);
+    if (listed !== this.builtInOptions) {
+      this.builtInOptions = listed;
+      while (select.firstChild) {
+        select.removeChild(select.firstChild);
+      }
       const defaultOpt = document.createElement('option');
       defaultOpt.value = '';
       defaultOpt.disabled = true;
       defaultOpt.textContent = '-- Select --';
       select.appendChild(defaultOpt);
-
-      const options = this.options || [];
-      options.forEach((opt) => {
-        const optObj = opt as Record<string, any>;
-        const optVal = optObj['value'] ?? optObj['id'] ?? opt;
-        const optLabel = optObj['label'] ?? optObj['name'] ?? String(optVal);
+      for (const option of options) {
         const optionEl = document.createElement('option');
-        optionEl.value = String(optVal);
-        optionEl.textContent = String(optLabel);
-        if (String(optVal) === String(this.value)) {
-          optionEl.selected = true;
-        }
+        optionEl.value = option.value;
+        optionEl.textContent = option.label;
         select.appendChild(optionEl);
-      });
-
-      select.addEventListener('change', (e) => {
-        this.emitValue((e.target as HTMLSelectElement).value);
-      });
-      nativeEl.appendChild(select);
-      return true;
+      }
     }
 
-    return false;
+    const wanted = String(this.value);
+    const all = Array.from(select.options);
+    // Without a match the first option that can be chosen is shown, which is
+    // what a select built from scratch shows.
+    const chosen =
+      all.find((option) => !option.disabled && option.value === wanted) ??
+      all.find((option) => !option.disabled);
+    if (chosen && !chosen.selected) {
+      chosen.selected = true;
+    }
   }
 
   private renderError(message: string): void {
