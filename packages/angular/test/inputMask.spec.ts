@@ -110,14 +110,14 @@ describe('a field with a mask', () => {
       providers: [{ provide: FIELD_REGISTRY, useValue: registry }],
     });
     const { fixture, input, type } = mount([phone], { phone: '5551234567' });
-    // The built-in input is drawn again when what it shows changes; the one
-    // drawn last is the one that counts.
-    const drawn = (): HTMLInputElement =>
-      [...fixture.nativeElement.querySelectorAll('input')].pop();
-    expect(input().value).toBe('(555) 123-4567');
+    const builtIn = input();
+    expect(builtIn.value).toBe('(555) 123-4567');
     await type('(555) 123-45678');
     expect(fixture.componentInstance.data).toEqual({ phone: '5551234567' });
-    expect(drawn().value).toBe('(555) 123-4567');
+    // the one input, put right where it stands
+    expect(fixture.nativeElement.querySelectorAll('input')).toHaveLength(1);
+    expect(input()).toBe(builtIn);
+    expect(builtIn.value).toBe('(555) 123-4567');
   });
 
   it('leaves a field without a mask as it was', async () => {

@@ -4,12 +4,17 @@ import {
   type OptionsStatus,
   Properties,
 } from '@dynamic-field-kit/core';
-import { defineComponent, computed, h, PropType } from 'vue';
+import { defineComponent, computed, h, mergeProps, PropType } from 'vue';
 import { getDefaultRenderer } from '../defaultRenderers';
 import { useFieldRegistry } from '../fieldRegistryContext';
 
 const DynamicInput = /* @__PURE__ */ defineComponent({
   name: 'DynamicInput',
+
+  // A built-in renderer is rendered as a list (the control, then its error
+  // when there is one), and a list cannot inherit attributes. They are handed
+  // to the control by hand instead, so that they arrive in every case.
+  inheritAttrs: false,
 
   // Every key of core's FIELD_RENDERER_PROP_KEYS must be declared here, or Vue
   // treats it as a fallthrough attribute instead of a prop and the renderer
@@ -133,7 +138,7 @@ const DynamicInput = /* @__PURE__ */ defineComponent({
     },
   },
 
-  setup(props) {
+  setup(props, { attrs }) {
     const registry = useFieldRegistry();
     const registered = computed(() => registry.get(props.type));
     const Renderer = computed(
@@ -148,7 +153,7 @@ const DynamicInput = /* @__PURE__ */ defineComponent({
         return h('div', `Unknown field type: ${props.type}`);
       }
 
-      const control = h(Renderer.value, {
+      const controlProps = {
         ...props.extraProps,
         value: props.value,
         // Both spellings: `onUpdate:value` is the Vue idiom the bundled
@@ -186,7 +191,8 @@ const DynamicInput = /* @__PURE__ */ defineComponent({
         step: props.step,
         accept: props.accept,
         multiple: props.multiple,
-      });
+      };
+      const control = h(Renderer.value, mergeProps(attrs, controlProps));
 
       // This adapter accepts `error` as a string as well as an array, so index
       // 0 of a raw string would be its first character.
@@ -194,25 +200,31 @@ const DynamicInput = /* @__PURE__ */ defineComponent({
         ? props.error[0]
         : props.error;
 
-      if (!isDefault.value || !firstError || !props.id) {
+      if (!isDefault.value) {
         return control;
       }
 
       // An array, not a wrapper element: Vue renders it as a fragment, so the
       // message appears without changing the surrounding layout. The id is
       // what `ariaDescribedBy` targets.
-      return [
-        control,
-        h(
-          'div',
-          {
-            id: makeErrorId(props.id),
-            class: 'dfk-field-error',
-            role: 'alert',
-          },
-          firstError,
-        ),
-      ];
+      //
+      // An array with or without the message, never the control alone: going
+      // from a single node to a list makes Vue build the control again, and an
+      // input that is replaced while it is typed in loses the focus.
+      return firstError && props.id
+        ? [
+            control,
+            h(
+              'div',
+              {
+                id: makeErrorId(props.id),
+                class: 'dfk-field-error',
+                role: 'alert',
+              },
+              firstError,
+            ),
+          ]
+        : [control];
     };
   },
 });
