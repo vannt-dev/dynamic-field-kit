@@ -1,9 +1,33 @@
 import { Properties } from '@dynamic-field-kit/core';
 import { defineComponent, h, PropType } from 'vue';
 
+/**
+ * What a form tells every renderer about its field and what is not an
+ * attribute of an HTML control. Declared on each built-in renderer, whether it
+ * shows them or not: Vue hands a prop a component does not declare on to its
+ * root element, where `touched`, `label` or `error` would end up as attributes
+ * of the input.
+ *
+ * Left undeclared on purpose: what *is* an attribute of the control (`min`,
+ * `max`, `step`, `accept`, `multiple`, and a field's own `props` such as
+ * `maxlength`), which reaches it exactly that way.
+ */
+const ABOUT_THE_FIELD = {
+  label: String,
+  description: null,
+  error: [String, Array] as PropType<string | string[]>,
+  touched: { type: Boolean, default: undefined },
+  dirty: { type: Boolean, default: undefined },
+  options: Array as PropType<Properties[]>,
+  optionsStatus: String,
+  optionsError: null,
+  onOptionsQuery: Function as PropType<(query: string) => void>,
+};
+
 export const DefaultTextRenderer = /* @__PURE__ */ defineComponent({
   name: 'DefaultTextRenderer',
   props: {
+    ...ABOUT_THE_FIELD,
     value: null,
     onValueChange: Function as PropType<(val: unknown) => void>,
     'onUpdate:value': Function as PropType<(val: unknown) => void>,
@@ -48,6 +72,7 @@ export const DefaultTextRenderer = /* @__PURE__ */ defineComponent({
 export const DefaultNumberRenderer = /* @__PURE__ */ defineComponent({
   name: 'DefaultNumberRenderer',
   props: {
+    ...ABOUT_THE_FIELD,
     value: null,
     onValueChange: Function as PropType<(val: unknown) => void>,
     'onUpdate:value': Function as PropType<(val: unknown) => void>,
@@ -114,6 +139,7 @@ export const DefaultEmailRenderer = /* @__PURE__ */ defineComponent({
 export const DefaultTextareaRenderer = /* @__PURE__ */ defineComponent({
   name: 'DefaultTextareaRenderer',
   props: {
+    ...ABOUT_THE_FIELD,
     value: null,
     onValueChange: Function as PropType<(val: unknown) => void>,
     'onUpdate:value': Function as PropType<(val: unknown) => void>,
@@ -153,6 +179,7 @@ export const DefaultTextareaRenderer = /* @__PURE__ */ defineComponent({
 export const DefaultCheckboxRenderer = /* @__PURE__ */ defineComponent({
   name: 'DefaultCheckboxRenderer',
   props: {
+    ...ABOUT_THE_FIELD,
     value: null,
     onValueChange: Function as PropType<(val: unknown) => void>,
     'onUpdate:value': Function as PropType<(val: unknown) => void>,
@@ -190,6 +217,7 @@ export const DefaultCheckboxRenderer = /* @__PURE__ */ defineComponent({
 export const DefaultSelectRenderer = /* @__PURE__ */ defineComponent({
   name: 'DefaultSelectRenderer',
   props: {
+    ...ABOUT_THE_FIELD,
     value: null,
     onValueChange: Function as PropType<(val: unknown) => void>,
     'onUpdate:value': Function as PropType<(val: unknown) => void>,
@@ -247,6 +275,7 @@ export const DefaultSelectRenderer = /* @__PURE__ */ defineComponent({
 export const DefaultRadioRenderer = /* @__PURE__ */ defineComponent({
   name: 'DefaultRadioRenderer',
   props: {
+    ...ABOUT_THE_FIELD,
     value: null,
     onValueChange: Function as PropType<(val: unknown) => void>,
     'onUpdate:value': Function as PropType<(val: unknown) => void>,
@@ -315,6 +344,7 @@ export const DefaultRadioRenderer = /* @__PURE__ */ defineComponent({
 export const DefaultRangeRenderer = /* @__PURE__ */ defineComponent({
   name: 'DefaultRangeRenderer',
   props: {
+    ...ABOUT_THE_FIELD,
     value: null,
     onValueChange: Function as PropType<(val: unknown) => void>,
     'onUpdate:value': Function as PropType<(val: unknown) => void>,
@@ -356,6 +386,7 @@ export const DefaultRangeRenderer = /* @__PURE__ */ defineComponent({
 export const DefaultFileRenderer = /* @__PURE__ */ defineComponent({
   name: 'DefaultFileRenderer',
   props: {
+    ...ABOUT_THE_FIELD,
     value: null,
     onValueChange: Function as PropType<(val: unknown) => void>,
     'onUpdate:value': Function as PropType<(val: unknown) => void>,
