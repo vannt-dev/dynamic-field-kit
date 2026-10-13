@@ -55,6 +55,24 @@ const PAGES = [
     sections: ['Repeatable field groups', 'Group array helpers'],
   },
   {
+    out: 'guide/sections.md',
+    title: 'Sections',
+    source: CORE,
+    sections: ['Sections'],
+  },
+  {
+    out: 'guide/input-masks.md',
+    title: 'Input masks',
+    source: CORE,
+    sections: ['Input masks'],
+  },
+  {
+    out: 'guide/server-errors.md',
+    title: 'Errors from the server',
+    source: CORE,
+    sections: ['Errors from the server'],
+  },
+  {
     out: 'guide/json-schema.md',
     title: 'Fields from a JSON Schema',
     source: CORE,
