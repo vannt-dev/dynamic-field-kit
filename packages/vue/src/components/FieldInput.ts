@@ -88,7 +88,9 @@ const FieldInput = /* @__PURE__ */ defineComponent({
     return () => {
       const { name } = props.fieldDescription;
 
-      const rendererProps = buildFieldRendererProps({
+      // `parseInput` stays here. DynamicInput does not declare it, so spread
+      // along with the rest it would fall through as an attribute.
+      const { parseInput, ...rendererProps } = buildFieldRendererProps({
         fieldDescription: props.fieldDescription,
         data: props.renderInfos,
         rootData: props.rootData,
@@ -98,11 +100,15 @@ const FieldInput = /* @__PURE__ */ defineComponent({
         validationErrors:
           props.errors === undefined ? undefined : (props.errors[name] ?? []),
         optionsState: optionsState.value,
+        applyMask: true,
       });
 
       return h(DynamicInput, {
         ...rendererProps,
-        onChange: (v: unknown) => props.onValueChangeField(v, name),
+        // A masked field shows formatted text; `parseInput` turns what its
+        // renderer reports back into the value to store.
+        onChange: (v: unknown) =>
+          props.onValueChangeField(parseInput ? parseInput(v) : v, name),
         onBlur: () => props.onBlurField?.(name),
         onOptionsQuery: loader
           ? (query: string) => loader.setQuery(query)

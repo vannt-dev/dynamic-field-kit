@@ -88,10 +88,21 @@ const FieldInputInner = ({
     [ensureLoader],
   );
 
+  // A masked field shows formatted text; this turns what its renderer reports
+  // back into the value to store. Assigned below, once the props are built,
+  // and read through a ref so the handler keeps its identity. Never set for a
+  // group, whose handler passes its items through untouched.
+  const parseInputRef = useRef<((input: unknown) => unknown) | undefined>(
+    undefined,
+  );
+
   // Stable per-field handler so DynamicInput's memoization isn't defeated
   // by a freshly-allocated closure on every parent render.
   const handleChange = useCallback(
-    (v: unknown) => onValueChangeField(v, name),
+    (v: unknown) => {
+      const parseInput = parseInputRef.current;
+      onValueChangeField(parseInput ? parseInput(v) : v, name);
+    },
     [onValueChangeField, name],
   );
 
@@ -118,7 +129,9 @@ const FieldInputInner = ({
     );
   }
 
-  const rendererProps = buildFieldRendererProps({
+  // `parseInput` stays here: DynamicInput spreads everything else on to the
+  // renderer.
+  const { parseInput, ...rendererProps } = buildFieldRendererProps({
     fieldDescription,
     data: renderInfos,
     rootData,
@@ -127,7 +140,9 @@ const FieldInputInner = ({
     dirty,
     validationErrors: errors === undefined ? undefined : (errors[name] ?? []),
     optionsState,
+    applyMask: true,
   });
+  parseInputRef.current = parseInput;
 
   return (
     <DynamicInput

@@ -23,6 +23,7 @@ export * from './formDraft';
 export * from './formHistory';
 
 export * from './rendererProps';
+export * from './inputMask';
 export * from './pathMaps';
 export * from './serverErrors';
 export * from './messages';
