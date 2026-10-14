@@ -1,0 +1,37 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      # Angular's packages only work at one version together, so they arrive as one pull request.
+      angular:
+        patterns:
+          - '@angular/*'
+          - '@angular-devkit/*'
+          - '@analogjs/*'
+          - 'ng-packagr'
+      npm-minor-and-patch:
+        update-types:
+          - minor
+          - patch
+    commit-message:
+      prefix: chore
+      include: scope
+    ignore:
+      # @angular/compiler-cli 21 accepts typescript <6.1.0. Move this with Angular.
+      - dependency-name: typescript
+        versions: ['>=6.1.0']
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      github-actions-minor-and-patch:
+        update-types:
+          - minor
+          - patch
+    commit-message:
+      prefix: chore
+      include: scope
