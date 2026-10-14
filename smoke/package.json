@@ -12,14 +12,14 @@
     "@dynamic-field-kit/vue": "*"
   },
   "devDependencies": {
-    "@testing-library/dom": "^10.0.0",
+    "@testing-library/dom": "^10.4.2",
     "@testing-library/react": "^16.0.0",
-    "@vitejs/plugin-react": "^6.1.1",
-    "@vue/test-utils": "^2.5.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "@vue/test-utils": "^2.5.1",
     "jsdom": "^29.1.1",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
     "vitest": "^4.1.11",
-    "vue": "^3.5.0"
+    "vue": "^3.5.43"
   }
 }

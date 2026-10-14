@@ -1,5 +1,13 @@
 # @dynamic-field-kit/angular
 
+## 1.11.1
+
+### Patch Changes
+
+- ba3538b: Angular 22 is accepted: `@angular/core` and `@angular/common` are now `>=16 <23`. An app on Angular 22 could not install the package before, as npm refused the peer range. `scripts/verify-angular-peer-range.js` now checks Angular 16 and 22, and the demo app was built with the Angular 22 CLI and used in a browser.
+- ba3538b: A registered field component that uses `OnPush` change detection now shows the props the form hands it after the first render. They were assigned to the component without marking it for check, so a value the form set itself, such as a computed field, did not show. From Angular 22 every component that names no strategy is `OnPush`, so on 22 this hit every registered field component.
+- Angular 22 support.
+
 ## 1.11.0
 
 ### Minor Changes
