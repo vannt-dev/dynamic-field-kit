@@ -86,16 +86,23 @@ For a complete UI integration, see the
 
 ## Supported Angular versions
 
-The package declares `@angular/core` and `@angular/common` as `>=16 <22`,
+The package declares `@angular/core` and `@angular/common` as `>=16 <23`,
 and `scripts/verify-angular-peer-range.js` proves both ends in CI by installing
-the packed tarballs against Angular 16 and 21 outside the workspace.
+the packed tarballs against Angular 16 and 22 outside the workspace.
 
 The floor is 16 because the form store is built on `signal` and `computed`,
 which Angular introduced in 16. It read `>=14` until 1.6.0: npm accepted the
 install on 14 and 15 and the package then failed on import.
 
 The suite, the build and the demo app all run Angular 21, which is the version
-the setup below is written for.
+the setup below is written for. The setup works unchanged on 22.
+
+Angular 22 makes `OnPush` the default for a component that names no change
+detection strategy, and that includes the field components you register. They
+need nothing extra for it: the adapter marks a rendered field component for
+check whenever it hands it new props. Up to 1.11.0 it did not, so on Angular 22
+a value the form set itself, such as a computed field, did not show in a
+registered component.
 
 ## Basic setup
 

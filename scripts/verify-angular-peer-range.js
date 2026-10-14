@@ -34,7 +34,7 @@ const REPO = path.resolve(__dirname, '..');
 // Kept in sync by hand with packages/angular/package.json
 // `peerDependencies['@angular/core']`: the declared floor, and the newest major
 // the range admits. A range end missing here is the gap this script closes.
-const MAJORS = ['16', '21'];
+const MAJORS = ['16', '22'];
 
 const quote = (a) => (/[\s"]/.test(a) ? '"' + a.replace(/"/g, '\\"') + '"' : a);
 
