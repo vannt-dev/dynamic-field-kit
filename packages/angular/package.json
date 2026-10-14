@@ -55,7 +55,7 @@
     "@angular/forms": "^21.2.0",
     "@angular/platform-browser": "^21.2.0",
     "@dynamic-field-kit/core": "^1.11.0",
-    "@vitest/coverage-istanbul": "^4.1.11",
+    "@vitest/coverage-istanbul": "^5.0.3",
     "jsdom": "^29.1.1",
     "ng-packagr": "^21.2.0",
     "rimraf": "^6.1.3",
