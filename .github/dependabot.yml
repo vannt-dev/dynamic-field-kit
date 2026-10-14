@@ -12,6 +12,11 @@ updates:
           - '@angular-devkit/*'
           - '@analogjs/*'
           - 'ng-packagr'
+      # vitest and its coverage providers only work at the same major.
+      vitest:
+        patterns:
+          - 'vitest'
+          - '@vitest/*'
       npm-minor-and-patch:
         update-types:
           - minor
@@ -23,15 +28,27 @@ updates:
       # @angular/compiler-cli 21 accepts typescript <6.1.0. Move this with Angular.
       - dependency-name: typescript
         versions: ['>=6.1.0']
+      # The Angular package is built and tested with Angular 21 (see packages/angular/README.md).
+      # Moving that toolchain to a new major is a change of its own, checked by
+      # scripts/verify-angular-peer-range.js, not a dependency bump.
+      - dependency-name: '@angular/*'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@angular-devkit/*'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@analogjs/*'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'ng-packagr'
+        update-types: ['version-update:semver-major']
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
     groups:
-      github-actions-minor-and-patch:
-        update-types:
-          - minor
-          - patch
+      # Majors too: an action's major is usually a new runtime, and one pull request per action
+      # was five at once on the first run.
+      github-actions:
+        patterns:
+          - '*'
     commit-message:
       prefix: chore
       include: scope
