@@ -24,11 +24,16 @@ jobs:
     #   none left;
     # - any PR into master, which carries changes that were already released
     #   from develop - their changesets are gone by definition, and demanding a
-    #   new one would mean releasing the same work twice.
+    #   new one would mean releasing the same work twice;
+    # - Dependabot's PRs, which change development dependencies almost always.
+    #   Each one failed here until an empty changeset was pushed to it by hand.
+    #   A dependency update that does need a release gets its changeset with
+    #   the release.
     if: >-
       github.event_name == 'pull_request' &&
       github.base_ref == 'develop' &&
-      !startsWith(github.head_ref, 'changeset-release/')
+      !startsWith(github.head_ref, 'changeset-release/') &&
+      !startsWith(github.head_ref, 'dependabot/')
     steps:
       - uses: actions/checkout@v7
         with:
