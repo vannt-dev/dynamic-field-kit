@@ -27,8 +27,8 @@
     "CHANGELOG.md"
   ],
   "peerDependencies": {
-    "@angular/common": ">=16 <22",
-    "@angular/core": ">=16 <22",
+    "@angular/common": ">=16 <23",
+    "@angular/core": ">=16 <23",
     "@dynamic-field-kit/core": "^1.3.0"
   },
   "publishConfig": {
