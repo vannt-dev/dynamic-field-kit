@@ -8,6 +8,7 @@ import {
   makeRegistry,
   TextRendererComponent,
   LegacyOutputRendererComponent,
+  OnPushTextRendererComponent,
   fallbackRenderer,
 } from './helpers/renderers';
 
@@ -92,6 +93,31 @@ describe('DynamicInput', () => {
     const input: HTMLInputElement =
       fixture.nativeElement.querySelector('input.txt');
     expect(input.value).toBe('second');
+  });
+
+  // A value the form sets itself (a computed field, a reset, an error from
+  // validation) reaches the renderer only through this sync. The props are
+  // assigned to the instance, which an OnPush view does not notice, so the
+  // renderer kept showing what it was first rendered with.
+  it('syncs prop changes to an OnPush renderer, the default from Angular 22', () => {
+    registry.register('text', OnPushTextRendererComponent as never);
+
+    const fixture = TestBed.createComponent(DynamicInput);
+    fixture.componentRef.setInput('type', 'text');
+    fixture.componentRef.setInput('value', 'first');
+    fixture.detectChanges();
+
+    fixture.componentRef.setInput('value', 'second');
+    fixture.componentRef.setInput('error', 'Required');
+    fixture.componentRef.setInput('extraProps', { hint: 'be brief' });
+    fixture.detectChanges();
+
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.querySelector<HTMLInputElement>('input.txt')?.value).toBe(
+      'second',
+    );
+    expect(el.querySelector('.err')?.textContent).toBe('Required');
+    expect(el.querySelector('.hint')?.textContent).toBe('be brief');
   });
 
   it('emits valueChange and onChange when the renderer emits valueChange', () => {

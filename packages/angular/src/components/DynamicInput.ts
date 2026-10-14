@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   ComponentRef,
   EventEmitter,
@@ -144,6 +145,12 @@ export class DynamicInput
     if (changes['extraProps']) {
       this.applyExtraProps(this.inputInstance);
     }
+    // The props above are assigned to the instance, which Angular does not
+    // see. Checking the host view alone skips an OnPush renderer that is not
+    // marked, and from Angular 22 every renderer that names no strategy is
+    // OnPush: a value the form set itself (a computed field, a reset) never
+    // showed. The renderer's own view is marked first.
+    this.compRef?.injector.get(ChangeDetectorRef).markForCheck();
     this.compRef?.changeDetectorRef?.detectChanges();
   }
 

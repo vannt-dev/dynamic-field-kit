@@ -1,5 +1,11 @@
 import { NgIf } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  EventEmitter,
+  Input,
+  Output,
+} from '@angular/core';
 import { FieldRegistry } from '@dynamic-field-kit/core';
 
 // The field types the specs register. Without this augmentation `keyof
@@ -14,22 +20,24 @@ declare module '@dynamic-field-kit/core' {
   }
 }
 
+const TEXT_TEMPLATE = `
+  <input
+    class="txt"
+    [value]="value ?? ''"
+    [disabled]="!!disabled"
+    [readOnly]="!!readOnly"
+    [placeholder]="placeholder ?? ''"
+    (input)="valueChange.emit($any($event.target).value)"
+  />
+  <span class="err" *ngIf="error">{{ errorText }}</span>
+  <span class="hint" *ngIf="hint">{{ hint }}</span>
+`;
+
 @Component({
   selector: 'dfk-test-text',
   standalone: true,
   imports: [NgIf],
-  template: `
-    <input
-      class="txt"
-      [value]="value ?? ''"
-      [disabled]="!!disabled"
-      [readOnly]="!!readOnly"
-      [placeholder]="placeholder ?? ''"
-      (input)="valueChange.emit($any($event.target).value)"
-    />
-    <span class="err" *ngIf="error">{{ errorText }}</span>
-    <span class="hint" *ngIf="hint">{{ hint }}</span>
-  `,
+  template: TEXT_TEMPLATE,
 })
 export class TextRendererComponent {
   @Input() value?: unknown;
@@ -51,6 +59,17 @@ export class TextRendererComponent {
     return ([] as string[]).concat(this.error ?? []).join(', ');
   }
 }
+
+// What a renderer that names no strategy is from Angular 22, where OnPush is
+// the default. The workspace runs Angular 21, so the strategy is set by hand.
+@Component({
+  selector: 'dfk-test-text-on-push',
+  standalone: true,
+  imports: [NgIf],
+  template: TEXT_TEMPLATE,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class OnPushTextRendererComponent extends TextRendererComponent {}
 
 @Component({
   selector: 'dfk-test-legacy',
