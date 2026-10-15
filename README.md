@@ -9,6 +9,7 @@
 [![react downloads](https://img.shields.io/npm/d18m/@dynamic-field-kit/react?label=react%20downloads)](https://www.npmjs.com/package/@dynamic-field-kit/react)
 [![vue downloads](https://img.shields.io/npm/d18m/@dynamic-field-kit/vue?label=vue%20downloads)](https://www.npmjs.com/package/@dynamic-field-kit/vue)
 [![angular downloads](https://img.shields.io/npm/d18m/@dynamic-field-kit/angular?label=angular%20downloads)](https://www.npmjs.com/package/@dynamic-field-kit/angular)
+[![Official vannt-dev build](https://vannt-dev.github.io/badges/official.svg)](https://vannt-dev.github.io/official.html)
 
 **[📘 Handbook](https://vannt-dev.github.io/dynamic-field-kit/handbook/)** — guides
 for every feature, per framework, with search. Also in
