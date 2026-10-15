@@ -39,6 +39,13 @@ updates:
         update-types: ['version-update:semver-major']
       - dependency-name: 'ng-packagr'
         update-types: ['version-update:semver-major']
+      # @angular/build 21 has vitest ^4 as a peer, and npm 10 (Node 22, this repo's CI) stops
+      # with "Cannot read properties of null (reading 'edgesOut')" on vitest 5 (#100).
+      # @angular/build 22 accepts ^5: move vitest with the Angular toolchain.
+      - dependency-name: 'vitest'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@vitest/*'
+        update-types: ['version-update:semver-major']
   - package-ecosystem: github-actions
     directory: /
     schedule:
