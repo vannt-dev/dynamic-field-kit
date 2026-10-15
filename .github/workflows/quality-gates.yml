@@ -155,9 +155,9 @@ jobs:
       - name: Install workspace dependencies
         run: npm ci
 
-      # `npm install`, not `npm ci`: example/angular-app gitignores its
-      # package-lock.json, so there is no lockfile to clean-install from. The
-      # other two still honour their committed lockfiles.
+      # Every example has a committed lockfile, which `npm install` honours. angular-app's
+      # was gitignored until 15/10/2026: CI then resolved it fresh each run, and npm 10 (Node
+      # 22) crashed resolving it: "Cannot read properties of null (reading 'edgesOut')".
       - name: Install example dependencies
         working-directory: example/${{ matrix.app }}
         run: npm install --no-audit --no-fund
