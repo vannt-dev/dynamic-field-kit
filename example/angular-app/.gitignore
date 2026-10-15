@@ -13,7 +13,6 @@ out-tsc/
 *~
 
 # Dependencies
-package-lock.json
 yarn.lock
 
 demo-sources.ts
