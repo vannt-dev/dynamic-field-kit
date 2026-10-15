@@ -155,6 +155,19 @@ jobs:
             git tag -a "v$version" -m "Release v$version" -m "$published"
             git push origin "v$version"
           fi
+
+          # A package that moved on its own (angular 1.11.1 next to core 1.11.0) has no
+          # v<version> tag to stand for it: it gets one named after itself.
+          own=$(node scripts/own-release-packages.js)
+          while read -r tag pkg pv; do
+            [ -n "$tag" ] || continue
+            if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+              echo "Tag $tag already exists - leaving it alone."
+            else
+              git tag -a "$tag" -m "Release $tag"
+              git push origin "$tag"
+            fi
+          done <<< "$own"
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -174,26 +187,44 @@ jobs:
 
           if gh release view "v$version" >/dev/null 2>&1; then
             echo "Release v$version already exists - leaving it alone."
-            exit 0
+          else
+            {
+              echo 'All five packages ship at this version with npm provenance:'
+              echo
+              for pkg in core react vue angular svelte; do
+                echo "- \`@dynamic-field-kit/$pkg@$(node -p "require('./packages/$pkg/package.json').version")\`"
+              done
+              echo
+              awk -v heading="## $version" \
+                '$0 == heading { found = 1; next } /^## / { if (found) exit } found' \
+                packages/core/CHANGELOG.md
+            } > "$RUNNER_TEMP/release-notes.md"
+
+            gh release create "v$version" \
+              --title "v$version" \
+              --notes-file "$RUNNER_TEMP/release-notes.md" \
+              --verify-tag \
+              --latest
           fi
 
-          {
-            echo 'All five packages ship at this version with npm provenance:'
-            echo
-            for pkg in core react vue angular svelte; do
-              echo "- \`@dynamic-field-kit/$pkg@$(node -p "require('./packages/$pkg/package.json').version")\`"
-            done
-            echo
-            awk -v heading="## $version" \
+          # A package that moved on its own gets a Release of its own, from its own
+          # CHANGELOG. It is not marked latest: v<version> stays the release people land on.
+          own=$(node scripts/own-release-packages.js)
+          while read -r tag pkg pv; do
+            [ -n "$tag" ] || continue
+            if gh release view "$tag" >/dev/null 2>&1; then
+              echo "Release $tag already exists - leaving it alone."
+              continue
+            fi
+            awk -v heading="## $pv" \
               '$0 == heading { found = 1; next } /^## / { if (found) exit } found' \
-              packages/core/CHANGELOG.md
-          } > "$RUNNER_TEMP/release-notes.md"
-
-          gh release create "v$version" \
-            --title "v$version" \
-            --notes-file "$RUNNER_TEMP/release-notes.md" \
-            --verify-tag \
-            --latest
+              "packages/$pkg/CHANGELOG.md" > "$RUNNER_TEMP/release-notes-$pkg.md"
+            gh release create "$tag" \
+              --title "$tag" \
+              --notes-file "$RUNNER_TEMP/release-notes-$pkg.md" \
+              --verify-tag \
+              --latest=false
+          done <<< "$own"
         env:
           GH_TOKEN: ${{ github.token }}
 
@@ -202,4 +233,6 @@ jobs:
         run: |
           echo 'Dry run - nothing was committed, tagged or published.'
           echo 'Versions that would have shipped are listed above.'
+          echo 'Packages that would get a tag and a Release of their own (tag, package, version):'
+          node scripts/own-release-packages.js
           git --no-pager diff --stat
