@@ -45,3 +45,6 @@ handbook/.vitepress/cache/
 
 # svelte-package's working copy of the Svelte adapter's source
 .svelte-kit/
+
+# Storybook's static build
+storybook-static/

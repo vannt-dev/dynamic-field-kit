@@ -2,6 +2,7 @@ import { defineConfig } from 'vitepress';
 
 const REPO = 'https://github.com/vannt-dev/dynamic-field-kit';
 const DEMOS = 'https://vannt-dev.github.io/dynamic-field-kit/';
+const STORYBOOK = `${DEMOS}storybook/`;
 
 export default defineConfig({
   // Set by the Pages workflow to '/dynamic-field-kit/handbook/'. Defaults to
@@ -39,6 +40,7 @@ export default defineConfig({
             ],
           },
           { text: 'Live demos', link: DEMOS },
+          { text: 'Storybook', link: STORYBOOK },
         ],
         sidebar: [
           {
@@ -123,6 +125,7 @@ export default defineConfig({
             ],
           },
           { text: 'Demo trực tiếp', link: DEMOS },
+          { text: 'Storybook', link: STORYBOOK },
         ],
         sidebar: [
           {
