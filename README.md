@@ -464,7 +464,7 @@ All framework adapters (`react`, `vue`, `angular`, `svelte`) ship with **built-i
 `text` · `number` · `password` · `email` · `textarea` · `checkbox` · `select` ·
 `radio` · `range` · `file` · `date` · `time` · `datetime-local` · `switch`
 
-If you do not register a custom component for a type, the library automatically renders a clean, accessible HTML5 input with support for labels, placeholders, disabled states, options, and error states.
+If you do not register a custom component for a type, the library automatically renders a clean, accessible HTML5 input with support for labels, placeholders, disabled states, options, and error states. The label is a `<label for>` tied to the control (a radio group is named through `aria-labelledby`), and the label, control and error message are wrapped in one `<div class="dfk-field">`.
 
 Every key above is also a `FieldTypeMap` entry, so `type: 'switch'` typechecks
 out of the box. The map itself is reachable if you need to wrap or inspect a

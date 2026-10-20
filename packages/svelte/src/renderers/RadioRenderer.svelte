@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { FieldRendererProps } from '@dynamic-field-kit/core';
+  import { makeLabelId, type FieldRendererProps } from '@dynamic-field-kit/core';
   import { readOptions } from './options.js';
 
   let {
@@ -11,6 +11,7 @@
     readOnly,
     required,
     id,
+    label,
     className,
     ariaInvalid,
     ariaDescribedBy,
@@ -27,6 +28,7 @@
   class="dfk-radio-group {className ?? ''}"
   {id}
   role="radiogroup"
+  aria-labelledby={label && id ? makeLabelId(id) : undefined}
   aria-invalid={ariaInvalid}
   aria-describedby={ariaDescribedBy}
   onfocusout={() => onBlur?.()}

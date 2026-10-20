@@ -3,6 +3,44 @@
 Version-by-version tables of what changed and what to do about it. For the full
 list of changes see each package's `CHANGELOG.md`.
 
+## 1.11.x → 1.12.0
+
+### Default renderers are labelled, and wrapped
+
+If a field uses the built-in renderers (no renderer registered for its type),
+it now renders
+
+```html
+<div class="dfk-field">
+  <label id="{fieldId}-label" for="{fieldId}" class="dfk-field-label"
+    >Email</label
+  >
+  <input id="{fieldId}" type="email" />
+  <div id="{fieldId}-error" class="dfk-field-error" role="alert">
+    Invalid email
+  </div>
+</div>
+```
+
+Before, the control (and its message) were direct children of the layout, and
+there was no label at all, so the control had no accessible name. What moved:
+
+- **A wrapper.** The control is inside `.dfk-field`, which keeps its label and
+  message in the same cell of a grid layout. CSS that picked the control as a
+  direct child of the layout, such as `.my-grid > input`, now needs
+  `.my-grid > .dfk-field > input` or a class of your own. Angular adds no
+  element: the `<dfk-dynamic-input>` that already held them gets the class
+  `dfk-field`.
+- **A label**, only when the field has a `label`. Hide it visually with your
+  own CSS if your design shows the label elsewhere, but keep it in the page.
+- **Radio groups** have `role="radiogroup"` and `aria-labelledby` pointing at a
+  `<span class="dfk-field-label">` caption (a group cannot take `<label for>`).
+- **Angular:** a form store's errors now set `aria-describedby` on the control
+  too; it used to follow only the errors of the field's own rules.
+
+Registered renderers are **not** affected: no wrapper, no label. Core gains
+`makeLabelId(id)`, the id the label carries.
+
 ## 1.6.x → 1.7.0
 
 Everything here is additive or a bugfix. No API was removed, and no peer range

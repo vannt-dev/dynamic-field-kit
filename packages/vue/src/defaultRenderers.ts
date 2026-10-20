@@ -1,4 +1,4 @@
-import { Properties } from '@dynamic-field-kit/core';
+import { makeLabelId, Properties } from '@dynamic-field-kit/core';
 import { defineComponent, h, PropType } from 'vue';
 
 /**
@@ -333,6 +333,10 @@ export const DefaultRadioRenderer = /* @__PURE__ */ defineComponent({
         {
           class: `dfk-radio-group ${props.class || ''}`,
           id: props.id,
+          role: 'radiogroup',
+          // The caption DynamicInput draws for a labelled field.
+          'aria-labelledby':
+            props.label && props.id ? makeLabelId(props.id) : undefined,
           onBlur: props.onBlur,
         },
         radioNodes,

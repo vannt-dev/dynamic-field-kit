@@ -16,6 +16,7 @@ import {
   isAsyncOptions,
   type OptionsLoader,
   type OptionsState,
+  makeErrorId,
   makeFieldId,
   FieldDescription,
   Properties,
@@ -188,11 +189,12 @@ export class FieldInput implements OnChanges, OnDestroy {
     }
 
     const data = this.data ?? { [field.name]: this.value };
+    const id = makeFieldId(field, this.idPrefix);
     const base = buildFieldRendererProps({
       fieldDescription: field,
       data,
       rootData: this.rootData,
-      id: makeFieldId(field, this.idPrefix),
+      id,
       touched: this.touched,
       dirty: this.dirty,
       optionsState: this.optionsState,
@@ -211,6 +213,11 @@ export class FieldInput implements OnChanges, OnDestroy {
       readOnly: this.readOnly ?? base.readOnly,
       error,
       ariaInvalid: Boolean(error),
+      // Follows `error` as `ariaInvalid` does: an error the host passed in
+      // (a form store's) has a message node too, and the control must point
+      // at it. Taken from `base`, it pointed at nothing whenever the field
+      // description's own rules found no error.
+      ariaDescribedBy: error ? makeErrorId(id) : undefined,
     };
   }
 }

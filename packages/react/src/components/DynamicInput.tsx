@@ -2,6 +2,7 @@ import {
   FieldRendererProps,
   FieldTypeKey,
   makeErrorId,
+  makeLabelId,
   type OptionsStatus,
   Properties,
 } from '@dynamic-field-kit/core';
@@ -69,7 +70,7 @@ const DynamicInputInner = <T extends FieldTypeKey>({
     return <div>Unknown field type: {type}</div>;
   }
 
-  const { error, id } = rendererProps as FieldRendererProps;
+  const { error, id, label } = rendererProps as FieldRendererProps;
 
   // Spread rather than re-listing each prop: the set is fixed by core's
   // FIELD_RENDERER_PROP_KEYS contract, and a hand-maintained list here is
@@ -87,20 +88,41 @@ const DynamicInputInner = <T extends FieldTypeKey>({
   // consumer can hand it a bare string - index 0 of which is a character.
   const firstError = Array.isArray(error) ? error[0] : error;
 
-  if (!isDefault || !firstError || !id) {
+  // A custom renderer owns its label and its error presentation.
+  if (!isDefault) {
     return control;
   }
 
-  // A fragment, not a wrapper element: the message appears, but nothing about
-  // the surrounding layout changes. The id is what `ariaDescribedBy` targets -
-  // without this node that reference would dangle.
+  // A built-in renderer is a bare control, so its label and its message are
+  // drawn here, in one element that keeps them together in a grid layout.
+  // Always the same element, with or without a message, so the control is
+  // never rebuilt (and never loses the focus) when an error comes or goes.
+  //
+  // A radio group is not a labelable element: its caption is a plain element
+  // that the group names itself after (`aria-labelledby`). Every other
+  // built-in control gets a `<label for>`.
+  const labelText = label && id ? label : undefined;
   return (
-    <>
+    <div className="dfk-field">
+      {labelText &&
+        (type === 'radio' ? (
+          <span id={makeLabelId(id!)} className="dfk-field-label">
+            {labelText}
+          </span>
+        ) : (
+          <label id={makeLabelId(id!)} htmlFor={id} className="dfk-field-label">
+            {labelText}
+          </label>
+        ))}
       {control}
-      <div id={makeErrorId(id)} className="dfk-field-error" role="alert">
-        {firstError}
-      </div>
-    </>
+      {firstError && id && (
+        // The id is what `ariaDescribedBy` targets - without this node that
+        // reference would dangle.
+        <div id={makeErrorId(id)} className="dfk-field-error" role="alert">
+          {firstError}
+        </div>
+      )}
+    </div>
   );
 };
 

@@ -231,7 +231,10 @@ control: `text`, `number`, `password`, `email`, `textarea`, `checkbox`,
 `switch`, `select`, `radio`, `range`, `file`, `date`, `time` and
 `datetime-local`. Under a default control the first error is shown in a
 `<div class="dfk-field-error" role="alert">` whose id is what
-`aria-describedby` points at. A registered renderer shows its own errors.
+`aria-describedby` points at. The control, its label and its message sit in one
+`<div class="dfk-field">`, with `<label for>` (class `dfk-field-label`) before
+the control when the field has a `label`; a radio group is named by its caption
+through `aria-labelledby`. A registered renderer shows its own label and errors.
 
 ## Layouts
 
