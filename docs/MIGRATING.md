@@ -35,6 +35,10 @@ there was no label at all, so the control had no accessible name. What moved:
   own CSS if your design shows the label elsewhere, but keep it in the page.
 - **Radio groups** have `role="radiogroup"` and `aria-labelledby` pointing at a
   `<span class="dfk-field-label">` caption (a group cannot take `<label for>`).
+- **Angular:** the built-in fallback covers all fourteen types, like the other
+  adapters: `radio`, `range`, `file`, `date`, `time`, `datetime-local` and
+  `switch` used to render "Unknown field type". Register a renderer for one of
+  them to keep your own.
 - **Angular:** a form store's errors now set `aria-describedby` on the control
   too; it used to follow only the errors of the field's own rules.
 
