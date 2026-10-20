@@ -59,7 +59,7 @@ const fields: FieldDescription[] = [
 - `validators.matches(otherFieldName, message?)` — bằng với field khác, dùng cho nhập lại mật khẩu / email. Bỏ qua giá trị rỗng để `required` lo thông báo đó, và so bằng `Object.is` nên hai `NaN` vẫn khớp
 - `validators.compose(...fns)` — gộp nhiều validator thành một
 
-`validateFields(fields, data, rootData?, context?)` trả về `{ valid, errors, complete, status }`, đi sâu vào các nhóm lặp lại (khoá dạng `contacts[0].email`) và bỏ qua field đang bị ẩn bởi `appearCondition` hoặc bị disabled. Các adapter gọi `validateField` / `resolveDisabled` / `resolveReadOnly` / `resolveOptions` cho từng field để đưa `error`, `disabled`, `readOnly` và `options` đã tính tới renderer.
+`validateFields(fields, data, rootData?, context?)` trả về `{ valid, errors, complete, status }`, đi sâu vào các nhóm lặp lại (khoá dạng `contacts[0].email`) và bỏ qua field đang bị ẩn (bởi `appearCondition` hoặc `appearWhen`) hoặc bị disabled. Các adapter gọi `validateField` / `resolveDisabled` / `resolveReadOnly` / `resolveOptions` cho từng field để đưa `error`, `disabled`, `readOnly` và `options` đã tính tới renderer.
 
 ## Thông báo validation
 

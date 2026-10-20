@@ -17,6 +17,7 @@ import {
   canRemoveGroupItem,
   createGroupItem,
   indexGroupPathMap,
+  resolveVisible,
   validateFields,
   FieldDescription,
   Properties,
@@ -487,8 +488,8 @@ export class MultiFieldInput implements OnInit, OnChanges {
 
   private updateVisibleFields() {
     const root = this.rootData ?? this.data;
-    this.visibleFields = this.fieldDescriptions.filter(
-      (f) => !f.appearCondition || f.appearCondition(this.data, root),
+    this.visibleFields = this.fieldDescriptions.filter((f) =>
+      resolveVisible(f, this.data, root),
     );
   }
 

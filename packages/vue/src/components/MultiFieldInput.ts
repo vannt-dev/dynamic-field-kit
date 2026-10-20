@@ -4,6 +4,7 @@ import {
   canRemoveGroupItem,
   createGroupItem,
   indexGroupPathMap,
+  resolveVisible,
   validateFields,
   FieldDescription,
   Properties,
@@ -316,9 +317,8 @@ const MultiFieldInput = /* @__PURE__ */ defineComponent({
     );
 
     const visibleFields = computed(() =>
-      props.fieldDescriptions.filter(
-        (f) =>
-          !f.appearCondition || f.appearCondition(data, props.rootData ?? data),
+      props.fieldDescriptions.filter((f) =>
+        resolveVisible(f, data, props.rootData ?? data),
       ),
     );
 

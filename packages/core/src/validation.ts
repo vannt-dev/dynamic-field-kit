@@ -1,4 +1,6 @@
+import { isEmptyValue, resolveRequired, resolveVisible } from './conditions';
 import { isFieldGroup, isFieldSection, sectionDataOf } from './fieldGroup';
+import { resolveMessage } from './messages';
 import { isAsyncOptions } from './optionsLoader';
 import type { FieldDescription, Properties, ValidationContext } from './types';
 
@@ -152,6 +154,30 @@ export function resolveOptions(
 }
 
 /**
+ * The `required` message when `requiredWhen` holds and the value is empty.
+ * Only for `requiredWhen`: a field with `required: true` has always relied on
+ * its own `validate` hook (`validators.required()`), and checking it here too
+ * would report the message twice.
+ */
+function requiredWhenError(
+  field: FieldDescription,
+  value: unknown,
+  data: Properties,
+  rootData: Properties | undefined,
+  context: ValidationContext | undefined,
+): string | undefined {
+  if (
+    field.requiredWhen === undefined ||
+    field.required === true ||
+    !isEmptyValue(value) ||
+    !resolveRequired(field, data, rootData)
+  ) {
+    return undefined;
+  }
+  return resolveMessage(context, 'required', undefined, 'Field is required');
+}
+
+/**
  * The sync validate pass, plus whether the hook returned a Promise this pass
  * could not await. `validateField` hides that second half for callers that only
  * want messages; `validateFields` needs it to fill in `ValidationResult.pending`.
@@ -165,6 +191,12 @@ function runSyncValidate(
   reportKey = field.name,
   context?: ValidationContext,
 ): { errors: string[]; isPending: boolean } {
+  const missing = requiredWhenError(field, value, data, rootData, context);
+  if (missing) {
+    // An empty value has nothing else worth checking, the way
+    // `validators.required` stands in for the rest of a composed rule.
+    return { errors: [missing], isPending: false };
+  }
   if (!field.validate) {
     return { errors: [], isPending: false };
   }
@@ -214,6 +246,10 @@ export async function validateFieldAsync(
   rootData?: Properties,
   context?: ValidationContext,
 ): Promise<string[]> {
+  const missing = requiredWhenError(field, value, data, rootData, context);
+  if (missing) {
+    return [missing];
+  }
   if (!field.validate) {
     return [];
   }
@@ -226,7 +262,7 @@ export async function validateFieldAsync(
 
 /**
  * Recursively validate `fields` against `data`, descending into repeatable
- * groups. Skips fields hidden by `appearCondition` or disabled (see
+ * groups. Skips hidden fields (`appearCondition` / `appearWhen`) and disabled ones (see
  * resolveDisabled); readOnly fields are still validated. Group error keys use
  * `${name}[${index}].${childName}`, section keys `${name}.${childName}`.
  * `rootData` defaults to `data`.
@@ -241,7 +277,7 @@ export function validateFields(
   const pending: string[] = [];
 
   for (const field of fields) {
-    if (field.appearCondition && !field.appearCondition(data, rootData)) {
+    if (!resolveVisible(field, data, rootData)) {
       continue;
     }
     if (resolveDisabled(field, data, rootData)) {
@@ -320,7 +356,7 @@ export async function validateFieldsAsync(
 ): Promise<ValidationResult> {
   const entries = await Promise.all(
     fields.map(async (field) => {
-      if (field.appearCondition && !field.appearCondition(data, rootData)) {
+      if (!resolveVisible(field, data, rootData)) {
         return [] as Array<[string, string[]]>;
       }
       if (resolveDisabled(field, data, rootData)) {
@@ -407,7 +443,7 @@ export async function validateFieldsAsync(
 
 /**
  * Return the concrete leaf paths that currently exist in a form. Skips the
- * same fields validation skips (hidden by `appearCondition`, disabled), so a
+ * same fields validation skips (hidden, disabled), so a
  * caller marking every path touched cannot touch a field that can never hold
  * an error.
  */
@@ -417,7 +453,7 @@ export function collectFieldPaths(
   rootData: Properties = data,
 ): string[] {
   return fields.flatMap((field) => {
-    if (field.appearCondition && !field.appearCondition(data, rootData)) {
+    if (!resolveVisible(field, data, rootData)) {
       return [];
     }
     if (resolveDisabled(field, data, rootData)) {

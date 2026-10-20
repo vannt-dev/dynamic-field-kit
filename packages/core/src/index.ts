@@ -3,6 +3,11 @@ export * from './types';
 export * from './layout';
 export * from './validation';
 export * from './validators';
+export {
+  evaluateCondition,
+  resolveVisible,
+  resolveRequired,
+} from './conditions';
 export { FieldRegistry } from './FieldRegistry';
 export { fieldRegistry } from './FieldRegistry';
 export { applyComputedValues } from './computeValues';

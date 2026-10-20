@@ -53,6 +53,7 @@ export default defineConfig({
             items: [
               { text: 'Computed fields', link: '/guide/computed-fields' },
               { text: 'Validation and conditions', link: '/guide/validation' },
+              { text: 'Conditions as data', link: '/guide/conditions' },
               { text: 'Input masks', link: '/guide/input-masks' },
               { text: 'Repeatable groups', link: '/guide/groups' },
               { text: 'Sections', link: '/guide/sections' },
@@ -136,6 +137,10 @@ export default defineConfig({
             items: [
               { text: 'Field dẫn xuất', link: '/vi/guide/computed-fields' },
               { text: 'Validation và điều kiện', link: '/vi/guide/validation' },
+              {
+                text: 'Điều kiện dạng dữ liệu',
+                link: '/vi/guide/conditions',
+              },
               { text: 'Mask nhập liệu', link: '/vi/guide/input-masks' },
               { text: 'Nhóm lặp lại', link: '/vi/guide/groups' },
               { text: 'Section', link: '/vi/guide/sections' },

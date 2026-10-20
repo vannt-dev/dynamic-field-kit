@@ -1,6 +1,7 @@
 import {
   applyComputedValues,
   isFieldGroup,
+  resolveVisible,
   validateFields,
   FieldDescription,
   Properties,
@@ -193,9 +194,7 @@ const MultiFieldInputInner = (
 
   const visibleFields = useMemo(
     () =>
-      fieldDescriptions.filter(
-        (f) => !f.appearCondition || f.appearCondition(data, effectiveRoot),
-      ),
+      fieldDescriptions.filter((f) => resolveVisible(f, data, effectiveRoot)),
     [fieldDescriptions, data, effectiveRoot],
   );
 

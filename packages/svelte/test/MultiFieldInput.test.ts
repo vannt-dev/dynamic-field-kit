@@ -73,6 +73,37 @@ describe('MultiFieldInput', () => {
     expect(input(shown.target, 'q-full').value).toBe('Ada');
   });
 
+  it('hides a field whose declarative appearWhen is false', () => {
+    const fields: FieldDescription[] = [
+      { name: 'kind', type: 'probe' },
+      {
+        name: 'company',
+        type: 'probe',
+        appearWhen: { field: 'kind', equals: 'business' },
+      },
+    ];
+    const hidden = render(
+      MultiFieldInput,
+      {
+        fieldDescriptions: fields,
+        properties: { kind: 'home' },
+        idPrefix: 'h',
+      },
+      probeRegistry(),
+    );
+    expect(ids(hidden.target)).toEqual(['h-kind']);
+    const shown = render(
+      MultiFieldInput,
+      {
+        fieldDescriptions: fields,
+        properties: { kind: 'business' },
+        idPrefix: 's',
+      },
+      probeRegistry(),
+    );
+    expect(ids(shown.target)).toEqual(['s-kind', 's-company']);
+  });
+
   it('on its own it keeps what the user typed and reports every change', () => {
     const onChange = vi.fn();
     const { target } = render(

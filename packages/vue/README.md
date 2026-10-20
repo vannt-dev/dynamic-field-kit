@@ -464,7 +464,7 @@ declare module '@dynamic-field-kit/core' {
 
 - `@dynamic-field-kit/core` owns the schema types and shared runtime registry.
 - `@dynamic-field-kit/vue` is the package you should import when registering Vue renderers.
-- `MultiFieldInput` filters fields using `appearCondition` and derives fields using `computeValue`.
+- `MultiFieldInput` filters fields using `appearCondition` (or the declarative `appearWhen`) and derives fields using `computeValue`.
 - `DynamicInput` renders `Unknown field type: ...` when a renderer is missing.
 - Fields with `fields` render as repeatable groups instead of going through `fieldRegistry`.
 

@@ -61,6 +61,12 @@ const PAGES = [
     sections: ['Sections'],
   },
   {
+    out: 'guide/conditions.md',
+    title: 'Conditions as data',
+    source: CORE,
+    sections: ['Conditions as data'],
+  },
+  {
     out: 'guide/input-masks.md',
     title: 'Input masks',
     source: CORE,
