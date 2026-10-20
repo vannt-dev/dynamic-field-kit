@@ -8,13 +8,13 @@ https://vannt-dev.github.io/dynamic-field-kit/svelte/
 `src/App.svelte` holds five tabs. The last three show the demo's own source beside
 the running form.
 
-| Tab                | Source                            | Shows                                                                                                                         |
-| ------------------ | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| Basics             | `src/App.svelte` (`legacyFields`) | `firstName` / `lastName`, a computed `fullName`, `age`, a repeatable `contacts` group                                         |
-| Validation         | `src/App.svelte` (`newFields`)    | options that depend on another field, the built-in validators, async validation, `appearCondition` and `disabledCondition`    |
-| Form state         | `src/demos/EnterpriseDemo.svelte` | `createDynamicForm`, the HTML5 renderers (`select`, `radio`, `range`, `email`, `date`, `switch`), blur wiring                 |
-| Wizard             | `src/demos/WizardDemo.svelte`     | the multi-step engine: `createWizardState`, `validateStep`, `goNext` / `goPrev`                                               |
-| JSON Schema + Undo | `src/demos/SchemaFormDemo.svelte` | a form built by `fieldsFromJsonSchema`, kept across reloads by `createFormDraft`, with undo and redo from `createFormHistory` |
+| Tab                | Source                            | Shows                                                                                                                                |
+| ------------------ | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Basics             | `src/App.svelte` (`legacyFields`) | `firstName` / `lastName`, a computed `fullName`, `age`, a repeatable `contacts` group                                                |
+| Validation         | `src/App.svelte` (`newFields`)    | options that depend on another field, the built-in validators, async validation, `appearCondition` and `disabledCondition`           |
+| Form state         | `src/demos/EnterpriseDemo.svelte` | `createDynamicForm`, the HTML5 renderers (`select`, `radio`, `range`, `email`, `date`, `switch`), blur wiring, `DynamicFormDevTools` |
+| Wizard             | `src/demos/WizardDemo.svelte`     | the multi-step engine: `createWizardState`, `validateStep`, `goNext` / `goPrev`                                                      |
+| JSON Schema + Undo | `src/demos/SchemaFormDemo.svelte` | a form built by `fieldsFromJsonSchema`, kept across reloads by `createFormDraft`, with undo and redo from `createFormHistory`        |
 
 The demos are in English and Vietnamese: the **EN / VI** switch in the navigation
 reloads the page in the other language (`../shared/i18n.ts`; English is the
