@@ -47,7 +47,7 @@ const stored = JSON.parse(JSON.stringify(fields));
 - **`appearWhen`** ẩn field khi điều kiện sai. Field bị ẩn không được render, không được validate và không có trong `collectFieldPaths`, đúng như với `appearCondition`. Nếu một field có cả hai thì **`appearCondition` thắng** và `appearWhen` bị bỏ qua, nên một hàm truyền qua `overrides` sẽ thay cho quy tắc đã lưu.
 - **`requiredWhen`** làm field bắt buộc khi điều kiện đúng: renderer nhận `required: true` (và `ariaRequired`), còn validation báo thông báo `required` lấy từ [bảng thông báo](./validation#thong-bao-validation) của form khi giá trị rỗng. Khi đã có giá trị, `validate` của field chạy như thường. **`required: true` thắng** `requiredWhen`: field đánh dấu `required` vẫn dựa vào hook `validate` của nó (`validators.required()`) như trước giờ.
 
-Điều kiện không thuộc các dạng trên được coi là sai, kèm cảnh báo khi chạy ở chế độ development. `evaluateCondition(condition, data, rootData?)`, `resolveVisible` và `resolveRequired` được export để dùng ngoài form. Mọi adapter đọc hai khoá này qua core, nên chúng có tác dụng khi cả core lẫn adapter đều ở bản phát hành có tính năng này.
+Điều kiện không thuộc các dạng trên được coi là sai, kèm cảnh báo khi chạy ở chế độ development. `evaluateCondition(condition, data, rootData?)`, `resolveVisible` và `resolveRequired` được export để dùng ngoài form. Mọi adapter đọc hai khoá này qua `resolveVisible` của core, nên adapter từ bản phát hành có tính năng này cần core từ cùng bản đó trở lên.
 
 ## Với JSON Schema
 

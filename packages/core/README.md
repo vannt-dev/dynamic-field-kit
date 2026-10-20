@@ -616,8 +616,8 @@ group, the section's object inside a section. A dotted path reads deeper
   stored rule.
 - **`requiredWhen`** makes the field required while the condition holds: the
   renderer receives `required: true` (and `ariaRequired`), and validation
-  reports the `required` message from the form's [message
-  catalog](#validation-messages) when the value is empty. Once a value is
+  reports the `required` message from the form's
+  [message catalog](#validation-messages) when the value is empty. Once a value is
   there, the field's own `validate` runs as usual. **`required: true` wins**
   over it: a field marked `required` keeps relying on its `validate` hook
   (`validators.required()`), as it always has.
@@ -625,12 +625,12 @@ group, the section's object inside a section. A dotted path reads deeper
 A condition that is not one of the shapes above is false, with a warning in
 development. `evaluateCondition(condition, data, rootData?)`, `resolveVisible`
 and `resolveRequired` are exported for code outside a form. Every adapter reads
-both keys through core, so they take effect when core and the adapter are both
-at the release that introduced them.
+both keys through core's `resolveVisible`, so an adapter from the release that
+introduced them needs core from that release too.
 
 `fieldsToJsonSchema` writes both as `if` / `then`, and `fieldsFromJsonSchema`
-reads `dependentRequired` and simple `if` / `then` back into them; see [Fields
-from a JSON Schema](#fields-from-a-json-schema).
+reads `dependentRequired` and simple `if` / `then` back into them; see
+[Fields from a JSON Schema](#fields-from-a-json-schema).
 
 ## Fields from a JSON Schema
 
