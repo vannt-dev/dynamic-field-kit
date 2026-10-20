@@ -1,5 +1,13 @@
 # @dynamic-field-kit/core
 
+## 1.12.0
+
+### Minor Changes
+
+- Conditions as data with appearWhen and requiredWhen, labelled built-in controls, DevTools for Svelte and a built-in control for every field type in Angular. Every adapter now needs core 1.12.0.
+- 5b535dc: Conditions as data. A field takes `appearWhen` and `requiredWhen`: a condition written as plain data, so a field list can be stored as JSON or sent from a server. A condition tests a value at the field's own level (`{ field: 'country', equals: 'US' }`, `notEquals`, `in: [...]`, `truthy`, `empty`; a dotted path reads deeper, `root: true` reads the top-level form) or combines others with `all`, `any` and `not`. `appearWhen` hides the field like `appearCondition`, which wins when both are set. `requiredWhen` passes `required: true` to the renderer and reports the `required` message for an empty value while it holds; `required: true` wins over it. Every adapter's `MultiFieldInput` reads `appearWhen` through core's new `resolveVisible`; core also exports `evaluateCondition` and `resolveRequired`. `fieldsToJsonSchema` writes both conditions as `if` / `then` instead of dropping them, and `fieldsFromJsonSchema` reads `dependentRequired` (and draft-07 `dependencies`) and `if` / `then` / `else` testing `const`, `enum` or presence back into them, so a field list survives the round trip. The adapters now import `resolveVisible` from core, so an adapter from this release needs core from this release too; upgrade them together.
+- e22327a: Built-in renderers are labelled. A field without a registered renderer now renders its `label` as a `<label for>` tied to the control (`id="{fieldId}-label"`, class `dfk-field-label`), so the control has an accessible name; a radio group gets `role="radiogroup"` and `aria-labelledby` pointing at its caption. In React, Vue and Svelte the label, the control and the error message sit in one `<div class="dfk-field">`, which keeps them together in a grid layout; in Angular the `<dfk-dynamic-input>` element that already holds them gets the class `dfk-field`. CSS that selected a built-in control as a direct child of the layout needs updating (see MIGRATING). Registered renderers are unaffected. In Angular, an error passed in by a form store now also sets `aria-describedby` on the control. Core gains `makeLabelId(id)`.
+
 ## 1.11.0
 
 ### Minor Changes

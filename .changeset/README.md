@@ -22,7 +22,9 @@ not `fixed`: a patch that only touches angular still must not bump and republish
 three packages whose tarballs did not change.
 
 **`onlyUpdatePeerDependentsWhenOutOfRange`** stops a core release from
-rewriting each adapter's `@dynamic-field-kit/core` peer range. The adapters use
-only core APIs that have existed since 1.3.0, so `^1.3.0` is the honest range —
-tightening it on every core release would force consumers to upgrade core for
-features their adapter does not call.
+rewriting each adapter's `@dynamic-field-kit/core` peer range. The floor is the
+oldest core that has every API the adapter imports, and it moves by hand when an
+adapter starts calling something new: since 1.12.0 the adapters import
+`resolveVisible` and `makeLabelId`, so the range is `^1.12.0`. Tightening it on
+every core release would force consumers to upgrade core for features their
+adapter does not call.
