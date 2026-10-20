@@ -24,7 +24,7 @@ features:
     details: Thư viện không kèm design system. Đăng ký một renderer cho mỗi loại field, và mọi form trong ứng dụng đều dùng nó.
     link: /vi/guide/registries
   - title: Validation và điều kiện
-    details: Validator dựng sẵn, quy tắc bất đồng bộ, field xuất hiện, bị khoá hoặc đổi lựa chọn tuỳ theo giá trị khác.
+    details: Validator dựng sẵn, quy tắc bất đồng bộ, field xuất hiện, bị khoá hoặc đổi lựa chọn tuỳ theo giá trị khác, và điều kiện viết dạng dữ liệu thuần, lưu được thành JSON.
     link: /vi/guide/validation
   - title: Nhóm lặp lại và wizard
     details: '"Thêm một mục nữa" ngay trong schema, và bộ máy nhiều bước có validation theo từng bước.'

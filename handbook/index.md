@@ -4,7 +4,7 @@ layout: home
 hero:
   name: Dynamic Field Kit
   text: Forms from a field list
-  tagline: Describe the fields once. Render them in React, Vue or Angular with your own components.
+  tagline: Describe the fields once. Render them in React, Vue, Angular or Svelte with your own components.
   actions:
     - theme: brand
       text: Get started
@@ -24,7 +24,7 @@ features:
     details: The kit ships no design system. Register a renderer per field type and every form in the app uses it.
     link: /guide/registries
   - title: Validation and conditions
-    details: Built-in validators, async rules, fields that appear, lock or change options depending on other values.
+    details: Built-in validators, async rules, fields that appear, lock or change options depending on other values, and conditions written as plain data that can be stored as JSON.
     link: /guide/validation
   - title: Repeatable groups and wizards
     details: '"Add another item" without leaving the schema, and a multi-step engine with per-step validation.'
