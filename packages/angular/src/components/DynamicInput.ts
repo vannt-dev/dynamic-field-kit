@@ -58,19 +58,48 @@ const KNOWN_PROPS = [
   'multiple',
 ] as const;
 
+// A radio group is a `div` holding the buttons; every other built-in is one
+// form control.
 type BuiltInControl =
-  HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+  HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | HTMLDivElement;
 
-/** The types the built-in fallback draws a control for (see createBuiltIn). */
-const BUILT_IN_TYPES: ReadonlySet<string> = new Set([
+/** Types whose control is an `<input>` of the same `type`, holding text. */
+const TEXT_INPUT_TYPES: ReadonlySet<string> = new Set([
   'text',
   'password',
   'email',
   'number',
+  // The browser hands these over as ISO text: `2026-10-21`, `09:30`,
+  // `2026-10-21T09:30`. That text is the value, as in the other adapters.
+  'date',
+  'time',
+  'datetime-local',
+]);
+
+/**
+ * The types the built-in fallback draws a control for (see createBuiltIn):
+ * the same fourteen as the React, Vue and Svelte adapters.
+ */
+const BUILT_IN_TYPES: ReadonlySet<string> = new Set([
+  ...TEXT_INPUT_TYPES,
   'textarea',
   'checkbox',
+  'switch',
   'select',
+  'radio',
+  'range',
+  'file',
 ]);
+
+/** An option as the select and the radio group show it, read as every adapter reads it. */
+function readOption(option: unknown): { value: unknown; label: string } {
+  const record = option as Record<string, unknown>;
+  const value = record?.['value'] ?? record?.['id'] ?? option;
+  return {
+    value,
+    label: String(record?.['label'] ?? record?.['name'] ?? value),
+  };
+}
 
 @Component({
   selector: 'dfk-dynamic-input',
@@ -83,12 +112,21 @@ const BUILT_IN_TYPES: ReadonlySet<string> = new Set([
   host: { '[class.dfk-field]': 'isBuiltIn()' },
   // *ngIf rather than @if: the peer range starts at Angular 16, and the
   // built-in control flow block syntax is 17+.
+  //
+  // A radio group is not a labelable element: its caption is a plain element
+  // the group names itself after (`aria-labelledby`), as in the other
+  // adapters.
   template: `<label
-      *ngIf="showDefaultLabel()"
+      *ngIf="showDefaultLabel() && type !== 'radio'"
       [id]="labelNodeId()"
       [attr.for]="id"
       class="dfk-field-label"
       >{{ label }}</label
+    ><span
+      *ngIf="showDefaultLabel() && type === 'radio'"
+      [id]="labelNodeId()"
+      class="dfk-field-label"
+      >{{ label }}</span
     >
     <div #host style="display: contents;"></div>
     <div
@@ -121,6 +159,9 @@ export class DynamicInput
   private builtIn?: BuiltInControl;
   private builtInType?: string;
   private builtInOptions?: string;
+  // The values of the radio buttons, by position: what a button emits when
+  // chosen is the option's own value, not the text of its `value` attribute.
+  private radioValues: unknown[] = [];
   private subscriptions: Subscription[] = [];
   // Tracks which KNOWN_PROPS were actually supplied to DynamicInput (via
   // SimpleChanges), independent of TS class-field emit. See applyProps.
@@ -460,28 +501,38 @@ export class DynamicInput
    * change, so a flag that is no longer given is taken off again.
    */
   private applyFallbackAria(): void {
-    const control = (
-      this.host.element.nativeElement as HTMLElement
-    ).querySelector('input, select, textarea');
-    if (!control) {
-      return;
-    }
-    const flag = (name: string, value: string | undefined) => {
-      if (value === undefined) {
-        control.removeAttribute(name);
-      } else {
-        control.setAttribute(name, value);
+    const root = this.host.element.nativeElement as HTMLElement;
+    // Each button of a radio group carries the flags, as in the React and Vue
+    // adapters; any other built-in is a single control.
+    const group = this.builtIn instanceof HTMLDivElement;
+    const controls = group
+      ? Array.from(root.querySelectorAll('input[type="radio"]'))
+      : [root.querySelector('input, select, textarea')].filter(
+          (control): control is Element => control !== null,
+        );
+    for (const control of controls) {
+      const flag = (name: string, value: string | undefined) => {
+        if (value === undefined) {
+          control.removeAttribute(name);
+        } else {
+          control.setAttribute(name, value);
+        }
+      };
+      flag(
+        'aria-invalid',
+        this.ariaInvalid === undefined ? undefined : String(this.ariaInvalid),
+      );
+      // The group's `required` says it; a button is not required on its own.
+      if (!group) {
+        flag(
+          'aria-required',
+          this.ariaRequired === undefined
+            ? undefined
+            : String(this.ariaRequired),
+        );
       }
-    };
-    flag(
-      'aria-invalid',
-      this.ariaInvalid === undefined ? undefined : String(this.ariaInvalid),
-    );
-    flag(
-      'aria-required',
-      this.ariaRequired === undefined ? undefined : String(this.ariaRequired),
-    );
-    flag('aria-describedby', this.ariaDescribedBy || undefined);
+      flag('aria-describedby', this.ariaDescribedBy || undefined);
+    }
   }
 
   /**
@@ -502,12 +553,7 @@ export class DynamicInput
   }
 
   private createBuiltIn(type: string): BuiltInControl | null {
-    if (
-      type === 'text' ||
-      type === 'password' ||
-      type === 'email' ||
-      type === 'number'
-    ) {
+    if (TEXT_INPUT_TYPES.has(type)) {
       const input = document.createElement('input');
       input.type = type;
       input.addEventListener('input', () => {
@@ -527,7 +573,8 @@ export class DynamicInput
       return textarea;
     }
 
-    if (type === 'checkbox') {
+    // A switch is a checkbox, as in the other adapters.
+    if (type === 'checkbox' || type === 'switch') {
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.addEventListener('change', () => {
@@ -544,6 +591,43 @@ export class DynamicInput
       return select;
     }
 
+    if (type === 'range') {
+      const range = document.createElement('input');
+      range.type = 'range';
+      range.addEventListener('input', () => {
+        this.emitValue(Number(range.value));
+      });
+      return range;
+    }
+
+    if (type === 'file') {
+      const file = document.createElement('input');
+      file.type = 'file';
+      // The chosen file, or the list of them for `multiple`; `null` when the
+      // choice is cleared.
+      file.addEventListener('change', () => {
+        const files = file.files;
+        if (!files) {
+          return;
+        }
+        this.emitValue(this.multiple ? Array.from(files) : (files[0] ?? null));
+      });
+      return file;
+    }
+
+    if (type === 'radio') {
+      const group = document.createElement('div');
+      group.setAttribute('role', 'radiogroup');
+      group.addEventListener('change', (event) => {
+        const target = event.target as HTMLInputElement;
+        const index = Number(target.dataset['index']);
+        if (target.type === 'radio' && index in this.radioValues) {
+          this.emitValue(this.radioValues[index]);
+        }
+      });
+      return group;
+    }
+
     return null;
   }
 
@@ -557,6 +641,18 @@ export class DynamicInput
       }
     };
     attribute('id', this.id);
+
+    if (control instanceof HTMLDivElement) {
+      control.className = `dfk-radio-group ${this.className || ''}`;
+      // The caption drawn for a labelled field; see `showDefaultLabel`.
+      attribute(
+        'aria-labelledby',
+        this.label && this.id ? this.labelNodeId() : undefined,
+      );
+      this.syncRadioButtons(control);
+      return;
+    }
+
     attribute('class', this.className);
     control.required = Boolean(this.required);
 
@@ -571,6 +667,28 @@ export class DynamicInput
       // nor has a checkbox
       control.disabled = Boolean(this.disabled || this.readOnly);
       control.checked = Boolean(this.value);
+      return;
+    }
+
+    if (control instanceof HTMLInputElement && control.type === 'range') {
+      // nor a range
+      control.disabled = Boolean(this.disabled || this.readOnly);
+      attribute('min', this.min?.toString());
+      attribute('max', this.max?.toString());
+      attribute('step', this.step?.toString());
+      // Bounds first: the browser clamps the value to them.
+      const next = String(this.value ?? this.min ?? 0);
+      if (control.value !== next) {
+        control.value = next;
+      }
+      return;
+    }
+
+    if (control instanceof HTMLInputElement && control.type === 'file') {
+      // A file input cannot be given a value, so `value` is not written.
+      control.disabled = Boolean(this.disabled || this.readOnly);
+      attribute('accept', this.accept);
+      control.multiple = Boolean(this.multiple);
       return;
     }
 
@@ -592,13 +710,56 @@ export class DynamicInput
     }
   }
 
+  /**
+   * The buttons of a built-in radio group, rebuilt only when the options
+   * changed, and the one that is checked. Markup as in the other adapters: a
+   * `<label>` per option around its button and its text.
+   */
+  private syncRadioButtons(group: HTMLDivElement): void {
+    const shown = (this.options || []).map(readOption);
+    const listed = JSON.stringify(
+      shown.map((option) => [String(option.value), option.label]),
+    );
+    if (listed !== this.builtInOptions) {
+      this.builtInOptions = listed;
+      this.radioValues = shown.map((option) => option.value);
+      while (group.firstChild) {
+        group.removeChild(group.firstChild);
+      }
+      shown.forEach((option, index) => {
+        const label = document.createElement('label');
+        label.style.marginRight = '12px';
+        label.style.display = 'inline-flex';
+        label.style.alignItems = 'center';
+        const button = document.createElement('input');
+        button.type = 'radio';
+        button.value = String(option.value);
+        button.dataset['index'] = String(index);
+        const text = document.createElement('span');
+        text.style.marginLeft = '4px';
+        text.textContent = option.label;
+        label.append(button, text);
+        group.appendChild(label);
+      });
+    }
+
+    const buttons = Array.from(
+      group.querySelectorAll<HTMLInputElement>('input[type="radio"]'),
+    );
+    buttons.forEach((button, index) => {
+      button.id = `${this.id || 'radio'}-${index}`;
+      button.name = this.id ?? '';
+      button.disabled = Boolean(this.disabled || this.readOnly);
+      button.required = Boolean(this.required);
+      button.checked = String(this.value) === String(this.radioValues[index]);
+    });
+  }
+
   /** The options of a built-in select, rebuilt only when the list changed, and the one that is chosen. */
   private syncBuiltInOptions(select: HTMLSelectElement): void {
     const options = (this.options || []).map((opt) => {
-      const optObj = opt as Record<string, any>;
-      const optVal = optObj['value'] ?? optObj['id'] ?? opt;
-      const optLabel = optObj['label'] ?? optObj['name'] ?? String(optVal);
-      return { value: String(optVal), label: String(optLabel) };
+      const option = readOption(opt);
+      return { value: String(option.value), label: option.label };
     });
     const listed = JSON.stringify(options);
     if (listed !== this.builtInOptions) {

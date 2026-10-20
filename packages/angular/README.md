@@ -263,8 +263,13 @@ For one field, set `id` on its `FieldDescription`; it wins over the prefix.
 `radio` · `range` · `file` · `date` · `time` · `datetime-local` · `switch`
 
 Any type you have not registered falls back to one of these. `file` emits a
-`File` (or `File[]` when `multiple` is set), `range` and `number` emit numbers,
-`checkbox` / `switch` emit booleans; everything else emits strings.
+`File` (or `File[]` when `multiple` is set, `null` when the choice is cleared),
+`range` and `number` emit numbers, `checkbox` / `switch` emit booleans, `radio`
+emits the chosen option's own `value`; everything else emits strings (`date`,
+`time` and `datetime-local` the ISO text the browser gives, such as
+`2026-10-21T09:30`). Before 1.12 only `text`, `password`, `email`, `number`,
+`textarea`, `checkbox` and `select` had a fallback here, and the other seven
+rendered "Unknown field type".
 
 Since 1.7.0 a default renderer also renders its validation message, as
 `<div id="{fieldId}-error" class="dfk-field-error" role="alert">`, which is what
@@ -276,7 +281,10 @@ it with `.dfk-field-error { display: none }` if you want the old silence.
 A built-in control is also labelled: when the field has a `label`,
 `<label id="{fieldId}-label" for="{fieldId}" class="dfk-field-label">` comes
 before it, and the `<dfk-dynamic-input>` element that holds the label, control
-and message gets the class `dfk-field`. A registered renderer is untouched.
+and message gets the class `dfk-field`. A radio group has `role="radiogroup"`
+and `aria-labelledby` pointing at a `<span class="dfk-field-label">` caption
+instead, with a `<label>` around each button. A registered renderer is
+untouched.
 
 ## DevTools
 

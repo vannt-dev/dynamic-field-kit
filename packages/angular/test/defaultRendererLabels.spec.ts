@@ -27,7 +27,7 @@ class HostComponent {
   @Input() errors?: Record<string, string[]>;
 }
 
-// The types the Angular fallback draws a control for.
+// Every built-in type except radio, which is a group rather than one control.
 const builtIn = [
   'text',
   'password',
@@ -36,6 +36,12 @@ const builtIn = [
   'textarea',
   'checkbox',
   'select',
+  'range',
+  'file',
+  'date',
+  'time',
+  'datetime-local',
+  'switch',
 ];
 
 /** The control a label names, the way assistive technology finds it. */
@@ -86,6 +92,26 @@ describe('built-in controls', () => {
     );
     const control = byLabelText(root, `The ${type}`);
     expect(control.id).toBe('f-x');
+  });
+
+  it('name a radio group after its caption', () => {
+    const root = mount(
+      list([
+        {
+          name: 'country',
+          type: 'radio',
+          label: 'Country',
+          options: [{ label: 'Vietnam', value: 'VN' }],
+        },
+      ]),
+    );
+    const group = root.querySelector('[role="radiogroup"]')!;
+    const caption = root.querySelector(
+      `[id="${group.getAttribute('aria-labelledby')}"]`,
+    );
+    expect(caption?.textContent).toBe('Country');
+    expect(group.id).toBe('f-country');
+    expect(group.closest('.dfk-field')).not.toBeNull();
   });
 
   it('keep label, control and message together in one element', () => {
