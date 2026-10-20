@@ -2,6 +2,7 @@
   import { validators } from '@dynamic-field-kit/core';
   import {
     type FieldDescription,
+    DynamicFormDevTools,
     MultiFieldInput,
     createDynamicForm,
   } from '@dynamic-field-kit/svelte';
@@ -102,4 +103,7 @@
     </p>
     <pre>{JSON.stringify(form.data, null, 2)}</pre>
   </div>
+
+  <!-- Reads data, errors, touched and isDirty from the form -->
+  <DynamicFormDevTools {form} {fields} />
 </form>

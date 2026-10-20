@@ -30,6 +30,7 @@
     canRemoveGroupItem,
     createGroupItem,
     indexGroupPathMap,
+    resolveVisible,
     validateFields,
     type FieldDescription,
     type LayoutConfig,
@@ -227,8 +228,7 @@
 
   const visibleFields = $derived(
     fieldDescriptions.filter(
-      (field) =>
-        !field.appearCondition || field.appearCondition(data, rootData ?? data),
+      (field) => resolveVisible(field, data, rootData ?? data),
     ),
   );
 

@@ -25,9 +25,11 @@ updates:
       prefix: chore
       include: scope
     ignore:
-      # @angular/compiler-cli 21 accepts typescript <6.1.0. Move this with Angular.
+      # The Angular 21 toolchain takes typescript >=5.9 <6.0 (@angular-devkit/build-angular,
+      # @ngtools/webpack, ng-packagr; compiler-cli alone would take <6.1): 6.0.3 failed npm ci
+      # with ERESOLVE (#110). Move this with Angular.
       - dependency-name: typescript
-        versions: ['>=6.1.0']
+        versions: ['>=6.0.0']
       # The Angular package is built and tested with Angular 21 (see packages/angular/README.md).
       # Moving that toolchain to a new major is a change of its own, checked by
       # scripts/verify-angular-peer-range.js, not a dependency bump.
@@ -39,6 +41,33 @@ updates:
         update-types: ['version-update:semver-major']
       - dependency-name: 'ng-packagr'
         update-types: ['version-update:semver-major']
+      # @angular/build 21 has vitest ^4 as a peer, and npm 10 (Node 22, this repo's CI) stops
+      # with "Cannot read properties of null (reading 'edgesOut')" on vitest 5 (#100).
+      # @angular/build 22 accepts ^5: move vitest with the Angular toolchain.
+      - dependency-name: 'vitest'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@vitest/*'
+        update-types: ['version-update:semver-major']
+  # The React Storybook has its own lockfile. One weekly pull request for all of it:
+  # Storybook's packages only work at one version together, and the rest is build tooling.
+  - package-ecosystem: npm
+    directory: /storybook
+    schedule:
+      interval: weekly
+    groups:
+      storybook:
+        patterns:
+          - '*'
+    commit-message:
+      prefix: chore
+      include: scope
+    ignore:
+      # Same hold as the root: vitest moves with the Angular toolchain there.
+      - dependency-name: 'vitest'
+        update-types: ['version-update:semver-major']
+      # Matches the root's TypeScript hold below 6.0.
+      - dependency-name: typescript
+        versions: ['>=6.0.0']
   - package-ecosystem: github-actions
     directory: /
     schedule:

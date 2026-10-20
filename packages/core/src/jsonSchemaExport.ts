@@ -1,5 +1,6 @@
 import { isFieldSection } from './fieldGroup';
 import type { JsonSchemaWarning } from './jsonSchema';
+import { conditionToSchema } from './jsonSchemaConditions';
 import type { FieldDescription, Properties } from './types';
 
 type SchemaObject = { [keyword: string]: unknown };
@@ -101,6 +102,10 @@ class Exporter {
   ): SchemaObject {
     const properties: SchemaObject = {};
     const required: string[] = [];
+    // `if` / `then` pairs for `appearWhen` and `requiredWhen`, in `allOf` so
+    // any number of them can sit on one object.
+    const conditionals: SchemaObject[] = [];
+    const nested = basePath !== '';
     for (const field of fields) {
       const path = basePath ? `${basePath}.${field.name}` : field.name;
       if (field.name in properties) {
@@ -121,21 +126,77 @@ class Exporter {
         property.default = value;
       }
       const override = this.options.overrides?.[path];
-      properties[field.name] = override
-        ? { ...property, ...override }
-        : property;
-      if (field.required) {
-        required.push(field.name);
+      const written = override ? { ...property, ...override } : property;
+      const appear = this.appearOf(field, path, nested);
+      if (appear) {
+        // Defined only while the field is shown: hidden, it is not validated,
+        // so any value it still holds is allowed. The `true` keeps its place
+        // in the order, and lets it through `strict`.
+        properties[field.name] = true;
+        conditionals.push({
+          if: appear,
+          then: {
+            properties: { [field.name]: written },
+            ...(field.required ? { required: [field.name] } : {}),
+          },
+        });
+      } else {
+        properties[field.name] = written;
+        if (field.required) {
+          required.push(field.name);
+        }
+      }
+      if (!field.required && field.requiredWhen !== undefined) {
+        const when = conditionToSchema(field.requiredWhen, nested);
+        if (when) {
+          conditionals.push({
+            if: appear ? { allOf: [appear, when] } : when,
+            then: { required: [field.name] },
+          });
+        } else {
+          this.warn(path, this.unwritable('requiredWhen', nested));
+        }
       }
     }
     const schema: SchemaObject = { type: 'object', properties };
     if (required.length > 0) {
       schema.required = required;
     }
+    if (conditionals.length > 0) {
+      schema.allOf = conditionals;
+    }
     if (this.options.strict) {
       schema.additionalProperties = false;
     }
     return schema;
+  }
+
+  unwritable(key: string, nested: boolean): string {
+    return nested
+      ? `\`${key}\` is not a condition, or reads the form root (\`root: true\`) ` +
+          'from inside a group or section, which the schema of the nested object ' +
+          'cannot see; not in the schema'
+      : `\`${key}\` is not a condition; not in the schema`;
+  }
+
+  /** The `if` of a field's `appearWhen`, or undefined when it is always shown. */
+  appearOf(
+    field: FieldDescription,
+    path: string,
+    nested: boolean,
+  ): SchemaObject | undefined {
+    // A function wins over `appearWhen` at runtime; propertyOf reports it.
+    if (field.appearCondition || field.appearWhen === undefined) {
+      return undefined;
+    }
+    const appear = conditionToSchema(field.appearWhen, nested);
+    if (!appear) {
+      this.warn(
+        path,
+        `${this.unwritable('appearWhen', nested)}; the property is always allowed`,
+      );
+    }
+    return appear;
   }
 
   /** `enum`, or `oneOf` of labelled constants when the labels say more than the values. */
@@ -261,7 +322,11 @@ class Exporter {
     if (field.appearCondition) {
       this.warn(
         path,
-        '`appearCondition` is a function and is not in the schema; the property is always allowed',
+        field.appearWhen === undefined
+          ? '`appearCondition` is a function and is not in the schema; the property ' +
+              'is always allowed. Write it as `appearWhen` to keep it'
+          : '`appearCondition` is a function and is not in the schema, and it ' +
+              'overrides `appearWhen`; the property is always allowed',
       );
     }
     if (field.validate) {
@@ -327,11 +392,14 @@ class Exporter {
  * as `enum`, or as `oneOf` of titled constants when the labels differ from
  * the values; `multiple` as an array; repeatable groups as arrays of objects
  * with `minItems` / `maxItems`; sections as nested objects; `defaults` as
- * `default`.
+ * `default`; `appearWhen` and `requiredWhen` as `if` / `then` in `allOf`
+ * (a conditionally shown field is defined under `then`, with `true` holding
+ * its place in `properties`).
  *
  * What cannot be: anything held in a function. `validate`, `appearCondition`,
  * `readOnlyCondition` and option loaders are reported in `warnings`, and the
- * rules behind them are added by hand through `overrides`.
+ * rules behind them are added by hand through `overrides`. So is a condition
+ * reading the form root from inside a group or section.
  */
 export function fieldsToJsonSchema(
   fields: FieldDescription[],

@@ -251,7 +251,8 @@ describe('fieldsToJsonSchema', () => {
     expect(
       warnings.map((warning) => `${warning.path}: ${warning.message}`),
     ).toEqual([
-      'vat: `appearCondition` is a function and is not in the schema; the property is always allowed',
+      'vat: `appearCondition` is a function and is not in the schema; the property ' +
+        'is always allowed. Write it as `appearWhen` to keep it',
       'code: `validate` is a function and is not in the schema; add its rules through `overrides`',
       'locked: `readOnlyCondition` is a function and is not in the schema',
       'avatar: a file has no JSON value; the property is left out',

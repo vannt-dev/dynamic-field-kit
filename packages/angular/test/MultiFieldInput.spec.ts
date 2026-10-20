@@ -68,6 +68,28 @@ describe('MultiFieldInput', () => {
     ).toBe(2);
   });
 
+  it('hides fields whose declarative appearWhen is false', () => {
+    const fields: FieldDescription[] = [
+      { name: 'kind', type: 'text' },
+      {
+        name: 'company',
+        type: 'text',
+        appearWhen: { field: 'kind', equals: 'business' },
+      },
+    ];
+
+    expect(
+      mount(fields, { kind: 'personal' }).nativeElement.querySelectorAll(
+        'input.txt',
+      ).length,
+    ).toBe(1);
+    expect(
+      mount(fields, { kind: 'business' }).nativeElement.querySelectorAll(
+        'input.txt',
+      ).length,
+    ).toBe(2);
+  });
+
   it('applies computeValue to the data it emits', () => {
     const fields: FieldDescription[] = [
       { name: 'price', type: 'text' },

@@ -188,6 +188,9 @@ export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {
     data: Record<string, any>,
     rootData?: Record<string, any>,
   ) => boolean;
+  // The same rule as data, which survives JSON (see "Conditions as data")
+  appearWhen?: FieldCondition;
+  requiredWhen?: FieldCondition;
   computeValue?: (
     data: Record<string, any>,
     rootData?: Record<string, any>,
@@ -326,7 +329,7 @@ const fields: FieldDescription[] = [
 
 `validateFields(fields, data, rootData?, context?)` returns `{ valid, errors,
 complete, status }`, recursing into repeatable groups (keys like `contacts[0].email`) and
-skipping fields that are hidden by `appearCondition` or disabled. Adapters call `validateField` /
+skipping fields that are hidden (by `appearCondition` or `appearWhen`) or disabled. Adapters call `validateField` /
 `resolveDisabled` / `resolveReadOnly` / `resolveOptions` per field to surface
 `error`, `disabled`, `readOnly` and the resolved `options` to renderers
 reactively.
@@ -559,6 +562,76 @@ Adapters parse **synchronously**, so the result works with the synchronous
 async refinements or async `.test()` rules cannot be parsed synchronously —
 those return a Promise, so validate through `validateFieldsAsync`.
 
+## Conditions as data
+
+`appearCondition` is a function, so a field list that uses it cannot be stored
+as JSON, sent from a server, or written to a JSON Schema. `appearWhen` and
+`requiredWhen` take the same kind of rule as plain data:
+
+```ts
+import type { FieldDescription } from '@dynamic-field-kit/core';
+
+const fields: FieldDescription[] = [
+  { name: 'country', type: 'select', options: countries },
+  {
+    name: 'state',
+    type: 'text',
+    appearWhen: { field: 'country', in: ['US', 'CA'] },
+    requiredWhen: { field: 'country', equals: 'US' },
+  },
+  {
+    name: 'vat',
+    type: 'text',
+    appearWhen: {
+      all: [
+        { field: 'accountType', equals: 'business' },
+        { not: { field: 'country', equals: 'US' } },
+      ],
+    },
+  },
+];
+
+// The same list, read back from storage, behaves the same.
+const stored = JSON.parse(JSON.stringify(fields));
+```
+
+| Condition                                     | True when                                                                           |
+| --------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `{ field, equals: value }`                    | the value equals `value`; arrays and objects compare by value, like JSON Schema     |
+| `{ field, notEquals: value }`                 | it does not (a missing value is not equal to anything)                              |
+| `{ field, in: [a, b] }`                       | it equals one of the list                                                           |
+| `{ field, truthy: true }` / `false`           | it is truthy / falsy in JavaScript terms                                            |
+| `{ field, empty: true }` / `false`            | it is / is not empty: undefined, `null`, `''` or `[]`, as for `validators.required` |
+| `{ all: [...] }`, `{ any: [...] }`, `{ not }` | every one, at least one, or not the one inside (`all: []` is true, `any: []` false) |
+
+`field` names a value at the field's own level: the item inside a repeatable
+group, the section's object inside a section. A dotted path reads deeper
+(`address.country`), and `root: true` reads the top-level form instead, the way
+`rootData` does for a function: `{ field: 'plan', equals: 'pro', root: true }`.
+
+- **`appearWhen`** hides the field while the condition is false. A hidden field
+  is not rendered, not validated and not in `collectFieldPaths`, exactly as
+  with `appearCondition`. If a field has both, **`appearCondition` wins** and
+  `appearWhen` is ignored, so a function passed through `overrides` replaces a
+  stored rule.
+- **`requiredWhen`** makes the field required while the condition holds: the
+  renderer receives `required: true` (and `ariaRequired`), and validation
+  reports the `required` message from the form's
+  [message catalog](#validation-messages) when the value is empty. Once a value is
+  there, the field's own `validate` runs as usual. **`required: true` wins**
+  over it: a field marked `required` keeps relying on its `validate` hook
+  (`validators.required()`), as it always has.
+
+A condition that is not one of the shapes above is false, with a warning in
+development. `evaluateCondition(condition, data, rootData?)`, `resolveVisible`
+and `resolveRequired` are exported for code outside a form. Every adapter reads
+both keys through core's `resolveVisible`, so an adapter from the release that
+introduced them needs core from that release too.
+
+`fieldsToJsonSchema` writes both as `if` / `then`, and `fieldsFromJsonSchema`
+reads `dependentRequired` and simple `if` / `then` back into them; see
+[Fields from a JSON Schema](#fields-from-a-json-schema).
+
 ## Fields from a JSON Schema
 
 `fieldsFromJsonSchema` turns a JSON Schema object into a field list, so a form can be driven by the schema an API already publishes (an OpenAPI `components.schemas` entry, for example).
@@ -603,7 +676,18 @@ const { fields, defaults, warnings } = fieldsFromJsonSchema(
 
 `title` becomes the label (a readable form of the property name otherwise), `description` the description, `readOnly` a `readOnlyCondition`. `required`, `minLength`, `maxLength`, `pattern`, `minimum`, `maximum` and the `email` format become `validate` hooks built from `validators`, so their messages go through the form's [message catalog](#validation-messages). Local `$ref` (`#/...`), `allOf`, and nullable types (`type: ['string', 'null']`, or `anyOf` with a `null` branch) are followed.
 
-Not turned into fields, and reported in `warnings` instead: objects without `properties`, tuples, arrays of free-form values, remote `$ref`, and `exclusiveMinimum` / `exclusiveMaximum`. Conditional keywords (`if` / `then`, `dependentRequired`) are ignored; express those with `appearCondition` through `overrides`.
+Conditional keywords become [declarative conditions](#conditions-as-data):
+
+| Schema                                                                            | Field                                                                 |
+| --------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `dependentRequired: { card: ['cvc'] }` (or draft-07 `dependencies`)               | `cvc` gets `requiredWhen: { field: 'card', empty: false }`            |
+| `if: { properties: { country: { const: 'US' } } }, then: { required: ['state'] }` | `state` gets `requiredWhen: { field: 'country', equals: 'US' }`       |
+| the same with `else: { required: ['postcode'] }`                                  | `postcode` gets `requiredWhen: { field: 'country', notEquals: 'US' }` |
+| `then: { properties: { vat: { type: 'string' } } }`, `vat` not in `properties`    | a `vat` field with `appearWhen` set to the `if`                       |
+
+An `if` can test `const`, `enum` and presence (`required`) on one or more properties, nested ones included, combined with `allOf`, `anyOf` and `not`; several of them go in `allOf`. An `if` that names a property without listing it in `required` is read as if it did, since a form always has a value to compare.
+
+Not turned into fields, and reported in `warnings` instead: objects without `properties`, tuples, arrays of free-form values, remote `$ref`, and `exclusiveMinimum` / `exclusiveMaximum`. So are an `if` that tests anything else (`minimum`, `pattern`...), a `then` that adds rules to a property that is always there, and other conditional keywords (`dependentSchemas`); express those with `appearCondition` through `overrides`.
 
 `overrides` is keyed by the same path the warnings use and is merged over the generated field. Use it to choose an application-specific `type` (`textarea`, a custom picker), or to attach hooks a schema cannot express.
 
@@ -634,6 +718,26 @@ const { schema, warnings } = fieldsToJsonSchema(fields, {
 | a section (`section`)                                        | nested object, with its own `properties` and `required`; its defaults go to its properties        |
 
 `label` becomes `title`, a string `description` the description, `required` the `required` list, and a field with `computeValue` is `readOnly`. `defaults` takes form data and records it as `default`; `strict: true` adds `additionalProperties: false`.
+
+`requiredWhen` and `appearWhen` are written as `if` / `then` in the object's `allOf`, which `fieldsFromJsonSchema` reads back to the same conditions:
+
+```json
+{
+  "type": "object",
+  "properties": { "country": { "type": "string" }, "state": true },
+  "allOf": [
+    {
+      "if": {
+        "required": ["country"],
+        "properties": { "country": { "enum": ["US", "CA"] } }
+      },
+      "then": { "properties": { "state": { "type": "string" } } }
+    }
+  ]
+}
+```
+
+A field with `appearWhen` is defined under `then`, so its rules apply only while it is shown, and `true` holds its place in `properties` (and lets it through `strict`). A hidden field is not validated, so whatever value it still holds is allowed. A condition that reads the form root (`root: true`) from inside a group or section cannot be written on the nested object's schema, and is reported in `warnings`.
 
 A schema cannot hold a function, so `validate`, `appearCondition`, `readOnlyCondition` and option loaders are listed in `warnings` rather than guessed at; put the rules they enforce in `overrides`, keyed by the same paths (`username`, `contacts[].phone`). A field type the kit does not know accepts any value until `types` describes it, and a `file` field is left out.
 

@@ -57,7 +57,7 @@
       label: 'Form state',
       title: t('Form state with createDynamicForm'),
       intro: t(
-        'The form owns data, errors, touched and submit state, read as plain properties that the markup follows.',
+        'The form owns data, errors, touched and submit state, read as plain properties that the markup follows; DynamicFormDevTools sits in the corner.',
       ),
       source: enterpriseSource,
       sourcePath: 'src/demos/EnterpriseDemo.svelte',

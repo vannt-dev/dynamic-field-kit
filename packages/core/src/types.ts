@@ -109,6 +109,48 @@ export interface FieldRendererProps<T = unknown> {
   multiple?: boolean;
 }
 
+/**
+ * Where a field test reads its value. `field` is a dotted path (`country`,
+ * `address.country`) into the data at the field's own level - the group item
+ * inside a repeatable group, the section's object inside a section. With
+ * `root: true` it reads the top-level form instead.
+ */
+interface ConditionTarget {
+  field: string;
+  root?: boolean;
+}
+
+/** Exactly one comparison per test: the other keys are ruled out. */
+type ConditionTest<K extends string, V> = ConditionTarget & {
+  [P in K]: V;
+} & {
+  [P in Exclude<ConditionComparison, K>]?: never;
+};
+
+type ConditionComparison = 'equals' | 'notEquals' | 'in' | 'truthy' | 'empty';
+
+/**
+ * A condition written as data, so a field list holding one can be stored as
+ * JSON. Values compare like JSON Schema's `const`: by value, arrays and
+ * objects included. "Empty" means undefined, null, `''` or `[]`, the same as
+ * `validators.required`.
+ *
+ * ```ts
+ * { field: 'country', equals: 'US' }
+ * { field: 'country', in: ['US', 'CA'] }
+ * { any: [{ field: 'plan', equals: 'pro' }, { field: 'seats', empty: false }] }
+ * ```
+ */
+export type FieldCondition =
+  | ConditionTest<'equals', unknown>
+  | ConditionTest<'notEquals', unknown>
+  | ConditionTest<'in', readonly unknown[]>
+  | ConditionTest<'truthy', boolean>
+  | ConditionTest<'empty', boolean>
+  | { all: readonly FieldCondition[] }
+  | { any: readonly FieldCondition[] }
+  | { not: FieldCondition };
+
 export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {
   name: string;
   type: T;
@@ -147,6 +189,19 @@ export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {
    * branch on a top-level value.
    */
   appearCondition?: (data: Properties, rootData?: Properties) => boolean;
+  /**
+   * The same visibility rule written as data (see `FieldCondition`), so it
+   * survives being stored as JSON and is written by `fieldsToJsonSchema`.
+   * When `appearCondition` is also set, the function wins and this is ignored.
+   */
+  appearWhen?: FieldCondition;
+  /**
+   * Makes the field required while the condition holds: validation reports
+   * the `required` message for an empty value, and the renderer receives
+   * `required: true`. `required: true` wins over it. A hidden field is never
+   * validated, so it is never required either.
+   */
+  requiredWhen?: FieldCondition;
   /**
    * Derives this field's value from the rest of the form data (e.g. a "full
    * name" field computed from firstName + lastName). Re-evaluated once,

@@ -40,6 +40,7 @@ export {
   buildFieldRendererProps,
   makeFieldId,
   makeErrorId,
+  makeLabelId,
   FIELD_RENDERER_PROP_KEYS,
 } from '@dynamic-field-kit/core';
 
