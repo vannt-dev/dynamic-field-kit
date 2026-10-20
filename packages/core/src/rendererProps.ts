@@ -178,6 +178,15 @@ export function makeErrorId(id: string): string {
 }
 
 /**
+ * The id of the element that names a field: the `<label>` the adapters render
+ * for a built-in renderer, or the caption of a group of controls (the radio
+ * buttons), which the group points at with `aria-labelledby`.
+ */
+export function makeLabelId(id: string): string {
+  return `${id}-label`;
+}
+
+/**
  * Builds the complete renderer prop bag for one field. Shared by the React,
  * Vue and Angular adapters so all three forward an identical set.
  */

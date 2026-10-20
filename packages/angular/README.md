@@ -273,6 +273,11 @@ it, so the form showed nothing. A registered custom renderer is unaffected — t
 node is emitted only where a default was used, so you never get two copies. Hide
 it with `.dfk-field-error { display: none }` if you want the old silence.
 
+A built-in control is also labelled: when the field has a `label`,
+`<label id="{fieldId}-label" for="{fieldId}" class="dfk-field-label">` comes
+before it, and the `<dfk-dynamic-input>` element that holds the label, control
+and message gets the class `dfk-field`. A registered renderer is untouched.
+
 ## DevTools
 
 ```html

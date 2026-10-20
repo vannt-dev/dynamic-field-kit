@@ -16,7 +16,12 @@ import {
   ViewChild,
   ViewContainerRef,
 } from '@angular/core';
-import { FieldTypeKey, makeErrorId, Properties } from '@dynamic-field-kit/core';
+import {
+  FieldTypeKey,
+  makeErrorId,
+  makeLabelId,
+  Properties,
+} from '@dynamic-field-kit/core';
 import { Subscription } from 'rxjs';
 import { FIELD_REGISTRY } from '../fieldRegistryToken';
 import { BaseInputComponent } from './BaseInput';
@@ -56,14 +61,36 @@ const KNOWN_PROPS = [
 type BuiltInControl =
   HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
 
+/** The types the built-in fallback draws a control for (see createBuiltIn). */
+const BUILT_IN_TYPES: ReadonlySet<string> = new Set([
+  'text',
+  'password',
+  'email',
+  'number',
+  'textarea',
+  'checkbox',
+  'select',
+]);
+
 @Component({
   selector: 'dfk-dynamic-input',
   standalone: true,
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // A built-in control is bare, so its label is drawn here, tied to it by
+  // `for`. The host element keeps label, control and message together, as
+  // the `.dfk-field` wrapper does in the other adapters.
+  host: { '[class.dfk-field]': 'isBuiltIn()' },
   // *ngIf rather than @if: the peer range starts at Angular 16, and the
   // built-in control flow block syntax is 17+.
-  template: `<div #host style="display: contents;"></div>
+  template: `<label
+      *ngIf="showDefaultLabel()"
+      [id]="labelNodeId()"
+      [attr.for]="id"
+      class="dfk-field-label"
+      >{{ label }}</label
+    >
+    <div #host style="display: contents;"></div>
     <div
       *ngIf="showDefaultError()"
       [id]="errorNodeId()"
@@ -189,6 +216,24 @@ export class DynamicInput
   /** The id `ariaDescribedBy` points at. See core's `makeErrorId`. */
   errorNodeId(): string {
     return makeErrorId(this.id ?? '');
+  }
+
+  /** The id of the label drawn for a built-in control. See core's `makeLabelId`. */
+  labelNodeId(): string {
+    return makeLabelId(this.id ?? '');
+  }
+
+  /**
+   * Whether the built-in fallback draws this field's control. Asks the
+   * registry directly, for the reason given on `showDefaultError`.
+   */
+  isBuiltIn(): boolean {
+    return !this.registry.get(this.type) && BUILT_IN_TYPES.has(this.type);
+  }
+
+  /** A registered renderer owns its label; a built-in control gets one here. */
+  showDefaultLabel(): boolean {
+    return Boolean(this.isBuiltIn() && this.label && this.id);
   }
 
   /** `error` may arrive as a bare string, so index 0 would be a character. */

@@ -4,6 +4,7 @@ import {
   buildFieldRendererProps,
   FIELD_RENDERER_PROP_KEYS,
   makeErrorId,
+  makeLabelId,
   makeFieldId,
 } from '../src/rendererProps';
 import type { FieldDescription } from '../src/types';
@@ -325,5 +326,12 @@ describe('options loading state', () => {
   it('declares both new keys in the contract', () => {
     expect(FIELD_RENDERER_PROP_KEYS).toContain('optionsStatus');
     expect(FIELD_RENDERER_PROP_KEYS).toContain('optionsError');
+  });
+});
+
+describe('makeLabelId', () => {
+  it('names the label of a field from its id, beside the error id', () => {
+    expect(makeLabelId('f-email')).toBe('f-email-label');
+    expect(makeLabelId('f-email')).not.toBe(makeErrorId('f-email'));
   });
 });

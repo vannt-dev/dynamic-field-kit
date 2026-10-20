@@ -1,4 +1,4 @@
-import { FieldRendererProps } from '@dynamic-field-kit/core';
+import { FieldRendererProps, makeLabelId } from '@dynamic-field-kit/core';
 import React from 'react';
 
 export interface DefaultInputProps extends FieldRendererProps {
@@ -188,11 +188,19 @@ export const DefaultRadioRenderer: React.FC<FieldRendererProps> = ({
   required,
   options = [],
   id,
+  label,
   className,
   ariaInvalid,
   ariaDescribedBy,
 }) => (
-  <div className={`dfk-radio-group ${className || ''}`} id={id} onBlur={onBlur}>
+  <div
+    className={`dfk-radio-group ${className || ''}`}
+    id={id}
+    role="radiogroup"
+    // The caption DynamicInput draws for a labelled field.
+    aria-labelledby={label && id ? makeLabelId(id) : undefined}
+    onBlur={onBlur}
+  >
     {options.map((opt, i) => {
       const optVal = opt.value ?? opt.id ?? opt;
       const optLabel = opt.label ?? opt.name ?? String(optVal);

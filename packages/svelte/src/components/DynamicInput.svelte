@@ -1,6 +1,7 @@
 <script lang="ts">
   import {
     makeErrorId,
+    makeLabelId,
     type FieldTypeKey,
     type OptionsStatus,
     type Properties,
@@ -91,7 +92,7 @@
   const firstError = $derived(Array.isArray(error) ? error[0] : error);
 </script>
 
-{#if Renderer}
+{#snippet control(Renderer: Component<Record<string, unknown>>)}
   <Renderer
     {...extraProps}
     value={value}
@@ -121,16 +122,38 @@
     accept={accept}
     multiple={multiple}
   />
-  <!--
-    A custom renderer owns its own error presentation; a second message next
-    to it would repeat what the consumer already shows. The id is what
-    `ariaDescribedBy` points at.
-  -->
-  {#if !registered && firstError && id}
-    <div id={makeErrorId(id)} class="dfk-field-error" role="alert">
-      {firstError}
-    </div>
-  {/if}
+{/snippet}
+
+<!--
+  A custom renderer owns its label and its error presentation; drawing them
+  here as well would repeat what the consumer already shows.
+
+  A built-in renderer is a bare control, so its label and its message are drawn
+  here, in one element that keeps them together in a grid layout. A radio group
+  is not a labelable element: its caption is a plain element the group names
+  itself after (`aria-labelledby`). Every other built-in control gets a
+  `<label for>`. The message's id is what `ariaDescribedBy` points at.
+-->
+{#if Renderer && registered}
+  {@render control(Renderer)}
+{:else if Renderer}
+  <div class="dfk-field">
+    {#if label && id}
+      {#if type === 'radio'}
+        <span id={makeLabelId(id)} class="dfk-field-label">{label}</span>
+      {:else}
+        <label id={makeLabelId(id)} for={id} class="dfk-field-label"
+          >{label}</label
+        >
+      {/if}
+    {/if}
+    {@render control(Renderer)}
+    {#if firstError && id}
+      <div id={makeErrorId(id)} class="dfk-field-error" role="alert">
+        {firstError}
+      </div>
+    {/if}
+  </div>
 {:else}
   <div>Unknown field type: {type}</div>
 {/if}
