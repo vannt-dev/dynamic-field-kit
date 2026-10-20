@@ -9,6 +9,7 @@
 [![react downloads](https://img.shields.io/npm/d18m/@dynamic-field-kit/react?label=react%20downloads)](https://www.npmjs.com/package/@dynamic-field-kit/react)
 [![vue downloads](https://img.shields.io/npm/d18m/@dynamic-field-kit/vue?label=vue%20downloads)](https://www.npmjs.com/package/@dynamic-field-kit/vue)
 [![angular downloads](https://img.shields.io/npm/d18m/@dynamic-field-kit/angular?label=angular%20downloads)](https://www.npmjs.com/package/@dynamic-field-kit/angular)
+[![Official vannt-dev build](https://vannt-dev.github.io/badges/official.svg)](https://vannt-dev.github.io/official.html)
 
 **[📘 Handbook](https://vannt-dev.github.io/dynamic-field-kit/handbook/)** — guides
 for every feature, per framework, with search. Also in
@@ -32,7 +33,8 @@ A lightweight, extensible **dynamic form engine** for React, Angular, Vue, and S
 - Schema-driven dynamic forms
 - Extensible field types (no enums, no hard-coded unions)
 - Pluggable field renderers via shared registry
-- Runtime conditional fields (`appearCondition`)
+- Runtime conditional fields (`appearCondition`), or the same rules as data that survive JSON
+  (`appearWhen`, `requiredWhen`)
 - Derived/computed fields (`computeValue`)
 - Repeatable field groups (`fields`) - "add another item" without leaving the schema
 - Titled sections (`section`) - a nested object under a heading, validated by path
@@ -267,6 +269,8 @@ const fields: FieldDescription[] = [
 | mask            | Shows the value formatted while it is typed and stores it unformatted: a pattern such as `'(999) 999-9999'` or a `{ format, parse }` pair. See **Input masks** below                                                                                                                                                                                                                 |
 | props           | Extra, framework-agnostic props forwarded verbatim to the renderer (e.g. `acceptFile`, `maxLength`) - keeps domain-specific inputs out of the adapter layer                                                                                                                                                                                                                          |
 | appearCondition | Runtime visibility condition. Called as `(data, rootData)`: `data` is this field's own level (the group item, inside a repeatable group), `rootData` is always the top-level form data                                                                                                                                                                                               |
+| appearWhen      | The same visibility rule as data, e.g. `{ field: 'country', in: ['US', 'CA'] }`, so the list can be stored as JSON. `appearCondition` wins when both are set. See **Conditions as data** in the core README                                                                                                                                                                          |
+| requiredWhen    | Required while a condition (same shape) holds: the renderer gets `required`, and validation reports the `required` message for an empty value                                                                                                                                                                                                                                        |
 | computeValue    | Derives this field's value from the rest of the form data (e.g. a total or full name) whenever any field changes. Called as `(data, rootData)` like `appearCondition`. Evaluated once per change, not to a fixed point, so avoid chaining `computeValue` fields into a cycle, and return a primitive or a stable reference (a fresh object/array each call defeats render-skipping). |
 
 **Repeatable Field Groups**
@@ -429,7 +433,7 @@ const fields: FieldDescription[] = [
 `MultiFieldInput` passes each field's current `error` and effective
 `disabled`/`readOnly` to its renderer (via `FieldRendererProps`), and emits an
 `onValidityChange` (`validityChange` in Angular) event with `{ valid, errors }`
-on every change. Disabled and hidden (`appearCondition`) fields are skipped -
+on every change. Disabled and hidden (`appearCondition` / `appearWhen`) fields are skipped -
 they never produce errors. For submit-time or async validation of a whole form (including
 group items) call `validateFields` or `validateFieldsAsync`:
 
@@ -460,7 +464,7 @@ All framework adapters (`react`, `vue`, `angular`, `svelte`) ship with **built-i
 `text` · `number` · `password` · `email` · `textarea` · `checkbox` · `select` ·
 `radio` · `range` · `file` · `date` · `time` · `datetime-local` · `switch`
 
-If you do not register a custom component for a type, the library automatically renders a clean, accessible HTML5 input with support for labels, placeholders, disabled states, options, and error states.
+If you do not register a custom component for a type, the library automatically renders a clean, accessible HTML5 input with support for labels, placeholders, disabled states, options, and error states. The label is a `<label for>` tied to the control (a radio group is named through `aria-labelledby`), and the label, control and error message are wrapped in one `<div class="dfk-field">`.
 
 Every key above is also a `FieldTypeMap` entry, so `type: 'switch'` typechecks
 out of the box. The map itself is reachable if you need to wrap or inspect a
@@ -556,8 +560,8 @@ keeps its own blur-only tracker, which only a ref (`resetTouched()`) can clear.
 
 The map is keyed by full path, so it reaches inside repeatable groups:
 `touchAll()` produces `contacts[0].email`, not `contacts`, and a group item
-reports its blur under the same key. Fields that are hidden by
-`appearCondition` or disabled are left out - validation skips them too, so they
+reports its blur under the same key. Fields that are hidden (by
+`appearCondition` or `appearWhen`) or disabled are left out - validation skips them too, so they
 can never carry an error to reveal.
 
 ```ts
@@ -688,7 +692,7 @@ A floating overlay showing live form data, errors, metadata and field
 descriptions. Render it next to your form during development.
 
 ```tsx
-import { DynamicFormDevTools } from '@dynamic-field-kit/react'; // or /vue
+import { DynamicFormDevTools } from '@dynamic-field-kit/react'; // or /vue, /svelte
 
 <DynamicFormDevTools
   data={form.data}
@@ -703,6 +707,11 @@ import { DynamicFormDevTools } from '@dynamic-field-kit/react'; // or /vue
 ```html
 <!-- Angular: DynamicFormDevToolsComponent -->
 <dfk-dev-tools [data]="store.data()" [errors]="store.errors()"></dfk-dev-tools>
+```
+
+```svelte
+<!-- Svelte: the same props, or a form from createDynamicForm in one -->
+<DynamicFormDevTools {form} {fields} />
 ```
 
 The collapsed button carries a red badge with the number of fields in error.
@@ -760,6 +769,17 @@ cd example/react-app && npm install && npm run dev
 
 CI builds all four example apps on every PR, so the code above is guaranteed
 to compile against the current packages.
+
+`storybook/` is a Storybook for the React package: a story per built-in field
+type, plus validation, conditions and the wizard, with controls and the
+accessibility addon. It is published at
+[/storybook/](https://vannt-dev.github.io/dynamic-field-kit/storybook/) next to
+the demos. It has its own install and reads the packages from source, so no
+build is needed first:
+
+```bash
+cd storybook && npm ci && npm run storybook   # http://localhost:6006
+```
 
 ---
 
@@ -845,9 +865,9 @@ All packages share the same `fieldRegistry` instance, so registrations are visib
 Form state, validation and a set of HTML renderers used to be out of scope; they
 are all in the kit now (see above). What it still leaves to you:
 
-- **A design system.** The built-in React and Vue renderers are plain HTML
-  inputs that take a `className` and nothing more, and Angular ships none.
-  Styling, and wiring in a component library, happen in your renderers.
+- **A design system.** The built-in renderers of every adapter are plain HTML
+  inputs that take a `className` and nothing more. Styling, and wiring in a
+  component library, happen in your renderers.
 - **A form builder UI.** The kit renders a form from a field list; it has no
   editor for writing one. It is meant to sit under a builder, not be one.
 - **Sending the data.** `handleSubmit` hands you the values; there is no HTTP

@@ -1,4 +1,9 @@
-import type { FieldDescription, Properties } from './types';
+import {
+  negateCondition,
+  sameCondition,
+  schemaToCondition,
+} from './jsonSchemaConditions';
+import type { FieldCondition, FieldDescription, Properties } from './types';
 import { validators, type ValidatorFn } from './validators';
 
 /** A JSON Schema document or sub-schema. Draft-07 and 2020-12 keywords are read. */
@@ -108,6 +113,83 @@ function resolvePointer(root: SchemaObject, ref: string): unknown {
   return node;
 }
 
+/** One `if` with its `then` and `else`, wherever in the schema it was found. */
+interface Conditional {
+  if: unknown;
+  then?: unknown;
+  else?: unknown;
+}
+
+// Folding `allOf` into one schema spreads each member over the last, so a
+// second `if` would overwrite the first. They are gathered here instead, on a
+// key no schema can spell.
+const CONDITIONALS = Symbol('conditionals');
+
+function conditionalsOf(schema: SchemaObject): Conditional[] {
+  const gathered =
+    ((schema as Record<symbol, unknown>)[CONDITIONALS] as
+      Conditional[] | undefined) ?? [];
+  return schema.if === undefined
+    ? gathered
+    : [...gathered, { if: schema.if, then: schema.then, else: schema.else }];
+}
+
+/**
+ * `dependentRequired`, and the array form of draft-07 `dependencies`: each
+ * property listed under a trigger is required once the trigger has a value.
+ */
+function dependentRequiredOf(schema: SchemaObject): Record<string, unknown[]> {
+  const result: Record<string, unknown[]> = {};
+  for (const keyword of ['dependencies', 'dependentRequired']) {
+    const map = schema[keyword];
+    if (!isObject(map)) {
+      continue;
+    }
+    for (const [trigger, names] of Object.entries(map)) {
+      if (Array.isArray(names)) {
+        result[trigger] = [...(result[trigger] ?? []), ...names];
+      }
+    }
+  }
+  return result;
+}
+
+/** `true` or `{}`: a property that allows anything, holding a place. */
+function isPlaceholder(schema: unknown): boolean {
+  return (
+    schema === true || (isObject(schema) && Object.keys(schema).length === 0)
+  );
+}
+
+/**
+ * `fieldsToJsonSchema` writes the `requiredWhen` of a conditionally shown
+ * field as "shown and the condition", since a schema cannot skip a hidden
+ * property the way validation does. Reading it back, the "shown" part is the
+ * field's own `appearWhen` and says nothing more.
+ */
+function withoutVisibility(
+  condition: FieldCondition,
+  appear: FieldCondition | undefined,
+): FieldCondition {
+  if (!appear || !('all' in condition)) {
+    return condition;
+  }
+  const rest = condition.all.filter((part) => !sameCondition(part, appear));
+  if (rest.length === condition.all.length || rest.length === 0) {
+    return condition;
+  }
+  return rest.length === 1 ? rest[0] : { all: rest };
+}
+
+interface ObjectConditions {
+  /** Properties defined under `then` / `else`, shown while the branch applies. */
+  appear: Map<
+    string,
+    { condition: FieldCondition; schema: unknown; required: boolean }
+  >;
+  requiredWhen: Map<string, FieldCondition>;
+}
+
 class Generator {
   readonly warnings: JsonSchemaWarning[] = [];
 
@@ -158,10 +240,18 @@ class Generator {
     if (Array.isArray(current.allOf)) {
       const { allOf, ...rest } = current;
       let merged: SchemaObject = {};
+      const conditionals: Conditional[] = [];
+      const dependent: Record<string, unknown[]> = {};
       for (const member of [...allOf, rest]) {
         const part = this.resolve(member, path, depth + 1);
         if (!part) {
           continue;
+        }
+        conditionals.push(...conditionalsOf(part));
+        for (const [trigger, names] of Object.entries(
+          dependentRequiredOf(part),
+        )) {
+          dependent[trigger] = [...(dependent[trigger] ?? []), ...names];
         }
         merged = {
           ...merged,
@@ -184,6 +274,19 @@ class Generator {
             : {}),
         };
       }
+      for (const keyword of [
+        'if',
+        'then',
+        'else',
+        'dependencies',
+        'dependentRequired',
+      ]) {
+        delete merged[keyword];
+      }
+      if (Object.keys(dependent).length > 0) {
+        merged.dependentRequired = dependent;
+      }
+      (merged as Record<symbol, unknown>)[CONDITIONALS] = conditionals;
       current = merged;
     }
     return current;
@@ -272,34 +375,153 @@ class Generator {
     const required = new Set(
       Array.isArray(schema.required) ? schema.required : [],
     );
+    const rules = this.conditionsOf(schema, basePath, properties);
 
-    for (const [name, raw] of Object.entries(properties)) {
+    const add = (name: string, raw: unknown, isRequired: boolean) => {
       const path = basePath ? `${basePath}.${name}` : name;
       const resolved = this.resolve(raw, path);
       if (!resolved) {
         if (raw === false) {
           this.warn(path, 'schema is `false`; the property is never valid');
         }
-        continue;
+        return;
       }
       const property = this.unwrapNullable(resolved, path);
-      const field = this.fieldOf(
-        name,
-        property,
-        path,
-        required.has(name),
-        defaults,
-      );
+      const field = this.fieldOf(name, property, path, isRequired, defaults);
       if (!field) {
-        continue;
+        return;
       }
       if (property.default !== undefined && !(name in defaults)) {
         defaults[name] = property.default;
       }
+      const appear = rules.appear.get(name);
+      if (appear) {
+        field.appearWhen = appear.condition;
+      }
+      const requiredWhen = rules.requiredWhen.get(name);
+      if (requiredWhen && !field.required) {
+        field.requiredWhen = withoutVisibility(requiredWhen, field.appearWhen);
+      }
       const override = this.overrides[path];
       fields.push(override ? { ...field, ...override } : field);
+    };
+
+    const placed = new Set<string>();
+    for (const [name, raw] of Object.entries(properties)) {
+      const appear = rules.appear.get(name);
+      if (appear && isPlaceholder(raw)) {
+        // `true` holds the place of a property defined under `then`.
+        add(name, appear.schema, required.has(name) || appear.required);
+        placed.add(name);
+      } else {
+        add(name, raw, required.has(name));
+      }
+    }
+    // Properties that exist only under `then` / `else` come after the rest.
+    for (const [name, appear] of rules.appear) {
+      if (!placed.has(name) && !(name in properties)) {
+        add(name, appear.schema, appear.required);
+      }
     }
     return { fields, defaults };
+  }
+
+  /**
+   * Reads `if` / `then` / `else` and `dependentRequired` on one object into
+   * the conditions of its fields. What it cannot read is reported and left
+   * out, as all of it was before conditions were read.
+   */
+  conditionsOf(
+    schema: SchemaObject,
+    basePath: string,
+    properties: SchemaObject,
+  ): ObjectConditions {
+    const appear: ObjectConditions['appear'] = new Map();
+    const requiredWhen: ObjectConditions['requiredWhen'] = new Map();
+    const where = basePath || '(root)';
+    const pathOf = (name: string) => (basePath ? `${basePath}.${name}` : name);
+    const requireWhen = (name: string, condition: FieldCondition) => {
+      const known = requiredWhen.get(name);
+      if (!known) {
+        requiredWhen.set(name, condition);
+      } else if ('any' in known && Object.keys(known).length === 1) {
+        requiredWhen.set(name, { any: [...known.any, condition] });
+      } else {
+        requiredWhen.set(name, { any: [known, condition] });
+      }
+    };
+
+    for (const [trigger, names] of Object.entries(
+      dependentRequiredOf(schema),
+    )) {
+      for (const name of names) {
+        if (typeof name === 'string') {
+          requireWhen(name, { field: trigger, empty: false });
+        }
+      }
+    }
+
+    const branch = (value: unknown, condition: FieldCondition, key: string) => {
+      if (value === undefined) {
+        return;
+      }
+      if (!isObject(value)) {
+        this.warn(where, `"${key}" is not an object; ignored`);
+        return;
+      }
+      const extra = Object.keys(value).filter(
+        (keyword) => !['properties', 'required'].includes(keyword),
+      );
+      if (extra.length > 0) {
+        this.warn(
+          where,
+          `"${key}" holds ${extra.map((k) => `"${k}"`).join(', ')}; ` +
+            'only "required" and the "properties" it adds are read',
+        );
+      }
+      const listed = Array.isArray(value.required) ? value.required : [];
+      const defined = isObject(value.properties) ? value.properties : {};
+      for (const [name, property] of Object.entries(defined)) {
+        if (name in properties && !isPlaceholder(properties[name])) {
+          this.warn(
+            pathOf(name),
+            `"${key}" adds rules to a property that is always there; they are not applied`,
+          );
+          continue;
+        }
+        if (appear.has(name)) {
+          this.warn(
+            pathOf(name),
+            'the property is defined under more than one "if"; the first is used',
+          );
+          continue;
+        }
+        appear.set(name, {
+          condition,
+          schema: property,
+          required: listed.includes(name),
+        });
+      }
+      for (const name of listed) {
+        if (typeof name === 'string' && !(name in defined)) {
+          requireWhen(name, condition);
+        }
+      }
+    };
+
+    for (const conditional of conditionalsOf(schema)) {
+      const condition = schemaToCondition(conditional.if);
+      if (!condition) {
+        this.warn(
+          where,
+          '"if" is not a test of property values this kit can read; its "then" and "else" are ignored',
+        );
+        continue;
+      }
+      branch(conditional.then, condition, 'then');
+      branch(conditional.else, negateCondition(condition), 'else');
+    }
+    return { appear, requiredWhen };
   }
 
   fieldOf(
@@ -544,9 +766,15 @@ class Generator {
  * arrays of objects (repeatable groups) and arrays of enums (multi-select),
  * nested objects (sections), local `$ref` and `allOf`.
  *
- * What is not: tuples, conditional keywords (`if`/`then`,
- * `dependentRequired`) and remote references. Those are reported in
- * `warnings` rather than guessed at.
+ * Conditions: `dependentRequired` (and the array form of draft-07
+ * `dependencies`) becomes `requiredWhen`. An `if` that tests property values
+ * (`const`, `enum`, presence, combined with `allOf` / `anyOf` / `not`)
+ * becomes `requiredWhen` for the names its `then` / `else` list in
+ * `required`, and `appearWhen` for the properties they add.
+ *
+ * What is not: tuples, other conditional keywords, a `then` that changes a
+ * property which is always there, and remote references. Those are reported
+ * in `warnings` rather than guessed at.
  *
  * The generated `validate` hooks use the built-in `validators`, so their
  * messages go through the form's message catalog like any other.

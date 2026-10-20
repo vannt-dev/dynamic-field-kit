@@ -279,6 +279,14 @@ it, so the form showed nothing. A registered custom renderer is unaffected — t
 node is emitted only where a default was used, so you never get two copies. Hide
 it with `.dfk-field-error { display: none }` if you want the old silence.
 
+A default renderer is also labelled: the control, its label and its message sit
+in one `<div class="dfk-field">`, with
+`<label id="{fieldId}-label" for="{fieldId}" class="dfk-field-label">` before
+the control when the field has a `label`. A radio group is named by its caption
+instead (`role="radiogroup"` with `aria-labelledby` pointing at a
+`<span class="dfk-field-label">`). Before that the control was a direct child of
+the layout and had no label at all. Again, a registered renderer is untouched.
+
 ## DevTools
 
 ```tsx
@@ -491,7 +499,7 @@ declare module '@dynamic-field-kit/core' {
 
 - `@dynamic-field-kit/core` stays framework-agnostic and does not export React-specific JSX types.
 - `@dynamic-field-kit/react` narrows the shared registry to React component types so `fieldRegistry.get(type)` can be rendered safely in TSX.
-- `MultiFieldInput` filters fields using `appearCondition` and derives fields using `computeValue`.
+- `MultiFieldInput` filters fields using `appearCondition` (or the declarative `appearWhen`) and derives fields using `computeValue`.
 - `DynamicInput` renders `Unknown field type: ...` when a renderer is missing.
 - Fields with `fields` render as repeatable groups instead of going through `fieldRegistry`.
 

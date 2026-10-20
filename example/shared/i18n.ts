@@ -73,8 +73,8 @@ const VI: Record<string, string> = {
     'Built-in validators (required, email, compose), options phụ thuộc trường khác, appearCondition / disabledCondition và async validation.',
   'Form state with useDynamicForm': 'Form state với useDynamicForm',
   'Form state with createDynamicForm': 'Form state với createDynamicForm',
-  'The form owns data, errors, touched and submit state, read as plain properties that the markup follows.':
-    'Form giữ data, errors, touched và trạng thái submit; đọc như thuộc tính thường và giao diện tự cập nhật theo.',
+  'The form owns data, errors, touched and submit state, read as plain properties that the markup follows; DynamicFormDevTools sits in the corner.':
+    'Form giữ data, errors, touched và trạng thái submit; đọc như thuộc tính thường và giao diện tự cập nhật theo; DynamicFormDevTools ở góc màn hình.',
   'Form state with createDynamicFormStore':
     'Form state với createDynamicFormStore',
   'The hook owns data, errors, touched and submit state; DynamicFormDevTools sits in the corner.':

@@ -13,6 +13,7 @@ on:
       - 'example/**'
       - 'handbook/**'
       - 'docs/**'
+      - 'storybook/**'
       - 'README.md'
       - '.github/workflows/deploy-pages.yml'
   workflow_dispatch:
@@ -94,11 +95,20 @@ jobs:
           npm install --no-audit --no-fund
           npm run build
 
+      # Reads the packages from source (storybook/vite.shared.ts), so it does
+      # not need the build above; it has its own lockfile and install.
+      - name: Build Storybook
+        working-directory: storybook
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build-storybook
+
       - name: Assemble the site
         run: |
           mkdir -p _site
           cp example/pages-index.html _site/index.html
           cp -r handbook/.vitepress/dist       _site/handbook
+          cp -r storybook/storybook-static     _site/storybook
           cp -r example/react-app/out          _site/react
           cp -r example/vue-app/dist           _site/vue
           cp -r example/svelte-app/dist        _site/svelte

@@ -39,6 +39,9 @@ export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {
     data: Record<string, any>,
     rootData?: Record<string, any>,
   ) => boolean;
+  // Cùng quy tắc đó dưới dạng dữ liệu, lưu được thành JSON (xem "Điều kiện dạng dữ liệu")
+  appearWhen?: FieldCondition;
+  requiredWhen?: FieldCondition;
   computeValue?: (
     data: Record<string, any>,
     rootData?: Record<string, any>,

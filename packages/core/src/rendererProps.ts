@@ -1,3 +1,4 @@
+import { resolveRequired } from './conditions';
 import { resolveInputMask } from './inputMask';
 import type { OptionsState } from './optionsLoader';
 import type { FieldDescription, FieldRendererProps, Properties } from './types';
@@ -177,6 +178,15 @@ export function makeErrorId(id: string): string {
 }
 
 /**
+ * The id of the element that names a field: the `<label>` the adapters render
+ * for a built-in renderer, or the caption of a group of controls (the radio
+ * buttons), which the group points at with `aria-labelledby`.
+ */
+export function makeLabelId(id: string): string {
+  return `${id}-label`;
+}
+
+/**
  * Builds the complete renderer prop bag for one field. Shared by the React,
  * Vue and Angular adapters so all three forward an identical set.
  */
@@ -196,7 +206,6 @@ export function buildFieldRendererProps({
     type,
     label,
     placeholder,
-    required,
     className,
     description,
     min,
@@ -209,6 +218,12 @@ export function buildFieldRendererProps({
 
   warnOnReservedProps(name, extraProps);
 
+  // Left exactly as given unless `requiredWhen` has a say, so a field without
+  // one is built key for key as it was before declarative conditions.
+  const required =
+    fieldDescription.requiredWhen === undefined
+      ? fieldDescription.required
+      : resolveRequired(fieldDescription, data, rootData);
   const disabled = resolveDisabled(fieldDescription, data, rootData);
   const readOnly = resolveReadOnly(fieldDescription, data, rootData);
   // An async loader owns the list; resolveOptions returns undefined for those.

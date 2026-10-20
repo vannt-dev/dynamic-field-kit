@@ -1,6 +1,7 @@
 import {
   FieldTypeKey,
   makeErrorId,
+  makeLabelId,
   type OptionsStatus,
   Properties,
 } from '@dynamic-field-kit/core';
@@ -11,9 +12,10 @@ import { useFieldRegistry } from '../fieldRegistryContext';
 const DynamicInput = /* @__PURE__ */ defineComponent({
   name: 'DynamicInput',
 
-  // A built-in renderer is rendered as a list (the control, then its error
-  // when there is one), and a list cannot inherit attributes. They are handed
-  // to the control by hand instead, so that they arrive in every case.
+  // A built-in renderer is rendered inside a wrapper with its label and its
+  // error, and attributes on this component are meant for the control, not
+  // for that wrapper. They are handed to the control by hand instead, so that
+  // they arrive in every case.
   inheritAttrs: false,
 
   // Every key of core's FIELD_RENDERER_PROP_KEYS must be declared here, or Vue
@@ -204,27 +206,38 @@ const DynamicInput = /* @__PURE__ */ defineComponent({
         return control;
       }
 
-      // An array, not a wrapper element: Vue renders it as a fragment, so the
-      // message appears without changing the surrounding layout. The id is
-      // what `ariaDescribedBy` targets.
+      // A built-in renderer is a bare control, so its label and its message
+      // are drawn here, in one element that keeps them together in a grid
+      // layout. The children keep their places (an absent label or message is
+      // a placeholder), so the control is never built again - an input that is
+      // replaced while it is typed in loses the focus.
       //
-      // An array with or without the message, never the control alone: going
-      // from a single node to a list makes Vue build the control again, and an
-      // input that is replaced while it is typed in loses the focus.
-      return firstError && props.id
-        ? [
-            control,
-            h(
-              'div',
+      // A radio group is not a labelable element: its caption is a plain
+      // element the group names itself after (`aria-labelledby`). Every other
+      // built-in control gets a `<label for>`.
+      const id = props.id;
+      const label =
+        props.label && id
+          ? h(
+              props.type === 'radio' ? 'span' : 'label',
               {
-                id: makeErrorId(props.id),
-                class: 'dfk-field-error',
-                role: 'alert',
+                id: makeLabelId(id),
+                for: props.type === 'radio' ? undefined : id,
+                class: 'dfk-field-label',
               },
+              props.label,
+            )
+          : null;
+      // The id is what `ariaDescribedBy` targets.
+      const message =
+        firstError && id
+          ? h(
+              'div',
+              { id: makeErrorId(id), class: 'dfk-field-error', role: 'alert' },
               firstError,
-            ),
-          ]
-        : [control];
+            )
+          : null;
+      return h('div', { class: 'dfk-field' }, [label, control, message]);
     };
   },
 });

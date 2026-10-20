@@ -135,6 +135,36 @@ describe('MultiFieldInput', () => {
     expect(screen.queryByText('Last Name')).not.toBeInTheDocument();
   });
 
+  it('should filter fields based on a declarative appearWhen', () => {
+    const fields: FieldDescription[] = [
+      { name: 'firstName', type: 'text', label: 'First Name' },
+      {
+        name: 'lastName',
+        type: 'text',
+        label: 'Last Name',
+        appearWhen: { field: 'firstName', in: ['John', 'Jo'] },
+      },
+    ];
+
+    const { rerender } = render(
+      <MultiFieldInput
+        fieldDescriptions={fields}
+        properties={{ firstName: 'John' }}
+      />,
+    );
+
+    expect(screen.getAllByTestId('text-input')).toHaveLength(2);
+
+    rerender(
+      <MultiFieldInput
+        fieldDescriptions={fields}
+        properties={{ firstName: 'Jane' }}
+      />,
+    );
+
+    expect(screen.queryByText('Last Name')).not.toBeInTheDocument();
+  });
+
   it('should render with default column layout', () => {
     const fields: FieldDescription[] = [
       { name: 'field1', type: 'text' },
