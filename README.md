@@ -689,7 +689,7 @@ A floating overlay showing live form data, errors, metadata and field
 descriptions. Render it next to your form during development.
 
 ```tsx
-import { DynamicFormDevTools } from '@dynamic-field-kit/react'; // or /vue
+import { DynamicFormDevTools } from '@dynamic-field-kit/react'; // or /vue, /svelte
 
 <DynamicFormDevTools
   data={form.data}
@@ -704,6 +704,11 @@ import { DynamicFormDevTools } from '@dynamic-field-kit/react'; // or /vue
 ```html
 <!-- Angular: DynamicFormDevToolsComponent -->
 <dfk-dev-tools [data]="store.data()" [errors]="store.errors()"></dfk-dev-tools>
+```
+
+```svelte
+<!-- Svelte: the same props, or a form from createDynamicForm in one -->
+<DynamicFormDevTools {form} {fields} />
 ```
 
 The collapsed button carries a red badge with the number of fields in error.

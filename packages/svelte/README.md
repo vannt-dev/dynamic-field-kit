@@ -35,6 +35,7 @@ do, so it needs a build that compiles Svelte: SvelteKit, or Vite with
 - `DynamicInput`
 - `FieldInput`
 - `MultiFieldInput`
+- `DynamicFormDevTools`
 - `createDynamicForm`
 - `layoutRegistry` / `LayoutRegistry`
 - `fieldRegistry`
@@ -44,7 +45,7 @@ do, so it needs a build that compiles Svelte: SvelteKit, or Vite with
 - Types: `FieldDescription`, `FieldTypeKey`, `FieldTypeMap`,
   `FieldRendererProps`, `FieldRenderer`, `Properties`, `LayoutConfig`,
   `LayoutProps`, `LayoutRenderer`, `DynamicForm`, `DynamicFormBinding`,
-  `CreateDynamicFormOptions`
+  `CreateDynamicFormOptions`, `DynamicFormDevToolsProps`, `DevToolsFormSource`
 
 Re-exported from `@dynamic-field-kit/core` so a consumer app rarely has to
 import both packages:
@@ -190,6 +191,32 @@ included, and `validateAsync()` does so on demand. A form created during
 component initialisation cancels its in-flight validation when the component
 is destroyed; one created elsewhere is yours to `destroy()`.
 
+## DevTools
+
+```svelte
+<script lang="ts">
+  import { DynamicFormDevTools } from '@dynamic-field-kit/svelte';
+</script>
+
+<DynamicFormDevTools
+  data={form.data}
+  errors={form.errors}
+  touched={form.touched}
+  isDirty={form.isDirty}
+  fields={fields}
+  position="bottom-right"
+/>
+
+<!-- or, from createDynamicForm in one prop -->
+<DynamicFormDevTools {form} {fields} />
+```
+
+The same floating overlay as the other adapters, with data / errors / meta /
+fields tabs. The collapsed button carries a red badge with the number of fields
+in error. `position` is `bottom-right` (the default) or `bottom-left`. With
+`form`, a prop passed next to it wins over the one it would read, as on
+`MultiFieldInput`.
+
 ## Field ids
 
 Each field renders with the id `${idPrefix}-${name}`. `MultiFieldInput` uses a
@@ -311,8 +338,6 @@ declare module '@dynamic-field-kit/core' {
 
 ## Not in this adapter yet
 
-- **DevTools.** The React and Vue adapters have a `DynamicFormDevTools` panel;
-  this one does not.
 - **A peer-range check in CI.** The other adapters have a script that runs
   their packed tarballs under the oldest supported framework version. For
   Svelte the floor was checked by hand (the test suite under 5.0.0), not by CI.

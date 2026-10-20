@@ -10,6 +10,11 @@ export { default as DynamicInput } from './components/DynamicInput.svelte';
 export { default as FieldInput } from './components/FieldInput.svelte';
 export { default as MultiFieldInput } from './components/MultiFieldInput.svelte';
 export type { DynamicFormBinding } from './components/MultiFieldInput.svelte';
+export { default as DynamicFormDevTools } from './components/DynamicFormDevTools.svelte';
+export type {
+  DynamicFormDevToolsProps,
+  DevToolsFormSource,
+} from './components/DynamicFormDevTools.svelte';
 export {
   defaultRenderersMap,
   getDefaultRenderer,
