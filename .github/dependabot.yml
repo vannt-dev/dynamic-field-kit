@@ -48,6 +48,26 @@ updates:
         update-types: ['version-update:semver-major']
       - dependency-name: '@vitest/*'
         update-types: ['version-update:semver-major']
+  # The React Storybook has its own lockfile. One weekly pull request for all of it:
+  # Storybook's packages only work at one version together, and the rest is build tooling.
+  - package-ecosystem: npm
+    directory: /storybook
+    schedule:
+      interval: weekly
+    groups:
+      storybook:
+        patterns:
+          - '*'
+    commit-message:
+      prefix: chore
+      include: scope
+    ignore:
+      # Same hold as the root: vitest moves with the Angular toolchain there.
+      - dependency-name: 'vitest'
+        update-types: ['version-update:semver-major']
+      # Matches the root's TypeScript hold below 6.0.
+      - dependency-name: typescript
+        versions: ['>=6.0.0']
   - package-ecosystem: github-actions
     directory: /
     schedule:

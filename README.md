@@ -762,6 +762,17 @@ cd example/react-app && npm install && npm run dev
 CI builds all four example apps on every PR, so the code above is guaranteed
 to compile against the current packages.
 
+`storybook/` is a Storybook for the React package: a story per built-in field
+type, plus validation, conditions and the wizard, with controls and the
+accessibility addon. It is published at
+[/storybook/](https://vannt-dev.github.io/dynamic-field-kit/storybook/) next to
+the demos. It has its own install and reads the packages from source, so no
+build is needed first:
+
+```bash
+cd storybook && npm ci && npm run storybook   # http://localhost:6006
+```
+
 ---
 
 ## 📖 Framework-Specific Usage

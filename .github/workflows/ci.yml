@@ -13,6 +13,37 @@ jobs:
   gates:
     uses: ./.github/workflows/quality-gates.yml
 
+  # The React Storybook lives outside the workspaces with its own lockfile, so
+  # its install never touches the packages' dependency tree. Its stories read
+  # the packages from source: a story broken by an API change fails here.
+  storybook:
+    name: Storybook
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: storybook
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+          cache-dependency-path: storybook/package-lock.json
+
+      - name: Install Storybook dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Typecheck the stories
+        run: npm run typecheck
+
+      - name: Render every story
+        run: npm test
+
+      - name: Build Storybook
+        run: npm run build-storybook
+
   changeset:
     name: Changeset present
     runs-on: ubuntu-latest
