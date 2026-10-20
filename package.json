@@ -46,7 +46,7 @@
     "tsup": "^8.0.1",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.71.1",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.12"
   },
   "//dependencies": "the root is private and ships nothing, so it declares no runtime dependencies. react/react-dom/vue/@types/react used to sit here for the packages to borrow; each package now declares its own (enforced by scripts/verify-framework-deps.js), which is also what keeps `npm audit --omit=dev` from failing on advisories in a build-time tree, e.g. vue -> @vue/compiler-sfc -> postcss -> nanoid.",
   "dependencies": {
