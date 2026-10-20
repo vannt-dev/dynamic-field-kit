@@ -118,6 +118,30 @@ describe('MultiFieldInput', () => {
     expect(wrapper.text()).not.toContain('Last Name');
   });
 
+  it('should filter fields based on a declarative appearWhen', async () => {
+    const fields: FieldDescription[] = [
+      { name: 'firstName', type: 'text', label: 'First Name' },
+      {
+        name: 'lastName',
+        type: 'text',
+        label: 'Last Name',
+        appearWhen: { field: 'firstName', in: ['John', 'Jo'] },
+      },
+    ];
+
+    const wrapper = mountMulti({
+      fieldDescriptions: fields,
+      properties: { firstName: 'John' },
+    });
+
+    expect(wrapper.text()).toContain('Last Name');
+
+    await wrapper.setProps({ properties: { firstName: 'Jane' } });
+
+    expect(wrapper.text()).toContain('First Name');
+    expect(wrapper.text()).not.toContain('Last Name');
+  });
+
   it('should render with default column layout', async () => {
     const fields: FieldDescription[] = [
       { name: 'field1', type: 'text' },

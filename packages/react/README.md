@@ -491,7 +491,7 @@ declare module '@dynamic-field-kit/core' {
 
 - `@dynamic-field-kit/core` stays framework-agnostic and does not export React-specific JSX types.
 - `@dynamic-field-kit/react` narrows the shared registry to React component types so `fieldRegistry.get(type)` can be rendered safely in TSX.
-- `MultiFieldInput` filters fields using `appearCondition` and derives fields using `computeValue`.
+- `MultiFieldInput` filters fields using `appearCondition` (or the declarative `appearWhen`) and derives fields using `computeValue`.
 - `DynamicInput` renders `Unknown field type: ...` when a renderer is missing.
 - Fields with `fields` render as repeatable groups instead of going through `fieldRegistry`.
 

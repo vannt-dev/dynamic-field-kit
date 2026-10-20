@@ -259,10 +259,11 @@ layoutRegistry.register('stack-tight', TightStack);
 
 ## Validation, conditions and derived fields
 
-`validate`, `appearCondition`, `disabledCondition`, `readOnlyCondition` and
-`computeValue` are part of the field description and behave as in every
-adapter; see the `@dynamic-field-kit/core` README. `MultiFieldInput` hides a
-field whose `appearCondition` fails and fills in `computeValue` fields before
+`validate`, `appearCondition`, `appearWhen`, `requiredWhen`,
+`disabledCondition`, `readOnlyCondition` and `computeValue` are part of the
+field description and behave as in every adapter; see the
+`@dynamic-field-kit/core` README. `MultiFieldInput` hides a field whose
+`appearCondition` (or `appearWhen`) fails and fills in `computeValue` fields before
 it reports a change. Pass `onValidityChange` to be told whether the whole form
 is valid, at mount and after each change.
 

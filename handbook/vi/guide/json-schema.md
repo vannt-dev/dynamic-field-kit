@@ -45,7 +45,11 @@ const { fields, defaults, warnings } = fieldsFromJsonSchema(
 
 `title` thành nhãn (nếu thiếu thì dùng dạng dễ đọc của tên thuộc tính), `description` thành mô tả, `readOnly` thành `readOnlyCondition`. `required`, `minLength`, `maxLength`, `pattern`, `minimum`, `maximum` và format `email` trở thành hook `validate` dựng từ `validators`, nên thông báo của chúng đi qua [bảng thông báo](./validation#thong-bao-validation) của form. `$ref` cục bộ (`#/...`), `allOf` và kiểu nullable (`type: ['string', 'null']`, hoặc `anyOf` có nhánh `null`) đều được lần theo.
 
-Những thứ không thành field và được báo trong `warnings`: object lồng nhau, tuple, mảng giá trị tự do, `$ref` từ xa, `exclusiveMinimum` / `exclusiveMaximum`. Các từ khoá điều kiện (`if` / `then`, `dependentRequired`) bị bỏ qua; hãy diễn đạt chúng bằng `appearCondition` thông qua `overrides`.
+Các từ khoá điều kiện trở thành [điều kiện dạng dữ liệu](./conditions): `dependentRequired` (và `dependencies` dạng mảng của draft-07) thành `requiredWhen`; một `if` kiểm tra `const`, `enum` hoặc sự có mặt (`required`) của thuộc tính, kết hợp bằng `allOf` / `anyOf` / `not`, thành `requiredWhen` cho các tên mà `then` / `else` liệt kê trong `required`, và `appearWhen` cho các thuộc tính mà chúng thêm vào. Một `if` nêu thuộc tính mà không liệt kê nó trong `required` được đọc như thể có liệt kê, vì form luôn có giá trị để so.
+
+Những thứ không thành field và được báo trong `warnings`: object không có `properties`, tuple, mảng giá trị tự do, `$ref` từ xa, `exclusiveMinimum` / `exclusiveMaximum`. Cũng vậy với một `if` kiểm tra thứ khác (`minimum`, `pattern`...), một `then` thêm quy tắc cho thuộc tính lúc nào cũng có, và các từ khoá điều kiện khác (`dependentSchemas`); hãy diễn đạt chúng bằng `appearCondition` thông qua `overrides`.
+
+Chiều ngược lại, `fieldsToJsonSchema` ghi `appearWhen` và `requiredWhen` thành `if` / `then`, và `fieldsFromJsonSchema` đọc lại đúng các điều kiện đó.
 
 `overrides` dùng khoá là đúng đường dẫn mà `warnings` dùng, và được trộn đè lên field sinh ra. Dùng nó để chọn `type` riêng của ứng dụng (`textarea`, một bộ chọn tuỳ biến), hoặc gắn các hook mà schema không diễn đạt được.
 

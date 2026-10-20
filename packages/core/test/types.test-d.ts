@@ -1,5 +1,6 @@
 import { assertType, expectTypeOf, test } from 'vitest';
 import type {
+  FieldCondition,
   FieldDescription,
   FieldRendererProps,
   FieldTypeMap,
@@ -135,4 +136,37 @@ test('every built-in default renderer key is a usable field type', () => {
 test('FieldTypeMap augmentation resolves', () => {
   expectTypeOf<FieldTypeMap['customType']>().toEqualTypeOf<{ id: string }>();
   assertType<FieldDescription>({ name: 'c', type: 'customType' });
+});
+
+test('FieldCondition takes exactly one comparison per field test', () => {
+  assertType<FieldCondition>({ field: 'country', equals: 'US' });
+  assertType<FieldCondition>({
+    field: 'plan',
+    in: ['pro', 'team'],
+    root: true,
+  });
+  assertType<FieldCondition>({ field: 'seats', empty: false });
+  assertType<FieldCondition>({
+    any: [
+      { field: 'a', truthy: true },
+      { not: { all: [{ field: 'b', notEquals: 1 }] } },
+    ],
+  });
+  // @ts-expect-error two comparisons in one test
+  assertType<FieldCondition>({ field: 'country', equals: 'US', in: ['CA'] });
+  // @ts-expect-error a comparison without a field
+  assertType<FieldCondition>({ equals: 'US' });
+  // @ts-expect-error `in` takes a list
+  assertType<FieldCondition>({ field: 'country', in: 'US' });
+  // @ts-expect-error `truthy` takes a boolean
+  assertType<FieldCondition>({ field: 'country', truthy: 'yes' });
+});
+
+test('FieldDescription accepts appearWhen and requiredWhen', () => {
+  assertType<FieldDescription>({
+    name: 'state',
+    type: 'text',
+    appearWhen: { field: 'country', in: ['US', 'CA'] },
+    requiredWhen: { field: 'country', equals: 'US' },
+  });
 });
