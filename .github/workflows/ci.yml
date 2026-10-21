@@ -18,7 +18,7 @@ jobs:
   # the packages from source: a story broken by an API change fails here.
   storybook:
     name: Storybook
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     defaults:
       run:
         working-directory: storybook
@@ -46,7 +46,7 @@ jobs:
 
   changeset:
     name: Changeset present
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     # Only PRs into develop can be missing a changeset, because develop is where
     # unreleased work accumulates. Skipped elsewhere:
     #

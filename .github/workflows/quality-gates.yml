@@ -7,7 +7,7 @@ on:
 
 jobs:
   lint-and-build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
 
@@ -67,7 +67,7 @@ jobs:
 
   test:
     name: Test ${{ matrix.package }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     strategy:
       fail-fast: false
       matrix:
@@ -126,7 +126,7 @@ jobs:
 
   examples:
     name: Example ${{ matrix.app }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: [lint-and-build]
     strategy:
       fail-fast: false
@@ -169,7 +169,7 @@ jobs:
         run: npm run build
 
   verify:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: [lint-and-build, test]
     steps:
       - uses: actions/checkout@v7
