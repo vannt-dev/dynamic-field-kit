@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "postbuild": "node scripts/flatten-segment-files.js",
     "start": "next start"
   },
   "dependencies": {
