@@ -1,5 +1,6 @@
 // Kept in each adapter rather than in core: an adapter may only call core APIs
 // that exist in the oldest core its peer range allows, and these are newer.
+import { evaluateCondition } from '@dynamic-field-kit/core';
 import type { FieldDescription, Properties } from '@dynamic-field-kit/core';
 
 const NO_VALUES: Properties = Object.freeze({});
@@ -47,7 +48,8 @@ export function sectionPathMap<T>(
 }
 
 /**
- * Whether a section is disabled, by its flag or by its condition: the test
+ * Whether a section is disabled, by its flag or by its condition (a function
+ * or `disabledWhen`): the test
  * validation applies before it skips the section.
  */
 export function isSectionDisabled(
@@ -55,8 +57,16 @@ export function isSectionDisabled(
   data: Properties,
   rootData?: Properties,
 ): boolean {
+  if (field.disabled === true) {
+    return true;
+  }
+  // The rule of core's resolveDisabled, kept here so a core from before
+  // `disabledWhen` (1.12, the oldest in the peer range) still honours it.
+  if (field.disabledCondition) {
+    return field.disabledCondition(data, rootData) === true;
+  }
   return (
-    field.disabled === true ||
-    field.disabledCondition?.(data, rootData) === true
+    field.disabledWhen !== undefined &&
+    evaluateCondition(field.disabledWhen, data, rootData ?? data)
   );
 }

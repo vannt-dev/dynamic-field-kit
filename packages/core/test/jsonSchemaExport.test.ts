@@ -236,6 +236,12 @@ describe('fieldsToJsonSchema', () => {
         { name: 'vat', type: 'text', appearCondition: () => true },
         { name: 'code', type: 'text', validate: () => undefined },
         { name: 'locked', type: 'text', readOnlyCondition: () => true },
+        {
+          name: 'note',
+          type: 'text',
+          disabledWhen: { field: 'locked', truthy: true },
+          readOnlyWhen: { field: 'locked', truthy: true },
+        },
         { name: 'avatar', type: 'file', required: true },
         { name: 'code', type: 'number' },
       ]),
@@ -246,6 +252,7 @@ describe('fieldsToJsonSchema', () => {
       vat: { type: 'string' },
       code: { type: 'string' },
       locked: { type: 'string' },
+      note: { type: 'string' },
     });
     expect(schema.required).toBeUndefined();
     expect(
@@ -255,6 +262,8 @@ describe('fieldsToJsonSchema', () => {
         'is always allowed. Write it as `appearWhen` to keep it',
       'code: `validate` is a function and is not in the schema; add its rules through `overrides`',
       'locked: `readOnlyCondition` is a function and is not in the schema',
+      'note: `disabledWhen` has no JSON Schema keyword and is not in the schema',
+      'note: `readOnlyWhen` has no JSON Schema keyword and is not in the schema',
       'avatar: a file has no JSON value; the property is left out',
       'code: a field of this name is already in the schema; this one is skipped',
     ]);

@@ -206,6 +206,20 @@ describe('a section', () => {
     expect(fieldset().disabled).toBe(false);
   });
 
+  it('is disabled by a disabledWhen rule written as data', () => {
+    const fields = list([
+      { name: 'name', type: 'text' },
+      { ...address, disabledWhen: { field: 'same', truthy: true } },
+    ]);
+    const { fixture } = mount(fields, { same: true });
+    const fieldset = (): HTMLFieldSetElement =>
+      fixture.nativeElement.querySelector('fieldset');
+    expect(fieldset().disabled).toBe(true);
+    fixture.componentRef.setInput('data', { same: false });
+    fixture.detectChanges();
+    expect(fieldset().disabled).toBe(false);
+  });
+
   it('computes a value inside it from the section and from the form', async () => {
     const fields = list([
       { name: 'name', type: 'text' },

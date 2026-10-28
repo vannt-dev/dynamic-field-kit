@@ -319,6 +319,15 @@ class Exporter {
         );
       }
     }
+    for (const key of ['disabledWhen', 'readOnlyWhen'] as const) {
+      if (field[key] !== undefined) {
+        // JSON Schema has `readOnly`, but no way to make it depend on a value.
+        this.warn(
+          path,
+          `\`${key}\` has no JSON Schema keyword and is not in the schema`,
+        );
+      }
+    }
     if (field.appearCondition) {
       this.warn(
         path,
