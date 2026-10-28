@@ -213,8 +213,20 @@ export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {
   computeValue?: (data: Properties, rootData?: Properties) => unknown;
   /** Dynamic disabled state, OR-ed with the static `disabled` flag. */
   disabledCondition?: (data: Properties, rootData?: Properties) => boolean;
+  /**
+   * The same disabled rule written as data (see `FieldCondition`), so it
+   * survives being stored as JSON. OR-ed with `disabled`; when
+   * `disabledCondition` is also set, the function wins and this is ignored.
+   * A disabled field, or a disabled section or group, is not validated.
+   */
+  disabledWhen?: FieldCondition;
   /** Dynamic read-only state. */
   readOnlyCondition?: (data: Properties, rootData?: Properties) => boolean;
+  /**
+   * The same read-only rule written as data. When `readOnlyCondition` is also
+   * set, the function wins and this is ignored.
+   */
+  readOnlyWhen?: FieldCondition;
   /**
    * A static list, a synchronous function of the form data, or an
    * asynchronous loader. Declare `optionsMode: 'async'` for a loader that

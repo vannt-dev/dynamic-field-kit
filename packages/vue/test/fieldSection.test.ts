@@ -133,6 +133,17 @@ describe('a section', () => {
     expect(fieldset().disabled).toBe(false);
   });
 
+  it('is disabled by a disabledWhen rule written as data', async () => {
+    const fields = list([
+      { name: 'same', type: 'checkbox' },
+      { ...person[1], disabledWhen: { field: 'same', truthy: true } },
+    ]);
+    const { wrapper, input } = mountForm(fields, { same: true });
+    expect(wrapper.find('fieldset').element.disabled).toBe(true);
+    await input('same').setValue(false);
+    expect(wrapper.find('fieldset').element.disabled).toBe(false);
+  });
+
   it('computes a value inside it from the section and from the form', async () => {
     const fields = list([
       { name: 'name', type: 'text' },
