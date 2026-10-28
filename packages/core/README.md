@@ -191,6 +191,8 @@ export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {
   // The same rule as data, which survives JSON (see "Conditions as data")
   appearWhen?: FieldCondition;
   requiredWhen?: FieldCondition;
+  disabledWhen?: FieldCondition; // as data, beside disabledCondition
+  readOnlyWhen?: FieldCondition; // as data, beside readOnlyCondition
   computeValue?: (
     data: Record<string, any>,
     rootData?: Record<string, any>,
@@ -621,6 +623,13 @@ group, the section's object inside a section. A dotted path reads deeper
   there, the field's own `validate` runs as usual. **`required: true` wins**
   over it: a field marked `required` keeps relying on its `validate` hook
   (`validators.required()`), as it always has.
+- **`disabledWhen`** and **`readOnlyWhen`** are `disabledCondition` and
+  `readOnlyCondition` written as data: the renderer receives `disabled` or
+  `readOnly` while the condition holds. `disabled: true` still disables, and
+  a function wins over the rule when both are set. A disabled field (or a
+  disabled section or group, through `disabledWhen` on it) is not validated.
+  JSON Schema cannot say either, so `fieldsToJsonSchema` warns and leaves them
+  out.
 
 A condition that is not one of the shapes above is false, with a warning in
 development. `evaluateCondition(condition, data, rootData?)`, `resolveVisible`

@@ -31,10 +31,10 @@
     "@angular/compiler": "^21.2.25",
     "@angular/compiler-cli": "^21.2.25",
     "@changesets/cli": "^3.0.3",
-    "@commitlint/cli": "^21.2.3",
+    "@commitlint/cli": "^21.2.4",
     "@commitlint/config-conventional": "^21.2.0",
     "@eslint/js": "^10.0.1",
-    "@typescript-eslint/parser": "^8.71.2",
+    "@typescript-eslint/parser": "^8.72.0",
     "eslint": "^10.13.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-import-resolver-node": "^0.4.0",
@@ -45,7 +45,7 @@
     "prettier": "^3.9.10",
     "tsup": "^9.0.0",
     "typescript": "~5.9.3",
-    "typescript-eslint": "^8.71.2",
+    "typescript-eslint": "^8.72.0",
     "vitest": "^4.1.12"
   },
   "//dependencies": "the root is private and ships nothing, so it declares no runtime dependencies. react/react-dom/vue/@types/react used to sit here for the packages to borrow; each package now declares its own (enforced by scripts/verify-framework-deps.js), which is also what keeps `npm audit --omit=dev` from failing on advisories in a build-time tree, e.g. vue -> @vue/compiler-sfc -> postcss -> nanoid.",
@@ -54,9 +54,12 @@
     "@dynamic-field-kit/react": "workspace:*",
     "@dynamic-field-kit/vue": "workspace:*"
   },
-  "//overrides": "nanoid <3.3.18 is GHSA-2v37-7h3g-55p8. It reaches us only through vue -> @vue/compiler-sfc -> postcss (build-time), but pin it forward so the toolchain we actually run is patched, not merely excluded from the audit.",
+  "//overrides": "nanoid <3.3.18 is GHSA-2v37-7h3g-55p8. It reaches us only through vue -> @vue/compiler-sfc -> postcss (build-time), but pin it forward so the toolchain we actually run is patched, not merely excluded from the audit. sockjs (webpack-dev-server, Angular dev server only) asks for uuid ^8.3.2; uuid <11.1.1 is GHSA-w5hq-g745-h8pq. sockjs only calls uuid.v4(), which uuid 11 still exports for require().",
   "overrides": {
-    "nanoid": "^3.3.18"
+    "nanoid": "^3.3.18",
+    "sockjs": {
+      "uuid": "^11.1.1"
+    }
   },
   "//lint-staged": "globs must stay a superset of what `prettier --check .` sees, or a file can pass pre-commit and fail CI format-check. eslint only runs on the extensions the lint script targets. --no-warn-ignored keeps eslint 9 quiet when a staged file (an example app, say) is covered by the flat config ignores.",
   "lint-staged": {

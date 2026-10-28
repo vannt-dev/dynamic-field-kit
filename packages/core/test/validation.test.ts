@@ -80,6 +80,67 @@ describe('resolveDisabled / resolveReadOnly', () => {
       ),
     ).toBe(true);
   });
+
+  test('disabledWhen and readOnlyWhen are the same rules written as data', () => {
+    const field: FieldDescription = {
+      name: 'reason',
+      type: 'text',
+      disabledWhen: { field: 'status', equals: 'closed' },
+      readOnlyWhen: { field: 'signed', truthy: true },
+    };
+    expect(resolveDisabled(field, { status: 'open' })).toBe(false);
+    expect(resolveDisabled(field, { status: 'closed' })).toBe(true);
+    expect(resolveReadOnly(field, { signed: false })).toBe(false);
+    expect(resolveReadOnly(field, { signed: true })).toBe(true);
+    // inside a group, a rule can read the top-level form through `rootData`
+    expect(
+      resolveDisabled(
+        {
+          name: 'x',
+          type: 'text',
+          disabledWhen: { field: 'locked', root: true, truthy: true },
+        },
+        {},
+        { locked: true },
+      ),
+    ).toBe(true);
+  });
+
+  test('the static flag still disables, and a function wins over the data rule', () => {
+    expect(
+      resolveDisabled(
+        {
+          name: 'a',
+          type: 'text',
+          disabled: true,
+          disabledWhen: { field: 'x', equals: 1 },
+        },
+        { x: 2 },
+      ),
+    ).toBe(true);
+    expect(
+      resolveDisabled(
+        {
+          name: 'a',
+          type: 'text',
+          disabledCondition: () => false,
+          disabledWhen: { field: 'x', equals: 1 },
+        },
+        { x: 1 },
+      ),
+    ).toBe(false);
+    expect(
+      resolveReadOnly(
+        {
+          name: 'a',
+          type: 'text',
+          readOnlyCondition: () => false,
+          readOnlyWhen: { field: 'x', equals: 1 },
+        },
+        { x: 1 },
+      ),
+    ).toBe(false);
+  });
 });
 
 describe('validateFields', () => {
