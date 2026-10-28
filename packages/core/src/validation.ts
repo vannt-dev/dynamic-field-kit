@@ -1,4 +1,9 @@
-import { isEmptyValue, resolveRequired, resolveVisible } from './conditions';
+import {
+  evaluateCondition,
+  isEmptyValue,
+  resolveRequired,
+  resolveVisible,
+} from './conditions';
 import { isFieldGroup, isFieldSection, sectionDataOf } from './fieldGroup';
 import { resolveMessage } from './messages';
 import { isAsyncOptions } from './optionsLoader';
@@ -107,19 +112,31 @@ export function resolveDisabled(
   data: Properties,
   rootData?: Properties,
 ): boolean {
+  if (field.disabled === true) {
+    return true;
+  }
+  if (field.disabledCondition) {
+    return field.disabledCondition(data, rootData) === true;
+  }
   return (
-    field.disabled === true ||
-    field.disabledCondition?.(data, rootData) === true
+    field.disabledWhen !== undefined &&
+    evaluateCondition(field.disabledWhen, data, rootData ?? data)
   );
 }
 
-/** Effective read-only state from the dynamic condition. */
+/** Effective read-only state: `readOnlyCondition`, else `readOnlyWhen`. */
 export function resolveReadOnly(
   field: FieldDescription,
   data: Properties,
   rootData?: Properties,
 ): boolean {
-  return field.readOnlyCondition?.(data, rootData) === true;
+  if (field.readOnlyCondition) {
+    return field.readOnlyCondition(data, rootData) === true;
+  }
+  return (
+    field.readOnlyWhen !== undefined &&
+    evaluateCondition(field.readOnlyWhen, data, rootData ?? data)
+  );
 }
 
 /**

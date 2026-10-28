@@ -11,5 +11,9 @@
   },
   "devDependencies": {
     "vitepress": "^1.6.4"
+  },
+  "//overrides": "vitepress 1.6.x asks for vite ^5.4.14, and every vite 5 is open to GHSA advisories fixed only in 6.4.4+ (with esbuild 0.25). vitepress 1 builds on vite 6; drop this when vitepress 2 is stable.",
+  "overrides": {
+    "vite": "^6.4.5"
   }
 }

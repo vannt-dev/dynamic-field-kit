@@ -5,12 +5,13 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "postbuild": "node scripts/flatten-segment-files.js",
     "start": "next start"
   },
   "dependencies": {
     "@dynamic-field-kit/core": "file:../../packages/core",
     "@dynamic-field-kit/react": "file:../../packages/react",
-    "next": "16.1.3",
+    "next": "16.4.2",
     "react": "^19.2.3",
     "react-dom": "19.2.3"
   },
