@@ -50,12 +50,7 @@ on:
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 permissions:
-  contents: write
-  # npm provenance: the publish signs each tarball with a short-lived OIDC
-  # token, which links the package on npm back to this exact run. Every
-  # package sets `publishConfig.provenance`, and npm fails the publish
-  # outright if it cannot mint the token.
-  id-token: write
+  contents: read
 
 jobs:
   # The exact gates a PR faces, so a release can never ship something CI would
@@ -67,14 +62,22 @@ jobs:
     name: Release & Publish
     needs: [gates]
     runs-on: ubuntu-latest
+    permissions:
+      # The release commit, the tags and the GitHub Release.
+      contents: write
+      # npm provenance: the publish signs each tarball with a short-lived OIDC
+      # token, which links the package on npm back to this exact run. Every
+      # package sets `publishConfig.provenance`, and npm fails the publish
+      # outright if it cannot mint the token.
+      id-token: write
     steps:
-      - uses: actions/checkout@v7
-        with:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: # zizmor: ignore[artipacked] the job pushes the release commit and tags with these
           ref: ${{ github.ref_name }}
           fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
@@ -91,11 +94,15 @@ jobs:
       # put every package one version further than the one being finished.
       - name: Create changeset from inputs
         if: ${{ !inputs.resume }}
+        env:
+          BUMP: ${{ inputs.bump }}
+          PACKAGES: ${{ inputs.packages }}
+          MESSAGE: ${{ inputs.message }}
         run: |
           node scripts/create-changeset.js \
-            --bump "${{ inputs.bump }}" \
-            --packages "${{ inputs.packages }}" \
-            --message "${{ inputs.message }}"
+            --bump "$BUMP" \
+            --packages "$PACKAGES" \
+            --message "$MESSAGE"
 
       - name: Apply versions and changelogs
         if: ${{ !inputs.resume }}
@@ -126,10 +133,12 @@ jobs:
 
       - name: Commit the release
         if: ${{ !inputs.dry_run && !inputs.resume }}
+        env:
+          REF_NAME: ${{ github.ref_name }}
         run: |
           git add -A
           git commit -m 'chore(release): version packages'
-          git push origin HEAD:${{ github.ref_name }}
+          git push origin "HEAD:$REF_NAME"
 
       # changeset publish pushes each package that is not already on npm at its
       # current version. Its own tagging is off: it writes one tag per package,
@@ -159,7 +168,7 @@ jobs:
           # A package that moved on its own (angular 1.11.1 next to core 1.11.0) has no
           # v<version> tag to stand for it: it gets one named after itself.
           own=$(node scripts/own-release-packages.js)
-          while read -r tag pkg pv; do
+          while read -r tag _ _; do
             [ -n "$tag" ] || continue
             if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
               echo "Tag $tag already exists - leaving it alone."

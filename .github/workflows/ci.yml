@@ -9,6 +9,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   gates:
     uses: ./.github/workflows/quality-gates.yml
@@ -23,10 +26,12 @@ jobs:
       run:
         working-directory: storybook
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
@@ -66,13 +71,14 @@ jobs:
       !startsWith(github.head_ref, 'changeset-release/') &&
       !startsWith(github.head_ref, 'dependabot/')
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           # changeset status diffs against the base branch, so it needs history.
           fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
@@ -84,4 +90,6 @@ jobs:
       # changeset, which would otherwise merge and silently never be released.
       # Add one with `npx changeset`.
       - name: Check for a changeset
-        run: npx changeset status --since=origin/${{ github.base_ref }}
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: npx changeset status --since="origin/$BASE_REF"

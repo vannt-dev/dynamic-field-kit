@@ -1,0 +1,23 @@
+rules:
+  # cache-cleanup.yml runs on pull_request_target to delete a closed pull request's caches. It
+  # checks nothing out and runs no code from the pull request: it reads only its number.
+  dangerous-triggers:
+    ignore:
+      - cache-cleanup.yml
+  # A cooldown would hold back every Dependabot version update, which is the owner's choice.
+  # Security updates are not held back either way.
+  dependabot-cooldown:
+    ignore:
+      - dependabot.yml
+  # GitHub's `$/` self-repository syntax is not known to actionlint 1.7.12, which the workflow
+  # lint runs, so the local reusable workflow keeps the `./` form until actionlint accepts `$/`.
+  self-repository:
+    ignore:
+      - ci.yml
+      - release.yml
+  # The workflow lint caller follows the v0 tag of repokeeper's reusable workflow, which a
+  # repokeeper release moves on purpose.
+  unpinned-uses:
+    config:
+      policies:
+        vannt-dev/repokeeper/*: ref-pin
