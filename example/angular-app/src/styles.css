@@ -1,7 +1,5 @@
 /* Tailwind CSS */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
 /* The shared look of the three examples, example/shared/demo.css, is loaded
    after this file through angular.json. */
