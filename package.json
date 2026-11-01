@@ -27,9 +27,9 @@
   },
   "//": "root vitest is the hoisted peer target for @vitest/coverage-v8 - do not remove, it looks unused but breaks --coverage repo-wide",
   "devDependencies": {
-    "@angular-devkit/build-angular": "^21.2.27",
-    "@angular/compiler": "^21.2.25",
-    "@angular/compiler-cli": "^21.2.25",
+    "@angular-devkit/build-angular": "^22.2.5",
+    "@angular/compiler": "^22.2.4",
+    "@angular/compiler-cli": "^22.2.4",
     "@changesets/cli": "^3.0.3",
     "@commitlint/cli": "^21.2.4",
     "@commitlint/config-conventional": "^21.2.0",
@@ -44,9 +44,9 @@
     "lint-staged": "^17.6.0",
     "prettier": "^3.9.10",
     "tsup": "^9.0.0",
-    "typescript": "~5.9.3",
+    "typescript": "~6.0.3",
     "typescript-eslint": "^8.72.0",
-    "vitest": "^4.1.12"
+    "vitest": "^5.0.5"
   },
   "//dependencies": "the root is private and ships nothing, so it declares no runtime dependencies. react/react-dom/vue/@types/react used to sit here for the packages to borrow; each package now declares its own (enforced by scripts/verify-framework-deps.js), which is also what keeps `npm audit --omit=dev` from failing on advisories in a build-time tree, e.g. vue -> @vue/compiler-sfc -> postcss -> nanoid.",
   "dependencies": {
