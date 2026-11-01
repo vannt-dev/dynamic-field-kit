@@ -10,7 +10,7 @@
     "skipLibCheck": true,
     "isolatedModules": true,
     "allowImportingTsExtensions": true,
-    "types": ["node"],
+    "types": ["node", "vite/client"],
     "paths": {
       "@dynamic-field-kit/core": ["../packages/core/src/index.ts"],
       "@dynamic-field-kit/react": ["../packages/react/src/index.ts"],
