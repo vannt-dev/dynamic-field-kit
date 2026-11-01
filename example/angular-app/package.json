@@ -9,32 +9,26 @@
     "prebuild": "node scripts/embed-demo-sources.js"
   },
   "dependencies": {
-    "@angular/common": "^21.2.0",
-    "@angular/core": "^21.2.0",
-    "@angular/platform-browser": "^21.2.0",
+    "@angular/common": "^22.2.4",
+    "@angular/core": "^22.2.4",
+    "@angular/platform-browser": "^22.2.4",
     "@dynamic-field-kit/angular": "file:../../packages/angular/dist",
     "@dynamic-field-kit/core": "file:../../packages/core",
     "zone.js": "~0.16.0"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "^21.2.0",
-    "@angular/cli": "^21.2.0",
-    "@angular/compiler-cli": "^21.2.0",
-    "autoprefixer": "^10.4.27",
+    "@angular-devkit/build-angular": "^22.2.5",
+    "@angular/cli": "^22.2.5",
+    "@angular/compiler-cli": "^22.2.4",
+    "@tailwindcss/postcss": "^4.3.3",
     "postcss": "^8.5.8",
-    "tailwindcss": "^3.4.19",
-    "typescript": "~5.9.3"
+    "tailwindcss": "^4.3.3",
+    "typescript": "~6.0.3"
   },
-  "//overrides": "Build-time only. sockjs (Angular dev server) asks for uuid ^8.3.2, open to GHSA-w5hq-g745-h8pq; it only calls uuid.v4(), still in uuid 11. tailwindcss 3 and postcss-nested ask for postcss-selector-parser 6, open to GHSA-rj75-hqrm-r3gf with no 6.x fix; 7 parses the same selectors (built CSS checked identical).",
+  "//overrides": "Build-time only. sockjs (Angular dev server) asks for uuid ^8.3.2, open to GHSA-w5hq-g745-h8pq; it only calls uuid.v4(), still in uuid 11.",
   "overrides": {
     "sockjs": {
       "uuid": "^11.1.1"
-    },
-    "tailwindcss": {
-      "postcss-selector-parser": "^7.1.6"
-    },
-    "postcss-nested": {
-      "postcss-selector-parser": "^7.1.6"
     }
   }
 }
