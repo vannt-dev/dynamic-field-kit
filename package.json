@@ -35,7 +35,7 @@
     "@commitlint/cli": "^21.2.4",
     "@commitlint/config-conventional": "^21.2.0",
     "@eslint/js": "^10.0.1",
-    "@typescript-eslint/parser": "^8.72.0",
+    "@typescript-eslint/parser": "^8.72.1",
     "eslint": "^10.13.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-import-resolver-node": "^0.4.0",
@@ -46,7 +46,7 @@
     "prettier": "^3.9.10",
     "tsup": "^9.0.0",
     "typescript": "~6.0.3",
-    "typescript-eslint": "^8.72.0",
+    "typescript-eslint": "^8.72.1",
     "vitest": "^5.0.5"
   },
   "//dependencies": "the root is private and ships nothing, so it declares no runtime dependencies. react/react-dom/vue/@types/react used to sit here for the packages to borrow; each package now declares its own (enforced by scripts/verify-framework-deps.js), which is also what keeps `npm audit --omit=dev` from failing on advisories in a build-time tree, e.g. vue -> @vue/compiler-sfc -> postcss -> nanoid.",
