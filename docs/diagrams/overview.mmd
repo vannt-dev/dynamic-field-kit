@@ -1,0 +1,22 @@
+%% Overview diagram for the root README. Re-render the SVGs with `npm run diagrams`.
+flowchart LR
+  JS["JSON Schema"] -->|fieldsFromJsonSchema| CFG["Field config<br/>(plain objects)"]
+  MINE["Your renderers<br/>(custom field types)"] -->|register| REG
+
+  subgraph CORE["@dynamic-field-kit/core"]
+    direction TB
+    COND["Conditions<br/>(appearWhen, requiredWhen)"]
+    COMP["Computed values<br/>(computeValue)"]
+    VAL["Validation<br/>(rules, Zod, Yup, Valibot)"]
+    REG["Shared field registry<br/>(type to renderer)"]
+  end
+
+  CFG --> COND
+  CFG --> COMP
+  CFG --> VAL
+  COND --> ADP["Framework adapter<br/>React, Vue, Angular, Svelte"]
+  COMP --> ADP
+  VAL --> ADP
+  REG -->|look up by type| ADP
+  ADP --> FORM["Rendered form<br/>(built-in or your inputs)"]
+  FORM -->|handleSubmit| OUT["Valid values<br/>to your app"]

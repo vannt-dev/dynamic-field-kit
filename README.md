@@ -26,6 +26,15 @@ A lightweight, extensible **dynamic form engine** for React, Angular, Vue, and S
 
 `dynamic-field-kit` lets you define forms using **configuration objects** instead of hard-coded UI, and allows applications to **freely extend field types** across frameworks without modifying the library. Register custom renderers in React, Angular, or vanilla JS using a shared field registry.
 
+## How it works
+
+The core reads your field config; each framework adapter renders it, looking up every field's renderer in the shared registry.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/vannt-dev/dynamic-field-kit/develop/docs/diagrams/overview-dark.svg">
+  <img alt="A field config, written by hand or built from a JSON Schema, goes through the core's conditions, computed values and validation; a React, Vue, Angular or Svelte adapter renders it with renderers from the shared field registry, and handleSubmit hands the valid values to your app." src="https://raw.githubusercontent.com/vannt-dev/dynamic-field-kit/develop/docs/diagrams/overview-light.svg">
+</picture>
+
 ---
 
 ## ✨ Features
