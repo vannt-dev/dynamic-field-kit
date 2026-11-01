@@ -94,8 +94,8 @@ The floor is 16 because the form store is built on `signal` and `computed`,
 which Angular introduced in 16. It read `>=14` until 1.6.0: npm accepted the
 install on 14 and 15 and the package then failed on import.
 
-The suite, the build and the demo app all run Angular 21, which is the version
-the setup below is written for. The setup works unchanged on 22.
+The suite and the build run Angular 22, which is the version the setup below
+is written for.
 
 Angular 22 makes `OnPush` the default for a component that names no change
 detection strategy, and that includes the field components you register. They
