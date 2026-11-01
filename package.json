@@ -7,6 +7,7 @@
   ],
   "scripts": {
     "build": "npm run build --workspace=@dynamic-field-kit/core && npm run build --workspaces --if-present",
+    "diagrams": "npx -y @mermaid-js/mermaid-cli@latest -i docs/diagrams/overview.mmd -c docs/diagrams/mermaid.config.json -b transparent -t default -o docs/diagrams/overview-light.svg && npx -y @mermaid-js/mermaid-cli@latest -i docs/diagrams/overview.mmd -c docs/diagrams/mermaid.config.json -b transparent -t dark -o docs/diagrams/overview-dark.svg",
     "build:changed": "node scripts/build-changed.js",
     "dev": "npm run dev --workspaces",
     "test": "npm run test --workspaces --if-present",
