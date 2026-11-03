@@ -93,3 +93,21 @@ jobs:
         env:
           BASE_REF: ${{ github.base_ref }}
         run: npx changeset status --since="origin/$BASE_REF"
+
+  # The one check branch protection requires: it passes when every job above passed or was
+  # skipped, and fails on a failure or a cancellation.
+  ci-result:
+    name: CI result
+    if: always()
+    needs: [gates, storybook, changeset]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Every job passed or was skipped
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "job results: $RESULTS"
+          case " $RESULTS " in
+            *" failure "*|*" cancelled "*) exit 1 ;;
+          esac
