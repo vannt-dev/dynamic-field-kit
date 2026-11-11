@@ -57,7 +57,7 @@
     "@dynamic-field-kit/core": "^1.13.0",
     "@vitest/coverage-istanbul": "^5.0.5",
     "jsdom": "^30.1.3",
-    "ng-packagr": "^22.2.5",
+    "ng-packagr": "^22.2.6",
     "rimraf": "^6.1.3",
     "rxjs": "^7.8.0",
     "typescript": "~6.0.3",
