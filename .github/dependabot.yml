@@ -17,10 +17,20 @@ updates:
         patterns:
           - 'vitest'
           - '@vitest/*'
+      # Everything else. The two groups above are excluded by name: without that this group
+      # took their packages too (#150, #152: @angular/* and @vitest/* arrived here, with
+      # @angular/compiler one patch ahead of @angular/core, and npm ci stopped with ERESOLVE).
       npm-minor-and-patch:
         update-types:
           - minor
           - patch
+        exclude-patterns:
+          - '@angular/*'
+          - '@angular-devkit/*'
+          - '@analogjs/*'
+          - 'ng-packagr'
+          - 'vitest'
+          - '@vitest/*'
     commit-message:
       prefix: chore
       include: scope
