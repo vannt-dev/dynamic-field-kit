@@ -30,8 +30,9 @@ function warnUnreadable(condition: unknown): void {
   warnedConditions.add(key);
   console.warn(
     `[dynamic-field-kit] ${key} is not a condition: expected { field, equals | ` +
-      `notEquals | in | truthy | empty }, { all: [...] }, { any: [...] } or ` +
-      `{ not: ... }. It is treated as false.`,
+      `notEquals | in | notIn | gt | gte | lt | lte | contains | notContains | ` +
+      `truthy | empty }, { all: [...] }, { any: [...] } or { not: ... }. ` +
+      `It is treated as false.`,
   );
 }
 
@@ -65,6 +66,46 @@ function sameValue(a: unknown, b: unknown): boolean {
     );
   }
   return false;
+}
+
+/**
+ * A finite number, or a string that is one (`'18'`, `' 2.5 '`). Nothing else
+ * counts: `Number()` would also turn `''`, `true`, `null` and `[5]` into
+ * numbers, and a comparison must not match on those.
+ */
+function toNumber(value: unknown): number | undefined {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : undefined;
+  }
+  if (typeof value === 'string' && value.trim() !== '') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  return undefined;
+}
+
+const ORDER_TESTS = {
+  gt: (a: number, b: number) => a > b,
+  gte: (a: number, b: number) => a >= b,
+  lt: (a: number, b: number) => a < b,
+  lte: (a: number, b: number) => a <= b,
+} as const;
+
+const ORDER_KEYS = Object.keys(ORDER_TESTS) as (keyof typeof ORDER_TESTS)[];
+
+/**
+ * Whether a string has `needle` as a substring (case-sensitive) or an array
+ * has it as a member (by value). Undefined for a value that is neither, which
+ * neither `contains` nor `notContains` matches.
+ */
+function containsValue(value: unknown, needle: unknown): boolean | undefined {
+  if (typeof value === 'string') {
+    return typeof needle === 'string' && value.includes(needle);
+  }
+  if (Array.isArray(value)) {
+    return value.some((item) => sameValue(item, needle));
+  }
+  return undefined;
 }
 
 function readPath(data: Properties | undefined, path: string): unknown {
@@ -120,6 +161,32 @@ export function evaluateCondition(
   }
   if (Array.isArray(c.in)) {
     return c.in.some((candidate) => sameValue(value, candidate));
+  }
+  if (Array.isArray(c.notIn)) {
+    // Unlike `notEquals`, a missing value does not pass: there is nothing to
+    // hold against the list.
+    return (
+      value !== undefined &&
+      value !== null &&
+      !c.notIn.some((candidate) => sameValue(value, candidate))
+    );
+  }
+  for (const key of ORDER_KEYS) {
+    if (key in c) {
+      const limit = toNumber(c[key]);
+      if (limit === undefined) {
+        warnUnreadable(c);
+        return false;
+      }
+      const number = toNumber(value);
+      return number !== undefined && ORDER_TESTS[key](number, limit);
+    }
+  }
+  if ('contains' in c) {
+    return containsValue(value, c.contains) === true;
+  }
+  if ('notContains' in c) {
+    return containsValue(value, c.notContains) === false;
   }
   if (typeof c.truthy === 'boolean') {
     return Boolean(value) === c.truthy;

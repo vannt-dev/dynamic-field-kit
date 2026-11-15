@@ -172,11 +172,17 @@ class Exporter {
   }
 
   unwritable(key: string, nested: boolean): string {
+    // `gt`, `contains` and the like have no faithful keyword: `minimum`
+    // passes for a value that is not a number and cannot read a numeric
+    // string, and `not: { enum }` is true for a missing property.
+    const start =
+      `\`${key}\` is not a condition, or uses a comparison a schema cannot ` +
+      'express (`notIn`, `gt`, `gte`, `lt`, `lte`, `contains`, `notContains`)';
     return nested
-      ? `\`${key}\` is not a condition, or reads the form root (\`root: true\`) ` +
+      ? `${start}, or reads the form root (\`root: true\`) ` +
           'from inside a group or section, which the schema of the nested object ' +
           'cannot see; not in the schema'
-      : `\`${key}\` is not a condition; not in the schema`;
+      : `${start}; not in the schema`;
   }
 
   /** The `if` of a field's `appearWhen`, or undefined when it is always shown. */
