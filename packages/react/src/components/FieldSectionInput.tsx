@@ -10,6 +10,8 @@ interface Props {
   /** The object the section stores. */
   values: Properties;
   rootData?: Properties;
+  /** The id namespace of the section's fields: the form's, plus its name. */
+  idPrefix?: string;
   errors?: Record<string, string[]>;
   touched?: Record<string, boolean>;
   disabled?: boolean;
@@ -26,6 +28,7 @@ const FieldSectionInput = ({
   fields,
   values,
   rootData,
+  idPrefix,
   errors,
   touched,
   disabled,
@@ -56,6 +59,7 @@ const FieldSectionInput = ({
         fieldDescriptions={fields}
         properties={values}
         rootData={rootData}
+        idPrefix={idPrefix}
         errors={sectionErrors}
         touched={sectionTouched}
         onBlurField={handleBlur}

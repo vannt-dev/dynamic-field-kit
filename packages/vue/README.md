@@ -190,28 +190,29 @@ every field touched before validating, so a renderer that gates its error on
 touched the same way. Individually passed props win over the ones `form`
 derives.
 
-| Member                              | Description                                                                                                   |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `data`                              | `Ref` of the form data, with `computeValue` fields applied                                                    |
-| `errors`                            | `Ref<Record<string, string[]>>`, keyed like `validateFields`                                                  |
-| `isValid` / `isDirty`               | Live synchronous validity (`computed`) / changed state (`Ref`)                                                |
-| `baselineValues`                    | `Ref` holding the values `dirty` is measured against - `initialValues` until `reset(newValues)` replaces them |
-| `getDirtyValues()`                  | Only the entries differing from `baselineValues`, for PATCH-style submits                                     |
-| `isValidating`                      | An async validation pass is in flight                                                                         |
-| `isValidationComplete`              | Every applicable validator finished and none is in flight                                                     |
-| `validationStatus`                  | `'valid'                                                                                                      | 'invalid' | 'pending'`— prefer it over`isValid`alone:`valid` cannot tell "nothing is wrong" from "nothing is wrong yet" |
-| `isSubmitting` / `isSubmitted`      | In-flight submit / at least one submit attempted                                                              |
-| `touched`                           | Fields that have been blurred                                                                                 |
-| `handleChange(data)`                | Replace the whole form data — pass to `MultiFieldInput`'s `onChange`                                          |
-| `setFieldValue(name, value)`        | Change one field                                                                                              |
-| `handleBlur(name)`                  | Mark touched, and validate when `validateOnBlur`                                                              |
-| `setFieldTouched(name, value?)`     | Set touched explicitly                                                                                        |
-| `touchAll()`                        | Mark every field touched — `handleSubmit` already calls it                                                    |
-| `resetTouched()`                    | Clear touched only, leaving data/errors/dirty alone                                                           |
-| `validate()`                        | Validate now, returns a boolean                                                                               |
-| `validateAsync()`                   | Validate now, awaiting Promise-based rules                                                                    |
-| `reset(values?)`                    | Back to `initialValues` (or the values given), clearing errors/touched/submission                             |
-| `handleSubmit(onValid, onInvalid?)` | Returns a submit handler; calls `preventDefault`, validates, then dispatches                                  |
+| Member                              | Description                                                                                                         |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `data`                              | `Ref` of the form data, with `computeValue` fields applied                                                          |
+| `errors`                            | `Ref<Record<string, string[]>>`, keyed like `validateFields`                                                        |
+| `isValid` / `isDirty`               | Live synchronous validity (`computed`) / changed state (`Ref`)                                                      |
+| `baselineValues`                    | `Ref` holding the values `dirty` is measured against - `initialValues` until `reset(newValues)` replaces them       |
+| `getDirtyValues()`                  | Only the entries differing from `baselineValues`, for PATCH-style submits                                           |
+| `isValidating`                      | An async validation pass is in flight                                                                               |
+| `isValidationComplete`              | Every applicable validator finished and none is in flight                                                           |
+| `validationStatus`                  | `'valid'                                                                                                            | 'invalid' | 'pending'`— prefer it over`isValid`alone:`valid` cannot tell "nothing is wrong" from "nothing is wrong yet" |
+| `isSubmitting` / `isSubmitted`      | In-flight submit / at least one submit attempted                                                                    |
+| `submitCount`                       | Submits that have run their validation, valid or not, since creation or `reset()`; watch it to act once per attempt |
+| `touched`                           | Fields that have been blurred                                                                                       |
+| `handleChange(data)`                | Replace the whole form data — pass to `MultiFieldInput`'s `onChange`                                                |
+| `setFieldValue(name, value)`        | Change one field                                                                                                    |
+| `handleBlur(name)`                  | Mark touched, and validate when `validateOnBlur`                                                                    |
+| `setFieldTouched(name, value?)`     | Set touched explicitly                                                                                              |
+| `touchAll()`                        | Mark every field touched — `handleSubmit` already calls it                                                          |
+| `resetTouched()`                    | Clear touched only, leaving data/errors/dirty alone                                                                 |
+| `validate()`                        | Validate now, returns a boolean                                                                                     |
+| `validateAsync()`                   | Validate now, awaiting Promise-based rules                                                                          |
+| `reset(values?)`                    | Back to `initialValues` (or the values given), clearing errors/touched/submission                                   |
+| `handleSubmit(onValid, onInvalid?)` | Returns a submit handler; calls `preventDefault`, validates, then dispatches                                        |
 
 `onBlurField` is what connects `handleBlur` — and therefore `touched` and
 `validateOnBlur` — to the rendered form.

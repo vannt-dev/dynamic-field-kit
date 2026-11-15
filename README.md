@@ -65,6 +65,7 @@ The core reads your field config; each framework adapter renders it, looking up 
 - **Interactive Form DevTools**: Floating overlay component (`<DynamicFormDevTools />`) for realtime debugging.
 - **Blur wiring**: `MultiFieldInput` reports blur via `onBlurField` (an `@Output` in Angular), so a form store's `handleBlur` / `touched` / `validateOnBlur` can be connected to it. Pass `touched` back in to make the store its single source of truth.
 - **Unique field ids**: ids are namespaced per `MultiFieldInput` instance, so two forms holding a field of the same name do not collide. Override with `idPrefix`, or `FieldDescription.id` per field.
+- **Error summary (React)**: `<ErrorSummary />` lists the current errors as links that focus their field, is announced to screen readers on submit only, and can move focus to the first invalid field. Every form store has `submitCount` for doing that by hand. See the [React README](packages/react/README.md#error-summary).
 - **Group Array Manipulation Helpers**: `moveGroupItem`, `swapGroupItems`, `insertGroupItem`, and `focusFirstInvalidField`.
 
 #### Schema adapters
@@ -593,6 +594,7 @@ store.isSubmitting();
 | `errors`                            | `Record<string, string[]>`, keyed like `validateFields`                           |
 | `isValid` / `isDirty`               | No errors recorded / any value has changed                                        |
 | `isSubmitting` / `isSubmitted`      | In-flight submit / at least one submit attempted                                  |
+| `submitCount`                       | Submits that have run their validation, valid or not, since creation or `reset()` |
 | `touched`                           | Fields that have been blurred                                                     |
 | `handleChange(data)`                | Replace the whole form data — pass to `MultiFieldInput`'s `onChange`              |
 | `setFieldValue(name, value)`        | Change one field                                                                  |

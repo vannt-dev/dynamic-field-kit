@@ -246,6 +246,19 @@ describe('Angular Signal DynamicFormStore', () => {
     expect(store.isSubmitting()).toBe(false);
   });
 
+  it('counts submit attempts, valid or not, and starts over on reset', async () => {
+    const store = createDynamicFormStore({ fields });
+    expect(store.submitCount()).toBe(0);
+
+    await store.handleSubmit(vi.fn(), vi.fn())();
+    expect(store.submitCount()).toBe(1);
+    await store.handleSubmit(vi.fn(), vi.fn())();
+    expect(store.submitCount()).toBe(2);
+
+    store.reset();
+    expect(store.submitCount()).toBe(0);
+  });
+
   it('resets to explicitly supplied values', () => {
     const store = createDynamicFormStore({
       fields,

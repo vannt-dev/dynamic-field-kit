@@ -32,6 +32,11 @@ const meta = {
     validateOnBlur: { control: 'boolean' },
     validateOnChange: { control: 'boolean' },
     showDevTools: { control: 'boolean' },
+    showErrorSummary: { control: 'boolean' },
+    focusOnSubmit: {
+      options: [undefined, 'summary', 'first-invalid'],
+      control: { type: 'radio' },
+    },
   },
   args: {
     layout: 'column',
@@ -58,6 +63,20 @@ export const Validation: Story = {
     fields: formStateFields(validators),
     initialValues: { satisfaction: 8 },
     showDevTools: true,
+  },
+};
+
+/**
+ * `ErrorSummary` above the form. Submit it empty: the errors are listed as
+ * links that focus their field, and focus moves to the first invalid one.
+ * Fix a field and it leaves the list.
+ */
+export const WithErrorSummary: Story = {
+  args: {
+    fields: formStateFields(validators),
+    initialValues: { satisfaction: 8 },
+    showErrorSummary: true,
+    focusOnSubmit: 'first-invalid',
   },
 };
 

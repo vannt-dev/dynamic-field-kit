@@ -45,6 +45,25 @@ describe('form stories', () => {
     expect(await screen.findByText('Email is required')).toBeTruthy();
   });
 
+  it('list the errors of an empty submit as links that focus their field', async () => {
+    const { container } = render(<all.WithErrorSummary />);
+    expect(screen.queryByRole('alert')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Submit' }));
+    const summary = await screen.findByRole('group', {
+      name: 'There is a problem',
+    });
+    // Focus went to the first invalid field of the list.
+    expect(document.activeElement).toBe(
+      container.querySelector('#demo-country'),
+    );
+    const links = Array.from(summary.querySelectorAll('a'));
+    expect(links.length).toBeGreaterThan(1);
+    expect(links[0].getAttribute('href')).toBe('#demo-country');
+    const email = links.find((link) => link.textContent?.includes('Email'))!;
+    fireEvent.click(email);
+    expect(document.activeElement).toBe(container.querySelector('#demo-email'));
+  });
+
   it('show the conditional field only when "Yes" is chosen', () => {
     const { container } = render(<all.Conditions />);
     expect(container.querySelector('[id$="-note"]')).toBeNull();
