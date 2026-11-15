@@ -292,6 +292,96 @@ describe('ErrorSummary', () => {
     expect(next.textContent).toBe('There is a problem');
   });
 
+  describe('with every error fixed, a list that fills up again is silent', () => {
+    const only = [fields[0]];
+    const heading = () => within(summary()).getByRole('heading');
+    const alert = () => within(summary()).queryByRole('alert');
+
+    it('after a blur', async () => {
+      let form!: UseDynamicFormResult;
+      render(<Form fieldList={only} onForm={(f) => (form = f)} />);
+      await submit();
+      expect(alert()).not.toBe(null);
+
+      act(() => form.handleChange({ email: 'ada@example.com' }));
+      act(() => form.handleBlur('email'));
+      expect(screen.queryByRole('group')).toBe(null);
+
+      act(() => form.handleChange({ email: '' }));
+      act(() => form.handleBlur('email'));
+      // Listed again, under the same heading, with no live region around it.
+      expect(within(summary()).getAllByRole('link')).toHaveLength(1);
+      expect(heading()).toHaveTextContent('There is a problem');
+      expect(alert()).toBe(null);
+
+      // The next submit is what speaks.
+      await submit();
+      expect(alert()).not.toBe(null);
+    });
+
+    it('on every keystroke with validateOnChange', async () => {
+      let form!: UseDynamicFormResult;
+      render(
+        <Form fieldList={only} validateOnChange onForm={(f) => (form = f)} />,
+      );
+      await submit();
+      for (const email of ['a', '', 'b', '']) {
+        act(() => form.handleChange({ email }));
+        if (email === '') {
+          expect(within(summary()).getAllByRole('link')).toHaveLength(1);
+          expect(alert()).toBe(null);
+        } else {
+          expect(screen.queryByRole('group')).toBe(null);
+        }
+      }
+    });
+
+    it('after a submit that found nothing', async () => {
+      let form!: UseDynamicFormResult;
+      render(<Form fieldList={only} onForm={(f) => (form = f)} />);
+      act(() => form.handleChange({ email: 'ada@example.com' }));
+      await submit();
+      expect(form.submitCount).toBe(1);
+      expect(screen.queryByRole('group')).toBe(null);
+
+      act(() => form.handleChange({ email: '' }));
+      act(() => form.handleBlur('email'));
+      expect(within(summary()).getAllByRole('link')).toHaveLength(1);
+      expect(alert()).toBe(null);
+    });
+
+    it('for what the server answers to a valid submit', async () => {
+      let form!: UseDynamicFormResult;
+      render(<Form fieldList={only} onForm={(f) => (form = f)} />);
+      act(() => form.handleChange({ email: 'ada@example.com' }));
+      await submit();
+      act(() => form.setServerErrors({ email: 'Already registered' }));
+      // Listed, as a link to the field, but not announced.
+      expect(
+        within(summary()).getByRole('link', { name: /Already registered/ }),
+      ).toHaveAttribute('href', '#signup-email');
+      expect(alert()).toBe(null);
+    });
+
+    it('without a submit count, after the first list', () => {
+      const props = {
+        fieldDescriptions: only,
+        data: {},
+        idPrefix: 'signup',
+      };
+      const some = { email: ['Enter an email'] };
+      const { rerender } = render(<ErrorSummary {...props} errors={{}} />);
+      expect(screen.queryByRole('group')).toBe(null);
+      // The first list to show is announced.
+      rerender(<ErrorSummary {...props} errors={some} />);
+      expect(alert()).not.toBe(null);
+      rerender(<ErrorSummary {...props} errors={{}} />);
+      rerender(<ErrorSummary {...props} errors={some} />);
+      expect(within(summary()).getAllByRole('link')).toHaveLength(1);
+      expect(alert()).toBe(null);
+    });
+  });
+
   it('goes away when the last error is fixed, and on reset', async () => {
     let form!: UseDynamicFormResult;
     const only = [fields[0]];

@@ -293,11 +293,17 @@ const form = useDynamicForm({ fields });
   it sits: `Address: City`, `Contacts 2: Phone`. An error that belongs to no
   field of the list (one from `setServerErrors` for something the form does
   not show) comes last, as plain text under its path.
-- **Screen readers hear it on submit only.** The heading is the only live
-  region (`role="alert"`) and its text does not depend on the errors, so the
-  list can change on every keystroke without an announcement; each new submit
-  announces the heading again. The summary is a `role="group"` named by that
-  heading.
+- **Screen readers hear it when a submit finds errors, and not in between.**
+  The heading is the only live region (`role="alert"`) and its text does not
+  depend on the errors, so the list can change on every keystroke without an
+  announcement; each new submit that finds errors announces the heading
+  again. Once every error is fixed the heading stops being a live region
+  until the next submit, so a list that fills up again in between (a blur, a
+  keystroke with `validateOnChange`) is shown but not announced. The same
+  goes for errors set with `setServerErrors` after a submit that passed
+  validation: they are listed, not announced, and `focusOnSubmit` has already
+  run by then, so move focus yourself there if you want it. The summary is a
+  `role="group"` named by that heading.
 - Activating a link focuses the control and scrolls it into view. The built-in
   radio group, whose id is on its wrapper, gets focus on its first option. A
   custom renderer has to put the `id` prop on its control, as it already does

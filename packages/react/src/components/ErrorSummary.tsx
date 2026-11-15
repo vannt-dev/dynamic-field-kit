@@ -3,7 +3,7 @@ import {
   FieldDescription,
   Properties,
 } from '@dynamic-field-kit/core';
-import React, { useEffect, useId, useMemo, useRef } from 'react';
+import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { focusFieldById, listInvalidFields } from '../errorSummary';
 
 const NO_DATA: Properties = Object.freeze({});
@@ -17,6 +17,25 @@ export interface ErrorSummaryFormBinding {
   data: Properties;
   errors: Record<string, string[]>;
   submitCount?: number;
+}
+
+/**
+ * Whether the heading is a live region. `live`: it is, for the errors a
+ * submit found. `spent`: those errors are gone (or the submit found none), so
+ * a list that fills up again - a blur, a keystroke, an answer from the
+ * server - must not speak. `armed`: no submit count to go by; the first list
+ * to show is the one that is announced.
+ */
+type Announcement = 'armed' | 'live' | 'spent';
+
+function announcementFor(
+  submitCount: number | undefined,
+  hasErrors: boolean,
+): Announcement {
+  if (submitCount === undefined) {
+    return hasErrors ? 'live' : 'armed';
+  }
+  return submitCount > 0 && hasErrors ? 'live' : 'spent';
 }
 
 export interface ErrorSummaryProps {
@@ -35,8 +54,8 @@ export interface ErrorSummaryProps {
   /**
    * How many submits have been attempted. When it is known (`form` carries
    * it), the summary stays out of the way until the first one, and is
-   * announced again on each one after. Without it the summary shows whenever
-   * there are errors and is announced once, when it appears.
+   * announced by each one that finds errors. Without it the summary shows
+   * whenever there are errors and is announced once, the first time.
    */
   submitCount?: number;
   /** The heading. It is what a screen reader announces on submit. */
@@ -55,9 +74,11 @@ export interface ErrorSummaryProps {
  * The form's current validation errors as a list of links, each one moving
  * focus to its field.
  *
- * Only the heading sits in a live region (`role="alert"`), and its text does
- * not depend on the errors: fixing a field updates the list without a word
- * from the screen reader, and each new submit announces the heading again.
+ * Only the heading sits in a live region (`role="alert"`), and only for the
+ * errors a submit found; its text does not depend on them. Fixing a field
+ * updates the list without a word from the screen reader, a list that fills
+ * up again between two submits stays silent, and each new submit that finds
+ * errors announces the heading again.
  */
 const ErrorSummary = ({
   fieldDescriptions,
@@ -80,6 +101,29 @@ const ErrorSummary = ({
       listInvalidFields({ fields: fieldDescriptions, data, errors, idPrefix }),
     [fieldDescriptions, data, errors, idPrefix],
   );
+
+  // Derived while rendering rather than in an effect, so the node that is
+  // committed already has the right role: a live region announces when it is
+  // added, and must not be added for a list no submit produced.
+  const hasErrors = entries.length > 0;
+  const [announced, setAnnounced] = useState(() => ({
+    submitCount,
+    state: announcementFor(submitCount, hasErrors),
+  }));
+  let announcement = announced.state;
+  if (announced.submitCount !== submitCount) {
+    announcement = announcementFor(submitCount, hasErrors);
+  } else if (announcement === 'armed' && hasErrors) {
+    announcement = 'live';
+  } else if (announcement === 'live' && !hasErrors) {
+    announcement = 'spent';
+  }
+  if (
+    announcement !== announced.state ||
+    announced.submitCount !== submitCount
+  ) {
+    setAnnounced({ submitCount, state: announcement });
+  }
 
   const titleId = `dfk-${useId().replace(/[^a-zA-Z0-9]/g, '')}-error-summary`;
   const rootRef = useRef<HTMLDivElement>(null);
@@ -122,7 +166,10 @@ const ErrorSummary = ({
       tabIndex={-1}
     >
       {/* Remounted on every submit, so the same words are announced again. */}
-      <div role="alert" key={submitCount ?? 0}>
+      <div
+        role={announcement === 'live' ? 'alert' : undefined}
+        key={submitCount ?? 0}
+      >
         <Heading id={titleId} className="dfk-error-summary-title">
           {title}
         </Heading>
