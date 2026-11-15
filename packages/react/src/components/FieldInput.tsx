@@ -9,6 +9,7 @@ import {
   Properties,
 } from '@dynamic-field-kit/core';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { sectionIdPrefix } from '../errorSummary';
 import {
   isSectionDisabled,
   sectionFieldsOf,
@@ -130,6 +131,7 @@ const FieldInputInner = ({
         fields={section}
         values={sectionValuesOf(renderInfos, name)}
         rootData={rootData}
+        idPrefix={sectionIdPrefix(idPrefix, name)}
         errors={errors}
         touched={touchedMap}
         disabled={isSectionDisabled(fieldDescription, renderInfos, rootData)}
@@ -149,6 +151,7 @@ const FieldInputInner = ({
         fieldDescription={fieldDescription}
         items={items}
         rootData={rootData}
+        idPrefix={idPrefix}
         errors={errors}
         touched={touchedMap}
         onBlurField={onBlurField}

@@ -7,6 +7,7 @@ import {
   Properties,
 } from '@dynamic-field-kit/core';
 import React, { useCallback, useMemo } from 'react';
+import { groupItemIdPrefix } from '../errorSummary';
 import MultiFieldInput from './MultiFieldInput';
 
 /** Shared so an untouched item's `touched` prop keeps a stable identity. */
@@ -16,6 +17,12 @@ interface Props {
   fieldDescription: FieldDescription;
   items: Properties[];
   rootData?: Properties;
+  /**
+   * The id namespace of the form the group sits in. Each item's fields are
+   * namespaced under it by the group's name and the item's position, so the
+   * id of `contacts[1].phone` can be worked out from its path.
+   */
+  idPrefix?: string;
   errors?: Record<string, string[]>;
   touched?: Record<string, boolean>;
   onBlurField?: (key: string) => void;
@@ -26,6 +33,7 @@ const FieldGroupInput = ({
   fieldDescription,
   items,
   rootData,
+  idPrefix,
   errors,
   touched,
   onBlurField,
@@ -94,6 +102,11 @@ const FieldGroupInput = ({
               fieldDescriptions={fields}
               properties={item}
               rootData={rootData}
+              idPrefix={
+                idPrefix === undefined
+                  ? undefined
+                  : groupItemIdPrefix(idPrefix, fieldDescription.name, index)
+              }
               errors={errorsByItem?.[index]}
               // An item with no touched keys still has to receive a map, or
               // the nested input reads `undefined` as "uncontrolled" and starts

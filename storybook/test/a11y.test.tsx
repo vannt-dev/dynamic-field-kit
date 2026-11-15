@@ -1,5 +1,5 @@
 import { composeStories } from '@storybook/react-vite';
-import { render } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import axe from 'axe-core';
 import React from 'react';
 import { describe, expect, it } from 'vitest';
@@ -28,5 +28,17 @@ describe('accessibility of every story', () => {
         `${violation.id}: ${violation.nodes.map((node) => node.target.join(' ')).join(', ')}`,
     );
     expect(found).toEqual([]);
+  });
+
+  // The summary is not in the DOM until a submit finds errors.
+  it('WithErrorSummary, after an empty submit', async () => {
+    const { container } = render(<all.WithErrorSummary />);
+    fireEvent.click(screen.getByRole('button', { name: 'Submit' }));
+    await screen.findByRole('group', { name: 'There is a problem' });
+    const result = await axe.run(container, {
+      runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a'] },
+      rules: { 'color-contrast': { enabled: false } },
+    });
+    expect(result.violations.map((violation) => violation.id)).toEqual([]);
   });
 });

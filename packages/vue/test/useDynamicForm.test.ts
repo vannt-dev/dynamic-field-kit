@@ -74,6 +74,19 @@ describe('useDynamicForm submission state', () => {
     expect(preventDefault).toHaveBeenCalled();
   });
 
+  it('counts submit attempts, valid or not, and starts over on reset', async () => {
+    const form = useDynamicForm({ fields });
+    expect(form.submitCount.value).toBe(0);
+
+    await form.handleSubmit(vi.fn(), vi.fn())();
+    expect(form.submitCount.value).toBe(1);
+    await form.handleSubmit(vi.fn(), vi.fn())();
+    expect(form.submitCount.value).toBe(2);
+
+    form.reset();
+    expect(form.submitCount.value).toBe(0);
+  });
+
   it('resets submission state', async () => {
     const form = useDynamicForm({ fields, initialValues: { name: 'Alice' } });
 

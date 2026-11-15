@@ -174,7 +174,8 @@ What the form exposes:
 
 - State, read as plain properties: `data`, `errors`, `touched`, `isDirty`,
   `isValid`, `isValidating`, `isValidationComplete`, `validationStatus`,
-  `isSubmitting`, `isSubmitted`, `baselineValues`. They are reactive wherever
+  `isSubmitting`, `isSubmitted`, `submitCount` (submits that have run their
+  validation, valid or not, since creation or `reset()`), `baselineValues`. They are reactive wherever
   Svelte tracks reads (markup, `$derived`, `$effect`). Read them from `form`
   each time: `const { data } = form` takes a snapshot.
 - Functions: `handleChange`, `handleBlur`, `setFieldValue`, `setFieldTouched`,
