@@ -127,7 +127,19 @@ type ConditionTest<K extends string, V> = ConditionTarget & {
   [P in Exclude<ConditionComparison, K>]?: never;
 };
 
-type ConditionComparison = 'equals' | 'notEquals' | 'in' | 'truthy' | 'empty';
+type ConditionComparison =
+  | 'equals'
+  | 'notEquals'
+  | 'in'
+  | 'notIn'
+  | 'gt'
+  | 'gte'
+  | 'lt'
+  | 'lte'
+  | 'contains'
+  | 'notContains'
+  | 'truthy'
+  | 'empty';
 
 /**
  * A condition written as data, so a field list holding one can be stored as
@@ -135,9 +147,17 @@ type ConditionComparison = 'equals' | 'notEquals' | 'in' | 'truthy' | 'empty';
  * objects included. "Empty" means undefined, null, `''` or `[]`, the same as
  * `validators.required`.
  *
+ * `gt`, `gte`, `lt` and `lte` compare numbers; a numeric string (`'18'`) on
+ * either side counts as its number, anything else never matches. `contains`
+ * and `notContains` look for a substring in a string (case-sensitive) or a
+ * member in an array. None of these, nor `notIn`, matches a value that is
+ * undefined or null.
+ *
  * ```ts
  * { field: 'country', equals: 'US' }
  * { field: 'country', in: ['US', 'CA'] }
+ * { field: 'age', gte: 18 }
+ * { field: 'tags', contains: 'urgent' }
  * { any: [{ field: 'plan', equals: 'pro' }, { field: 'seats', empty: false }] }
  * ```
  */
@@ -145,6 +165,13 @@ export type FieldCondition =
   | ConditionTest<'equals', unknown>
   | ConditionTest<'notEquals', unknown>
   | ConditionTest<'in', readonly unknown[]>
+  | ConditionTest<'notIn', readonly unknown[]>
+  | ConditionTest<'gt', number | string>
+  | ConditionTest<'gte', number | string>
+  | ConditionTest<'lt', number | string>
+  | ConditionTest<'lte', number | string>
+  | ConditionTest<'contains', unknown>
+  | ConditionTest<'notContains', unknown>
   | ConditionTest<'truthy', boolean>
   | ConditionTest<'empty', boolean>
   | { all: readonly FieldCondition[] }

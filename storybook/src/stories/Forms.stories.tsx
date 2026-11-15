@@ -1,4 +1,4 @@
-import { validators } from '@dynamic-field-kit/core';
+import { type FieldDescription, validators } from '@dynamic-field-kit/core';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import {
   basicsFields,
@@ -49,6 +49,31 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+// Kept as data on purpose: this list survives `JSON.stringify`.
+const comparisonFields = [
+  { name: 'age', type: 'number', label: 'Age' },
+  {
+    name: 'guardian',
+    type: 'text',
+    label: 'Guardian (shown under 18)',
+    appearWhen: { field: 'age', lt: 18 },
+    requiredWhen: { field: 'age', lt: 16 },
+  },
+  {
+    name: 'licence',
+    type: 'text',
+    label: 'Driving licence number (shown from 18)',
+    appearWhen: { field: 'age', gte: 18 },
+  },
+  { name: 'email', type: 'email', label: 'Email' },
+  {
+    name: 'company',
+    type: 'text',
+    label: 'Company (shown for an @example.com address)',
+    appearWhen: { field: 'email', contains: '@example.com' },
+  },
+] as FieldDescription[];
+
 /** Plain fields, a computed full name and a repeatable group of contacts. */
 export const Basics: Story = {
   args: { fields: basicsFields(), layout: layouts['grid (2 columns)'] },
@@ -88,6 +113,19 @@ export const Conditions: Story = {
   args: {
     fields: conditionFields(validators),
     initialValues: { country: 'VN', enableExtra: 'no' },
+    validateOnChange: true,
+  },
+};
+
+/**
+ * Rules written as data: `gte` and `lt` compare the age as a number, and
+ * `contains` looks for a substring. An empty age matches neither comparison,
+ * so both age fields stay hidden until a number is typed.
+ */
+export const ComparisonConditions: Story = {
+  args: {
+    fields: comparisonFields,
+    initialValues: { age: 17 },
     validateOnChange: true,
   },
 };

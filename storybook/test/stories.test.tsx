@@ -69,6 +69,24 @@ describe('form stories', () => {
     expect(container.querySelector('[id$="-note"]')).toBeNull();
   });
 
+  it('swap the fields a numeric comparison shows as the age changes', () => {
+    const { container } = render(<all.ComparisonConditions />);
+    const shown = (name: string) =>
+      container.querySelector(`[id$="-${name}"]`) !== null;
+    expect([shown('guardian'), shown('licence')]).toEqual([true, false]);
+    const age = container.querySelector('[id$="-age"]') as HTMLInputElement;
+    fireEvent.change(age, { target: { value: '18' } });
+    expect([shown('guardian'), shown('licence')]).toEqual([false, true]);
+    // An empty age is neither under nor over 18.
+    fireEvent.change(age, { target: { value: '' } });
+    expect([shown('guardian'), shown('licence')]).toEqual([false, false]);
+    expect(shown('company')).toBe(false);
+    fireEvent.change(container.querySelector('[id$="-email"]')!, {
+      target: { value: 'ada@example.com' },
+    });
+    expect(shown('company')).toBe(true);
+  });
+
   it('keep the wizard on a step that is not valid', () => {
     render(<all.ThreeSteps />);
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
