@@ -24,6 +24,7 @@ Note: `@dynamic-field-kit/core`, `react`, and `react-dom` are **peer dependencie
 - `MultiFieldInput`
 - `useDynamicForm`
 - `DynamicFormDevTools`
+- `ErrorSummary` / `listInvalidFields` (see "Error summary" below)
 - `layoutRegistry`
 - `fieldRegistry`
 - `FieldRegistry` (class, for scoped registries)
@@ -206,6 +207,7 @@ derives, so you can pass `form` and still override one wire.
 | `isValidationComplete`              | Every applicable validator finished and none is in flight                                       |
 | `validationStatus`                  | `'valid'                                                                                        | 'invalid' | 'pending'`— prefer it over`isValid`alone:`valid` cannot tell "nothing is wrong" from "nothing is wrong yet" |
 | `isSubmitting` / `isSubmitted`      | In-flight submit / at least one submit attempted                                                |
+| `submitCount`                       | Submits that have run their validation, valid or not, since creation or `reset()`               |
 | `touched`                           | Fields that have been blurred                                                                   |
 | `handleChange(data)`                | Replace the whole form data — pass to `MultiFieldInput`'s `onChange`                            |
 | `setFieldValue(name, value)`        | Change one field                                                                                |
@@ -251,6 +253,100 @@ emit the same DOM id twice.
 For one field, set `id` on its `FieldDescription`; it wins over the prefix.
 Renderers receive the resolved value as the `id` prop, so a `<label htmlFor>` in
 a renderer points at exactly one input.
+
+Fields inside a section or a repeatable group are namespaced under the form's
+prefix by where they sit: `${idPrefix}-address-city` for `address.city`,
+`${idPrefix}-contacts-1-phone` for `contacts[1].phone`. So with an explicit
+`idPrefix` the id of any field follows from its path, which is what
+`ErrorSummary` relies on.
+
+## Error summary
+
+`ErrorSummary` lists the form's current errors in one place, above the form,
+as links that move focus to the field they are about. It is for the long form
+where an error can be off screen when the user presses Save.
+
+```tsx
+import {
+  ErrorSummary,
+  MultiFieldInput,
+  useDynamicForm,
+} from '@dynamic-field-kit/react';
+
+const form = useDynamicForm({ fields });
+
+<form onSubmit={form.handleSubmit(save)} noValidate>
+  <ErrorSummary fieldDescriptions={fields} form={form} idPrefix="signup" />
+  <MultiFieldInput fieldDescriptions={fields} form={form} idPrefix="signup" />
+  <button>Save</button>
+</form>;
+```
+
+- **Give both the same `idPrefix`.** The links point at `${idPrefix}-${name}`,
+  and the prefix `MultiFieldInput` picks on its own is not known outside it.
+  A field with a pinned `FieldDescription.id` is linked by that id.
+- It shows nothing until a submit has found errors. After that the list
+  follows `form.errors`: a fixed field leaves it, and the summary goes when
+  the last one does, or on `reset()`.
+- Each entry is the field's label and its first message, in the order of the
+  field list. A field inside a section or a repeatable group is led by where
+  it sits: `Address: City`, `Contacts 2: Phone`. An error that belongs to no
+  field of the list (one from `setServerErrors` for something the form does
+  not show) comes last, as plain text under its path.
+- **Screen readers hear it when a submit finds errors, and not in between.**
+  The heading is the only live region (`role="alert"`) and its text does not
+  depend on the errors, so the list can change on every keystroke without an
+  announcement; each new submit that finds errors announces the heading
+  again. Once every error is fixed the heading stops being a live region
+  until the next submit, so a list that fills up again in between (a blur, a
+  keystroke with `validateOnChange`) is shown but not announced. The same
+  goes for errors set with `setServerErrors` after a submit that passed
+  validation: they are listed, not announced, and `focusOnSubmit` has already
+  run by then, so move focus yourself there if you want it. The summary is a
+  `role="group"` named by that heading.
+- Activating a link focuses the control and scrolls it into view. The built-in
+  radio group, whose id is on its wrapper, gets focus on its first option. A
+  custom renderer has to put the `id` prop on its control, as it already does
+  for the label; without it the link has nothing to find.
+
+| Prop                | Description                                                                                                       |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `fieldDescriptions` | The field list the form renders                                                                                   |
+| `idPrefix`          | The `idPrefix` given to `MultiFieldInput`                                                                         |
+| `form`              | The `useDynamicForm` result: `data`, `errors` and `submitCount` in one prop                                       |
+| `data`, `errors`    | The same two as plain props; they win over `form`                                                                 |
+| `submitCount`       | Without a form store: a number you raise on each submit. Left out, the summary shows whenever there are errors    |
+| `focusOnSubmit`     | `'summary'` or `'first-invalid'`: where focus goes after a submit that found errors. Focus is left alone if unset |
+| `title`             | The heading, `There is a problem` by default                                                                      |
+| `headingLevel`      | `2` to `6`; an `<h2>` by default                                                                                  |
+| `className`         | Added to the root, next to `dfk-error-summary`                                                                    |
+
+It renders unstyled, with the classes `dfk-error-summary`,
+`dfk-error-summary-title`, `dfk-error-summary-list` and
+`dfk-error-summary-label`. `listInvalidFields({ fields, data, errors, idPrefix })`
+returns the same ordered list (`path`, `label`, `messages`, `id`) for a summary
+of your own.
+
+### Focus the first invalid field on submit
+
+`focusOnSubmit="first-invalid"` moves focus to the first invalid field, in the
+order of the field list, after every submit that found errors. Without a
+summary, use core's `focusFirstInvalidField` from an effect on
+`form.submitCount`:
+
+```tsx
+import { focusFirstInvalidField } from '@dynamic-field-kit/core';
+
+const formRef = useRef<HTMLFormElement>(null);
+useEffect(() => {
+  if (form.submitCount > 0) focusFirstInvalidField(formRef.current);
+}, [form.submitCount]);
+```
+
+Not from `handleSubmit`'s `onInvalid`: that callback runs before React has
+rendered the errors of the submit, so a field the user never touched is not
+marked `aria-invalid` yet and the helper finds nothing. `submitCount` changes in
+the same render as those errors, so the effect runs with them on screen.
 
 ## Default renderers
 

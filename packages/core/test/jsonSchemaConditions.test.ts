@@ -3,6 +3,7 @@ import { evaluateCondition } from '../src/conditions';
 import { fieldsFromJsonSchema } from '../src/jsonSchema';
 import {
   conditionToSchema,
+  negateCondition,
   schemaToCondition,
 } from '../src/jsonSchemaConditions';
 import { fieldsToJsonSchema } from '../src/jsonSchemaExport';
@@ -129,6 +130,37 @@ describe('conditions written as JSON Schema', () => {
     expect(schemaToCondition(conditionToSchema(condition, false))).toEqual(
       condition,
     );
+  });
+
+  it.each<FieldCondition>([
+    { field: 'country', notIn: ['US'] },
+    { field: 'age', gt: 17 },
+    { field: 'age', gte: 18 },
+    { field: 'age', lt: 65 },
+    { field: 'age', lte: 64 },
+    { field: 'tags', contains: 'urgent' },
+    { field: 'tags', notContains: 'urgent' },
+    {
+      all: [
+        { field: 'country', equals: 'US' },
+        { field: 'age', gte: 18 },
+      ],
+    },
+    { not: { field: 'tags', contains: 'urgent' } },
+  ])('%j has no schema', (condition) => {
+    expect(conditionToSchema(condition, false)).toBeUndefined();
+  });
+
+  it('negates a comparison with no opposite by wrapping it', () => {
+    // `lte` is not the opposite of `gt`, nor `notContains` of `contains`: a
+    // missing value fails both of each pair.
+    for (const condition of [
+      { field: 'age', gt: 17 },
+      { field: 'tags', contains: 'urgent' },
+      { field: 'country', notIn: ['US'] },
+    ] satisfies FieldCondition[]) {
+      expect(negateCondition(condition)).toEqual({ not: condition });
+    }
   });
 
   it('cannot write a root condition on a nested object', () => {
@@ -307,6 +339,30 @@ describe('fieldsToJsonSchema with declarative conditions', () => {
     ]);
     expect(warnings.map((w) => w.path)).toEqual(['contacts[].taxId']);
     expect(warnings[0].message).toContain('root: true');
+  });
+
+  it('warns about a comparison a schema cannot express and leaves it out', () => {
+    const { schema, warnings } = fieldsToJsonSchema(
+      fields([
+        { name: 'age', type: 'number' },
+        {
+          name: 'guardian',
+          type: 'text',
+          appearWhen: { field: 'age', lt: 18 },
+          requiredWhen: { field: 'age', lt: 16 },
+        },
+      ]),
+    );
+    expect(schema.allOf).toBeUndefined();
+    expect(
+      (schema.properties as Record<string, unknown>).guardian,
+    ).toBeDefined();
+    expect(warnings.map((w) => w.path)).toEqual(['guardian', 'guardian']);
+    expect(warnings[0].message).toContain('`appearWhen`');
+    expect(warnings[0].message).toContain('`lt`');
+    expect(warnings[0].message).toContain('always allowed');
+    expect(warnings[1].message).toContain('`requiredWhen`');
+    expect(warnings[1].message).toContain('not in the schema');
   });
 
   it('keeps reporting appearCondition, which wins over appearWhen', () => {

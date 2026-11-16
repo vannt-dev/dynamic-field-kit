@@ -3,6 +3,24 @@
 Version-by-version tables of what changed and what to do about it. For the full
 list of changes see each package's `CHANGELOG.md`.
 
+## 1.13.x → 1.14.0
+
+### React: ids of fields inside a section or a repeatable group
+
+A field at the top of a form keeps its id, `${idPrefix}-${name}`, and a pinned
+`FieldDescription.id` still wins. A field inside a section or a repeatable group
+used to take its id from a prefix generated for its nested form. It now takes it
+from the form's own prefix and its place:
+
+| Path                | Id with `idPrefix="signup"` |
+| ------------------- | --------------------------- |
+| `address.city`      | `signup-address-city`       |
+| `contacts[1].phone` | `signup-contacts-1-phone`   |
+
+So the id of any field follows from its path, which is what `ErrorSummary` links
+to. Nothing to do unless a test or a stylesheet matched the generated ids of
+nested fields; match the new ones, or pin `id` on the field.
+
 ## 1.11.x → 1.12.0
 
 ### Default renderers are labelled, and wrapped

@@ -1,6 +1,6 @@
 # Angular App
 
-Angular 21 demo app for `@dynamic-field-kit/angular`. Deployed at
+Angular 22 demo app for `@dynamic-field-kit/angular`. Deployed at
 https://vannt-dev.github.io/dynamic-field-kit/angular/
 
 ## What It Does

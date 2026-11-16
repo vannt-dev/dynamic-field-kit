@@ -11,6 +11,13 @@ export type {
   DynamicFormBinding,
 } from './components/MultiFieldInput';
 export { DynamicFormDevTools } from './components/DynamicFormDevTools';
+export { default as ErrorSummary } from './components/ErrorSummary';
+export type {
+  ErrorSummaryProps,
+  ErrorSummaryFormBinding,
+} from './components/ErrorSummary';
+export { listInvalidFields } from './errorSummary';
+export type { InvalidField, ListInvalidFieldsInput } from './errorSummary';
 export { useDynamicForm } from './useDynamicForm';
 export type {
   UseDynamicFormOptions,

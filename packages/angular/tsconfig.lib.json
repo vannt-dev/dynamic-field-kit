@@ -1,0 +1,11 @@
+{
+  // ng-packagr's own build defaults, with `lib` raised to match the ES2022 it
+  // emits. Its default lib is ES2018, and the source uses Object.fromEntries
+  // (ES2019). That only compiled while TypeScript loaded @types/node by default,
+  // whose lib reference brought the newer types in; TypeScript 6 loads no types
+  // unless asked, so the build failed on it.
+  "extends": "ng-packagr/src/lib/ts/conf/tsconfig.ngc.json",
+  "compilerOptions": {
+    "lib": ["dom", "es2022"]
+  }
+}

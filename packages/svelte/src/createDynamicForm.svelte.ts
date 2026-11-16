@@ -72,6 +72,11 @@ export function createDynamicForm({
   let touched = $state.raw<Record<string, boolean>>({});
   let isSubmitting = $state(false);
   let isSubmitted = $state(false);
+  // Submits that have run their validation, valid or not, since creation or
+  // the last reset. It moves together with the errors of that submit, so
+  // watching it is how to act once per attempt - focusing the first invalid
+  // field, say - with those errors already on screen.
+  let submitCount = $state(0);
   let validationResult = $state.raw<ValidationResult>(
     validateFields(fields, initial, undefined, validationContext),
   );
@@ -232,6 +237,7 @@ export function createDynamicForm({
     touched = {};
     isSubmitting = false;
     isSubmitted = false;
+    submitCount = 0;
     validationController?.abort();
     validationRun += 1;
     isValidating = false;
@@ -292,6 +298,7 @@ export function createDynamicForm({
           validationResult = live;
         }
         isSubmitted = true;
+        submitCount += 1;
         if (res.valid) {
           await onValid(snapshot);
         } else if (onInvalid) {
@@ -343,6 +350,9 @@ export function createDynamicForm({
     },
     get isSubmitted() {
       return isSubmitted;
+    },
+    get submitCount() {
+      return submitCount;
     },
     getDirtyValues,
     setFieldValue,

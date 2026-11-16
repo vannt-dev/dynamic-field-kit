@@ -81,6 +81,181 @@ describe('evaluateCondition', () => {
     expect(evaluateCondition(condition, data)).toBe(expected);
   });
 
+  describe('notIn', () => {
+    it.each<[FieldCondition, boolean]>([
+      [{ field: 'country', notIn: ['CA', 'VN'] }, true],
+      [{ field: 'country', notIn: ['CA', 'US'] }, false],
+      [{ field: 'country', notIn: [] }, true],
+      [{ field: 'age', notIn: [1, 2] }, true],
+      // Unlike notEquals: a value that is not there matches nothing.
+      [{ field: 'missing', notIn: ['CA'] }, false],
+      [{ field: 'address.zip', notIn: ['CA'] }, false],
+      [{ not: { field: 'missing', in: ['CA'] } }, true],
+    ])('%j is %s', (condition, expected) => {
+      expect(evaluateCondition(condition, data)).toBe(expected);
+    });
+
+    it('compares list members by value', () => {
+      expect(
+        evaluateCondition(
+          { field: 'picked', notIn: [['a']] },
+          { picked: ['a'] },
+        ),
+      ).toBe(false);
+    });
+  });
+
+  describe('gt, gte, lt and lte', () => {
+    const numbers = {
+      age: 18,
+      zero: 0,
+      text: '18',
+      padded: ' 2.5 ',
+      word: 'abc',
+      blank: '',
+      spaces: '   ',
+      flag: true,
+      list: [20],
+      nothing: null,
+      nan: Number.NaN,
+      huge: Number.POSITIVE_INFINITY,
+      born: '2020-01-02',
+    };
+
+    it.each<[FieldCondition, boolean]>([
+      [{ field: 'age', gt: 17 }, true],
+      [{ field: 'age', gt: 18 }, false],
+      [{ field: 'age', gte: 18 }, true],
+      [{ field: 'age', gte: 19 }, false],
+      [{ field: 'age', lt: 19 }, true],
+      [{ field: 'age', lt: 18 }, false],
+      [{ field: 'age', lte: 18 }, true],
+      [{ field: 'age', lte: 17 }, false],
+      [{ field: 'zero', gte: 0 }, true],
+      [{ field: 'zero', lt: 0.5 }, true],
+      [{ field: 'zero', gt: -1 }, true],
+      // A numeric string is its number, on either side.
+      [{ field: 'text', gte: 18 }, true],
+      [{ field: 'text', gt: '9' }, true],
+      [{ field: 'age', lt: '100' }, true],
+      [{ field: 'padded', gt: 2 }, true],
+      [{ field: 'padded', lte: '2.5' }, true],
+      // Nothing else is a number, whatever Number() would make of it.
+      [{ field: 'word', gt: 0 }, false],
+      [{ field: 'word', lt: 0 }, false],
+      [{ field: 'blank', gte: 0 }, false],
+      [{ field: 'blank', lte: 0 }, false],
+      [{ field: 'spaces', gte: 0 }, false],
+      [{ field: 'flag', gte: 1 }, false],
+      [{ field: 'list', gt: 5 }, false],
+      [{ field: 'nan', gte: 0 }, false],
+      [{ field: 'nan', lt: 0 }, false],
+      [{ field: 'huge', gt: 0 }, false],
+      // Dates are not compared: an ISO date is not a number.
+      [{ field: 'born', gt: '2019-12-31' }, false],
+      // A value that is not there matches nothing, in either direction.
+      [{ field: 'missing', gt: 0 }, false],
+      [{ field: 'missing', lt: 0 }, false],
+      [{ field: 'missing', gte: 0 }, false],
+      [{ field: 'missing', lte: 0 }, false],
+      [{ field: 'nothing', gte: 0 }, false],
+      [{ field: 'nothing', lte: 0 }, false],
+      [{ not: { field: 'missing', gt: 0 } }, true],
+    ])('%j is %s', (condition, expected) => {
+      __resetConditionWarnings();
+      const warn = vi
+        .spyOn(console, 'warn')
+        .mockImplementation(() => undefined);
+      expect(evaluateCondition(condition, numbers)).toBe(expected);
+      warn.mockRestore();
+    });
+
+    it('is false, with a warning, when the limit is not a number', () => {
+      __resetConditionWarnings();
+      const warn = vi
+        .spyOn(console, 'warn')
+        .mockImplementation(() => undefined);
+      for (const limit of ['abc', '', null, true, [5], Number.NaN]) {
+        const broken = { field: 'age', gt: limit } as unknown as FieldCondition;
+        expect(evaluateCondition(broken, numbers)).toBe(false);
+        const flipped = {
+          field: 'age',
+          lte: limit,
+        } as unknown as FieldCondition;
+        expect(evaluateCondition(flipped, numbers)).toBe(false);
+      }
+      expect(warn).toHaveBeenCalled();
+      warn.mockRestore();
+    });
+  });
+
+  describe('contains and notContains', () => {
+    const values = {
+      title: 'Hello World',
+      tags: ['urgent', 'billing'],
+      ids: [1, 2],
+      pairs: [{ id: 1 }, ['a']],
+      none: [],
+      blank: '',
+      count: 15,
+      flag: true,
+      record: { urgent: true },
+      nothing: null,
+    };
+
+    it.each<[FieldCondition, boolean]>([
+      // A string: a substring, case-sensitive like equals.
+      [{ field: 'title', contains: 'World' }, true],
+      [{ field: 'title', contains: 'world' }, false],
+      [{ field: 'title', contains: '' }, true],
+      [{ field: 'blank', contains: '' }, true],
+      [{ field: 'blank', contains: 'a' }, false],
+      [{ field: 'title', contains: 5 }, false],
+      [{ field: 'title', notContains: 'world' }, true],
+      [{ field: 'title', notContains: 'World' }, false],
+      [{ field: 'title', notContains: 5 }, true],
+      // An array: a member, by value.
+      [{ field: 'tags', contains: 'urgent' }, true],
+      [{ field: 'tags', contains: 'urg' }, false],
+      [{ field: 'ids', contains: 2 }, true],
+      [{ field: 'ids', contains: '2' }, false],
+      [{ field: 'pairs', contains: { id: 1 } }, true],
+      [{ field: 'pairs', contains: ['a'] }, true],
+      [{ field: 'none', contains: 'urgent' }, false],
+      [{ field: 'tags', notContains: 'draft' }, true],
+      [{ field: 'tags', notContains: 'urgent' }, false],
+      [{ field: 'none', notContains: 'urgent' }, true],
+      // Neither a string nor an array: nothing to look in.
+      [{ field: 'count', contains: 1 }, false],
+      [{ field: 'count', notContains: 1 }, false],
+      [{ field: 'flag', contains: true }, false],
+      [{ field: 'record', contains: 'urgent' }, false],
+      [{ field: 'record', notContains: 'urgent' }, false],
+      // A value that is not there matches neither.
+      [{ field: 'missing', contains: 'a' }, false],
+      [{ field: 'missing', notContains: 'a' }, false],
+      [{ field: 'nothing', contains: null }, false],
+      [{ field: 'nothing', notContains: 'a' }, false],
+      [{ field: 'missing', contains: undefined }, false],
+      [{ not: { field: 'missing', contains: 'a' } }, true],
+    ])('%j is %s', (condition, expected) => {
+      expect(evaluateCondition(condition, values)).toBe(expected);
+    });
+  });
+
+  it('drives appearWhen and requiredWhen with the comparisons', () => {
+    const adult = field({ appearWhen: { field: 'age', gte: 18 } });
+    expect(resolveVisible(adult, { age: 17 })).toBe(false);
+    expect(resolveVisible(adult, { age: '18' })).toBe(true);
+    expect(resolveVisible(adult, {})).toBe(false);
+    const reason = field({
+      requiredWhen: { field: 'tags', contains: 'refund' },
+    });
+    expect(resolveRequired(reason, { tags: ['refund'] })).toBe(true);
+    expect(resolveRequired(reason, { tags: [] })).toBe(false);
+    expect(resolveRequired(reason, {})).toBe(false);
+  });
+
   it('compares arrays and objects by value, like JSON Schema const', () => {
     expect(
       evaluateCondition(

@@ -139,6 +139,19 @@ describe('createDynamicForm', () => {
     expect(form.getDirtyValues()).toEqual({});
   });
 
+  it('counts submit attempts, valid or not, and starts over on reset', async () => {
+    const form = createDynamicForm({ fields });
+    expect(form.submitCount).toBe(0);
+
+    await form.handleSubmit(vi.fn(), vi.fn())();
+    expect(form.submitCount).toBe(1);
+    await form.handleSubmit(vi.fn(), vi.fn())();
+    expect(form.submitCount).toBe(2);
+
+    form.reset();
+    expect(form.submitCount).toBe(0);
+  });
+
   it('a valid submit hands over the data and stops the page reload', async () => {
     const form = createDynamicForm({ fields, initialValues: { first: 'Ada' } });
     const onValid = vi.fn();

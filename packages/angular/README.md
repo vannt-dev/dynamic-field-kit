@@ -94,8 +94,8 @@ The floor is 16 because the form store is built on `signal` and `computed`,
 which Angular introduced in 16. It read `>=14` until 1.6.0: npm accepted the
 install on 14 and 15 and the package then failed on import.
 
-The suite, the build and the demo app all run Angular 21, which is the version
-the setup below is written for. The setup works unchanged on 22.
+The suite and the build run Angular 22, which is the version the setup below
+is written for.
 
 Angular 22 makes `OnPush` the default for a component that names no change
 detection strategy, and that includes the field components you register. They
@@ -205,28 +205,29 @@ export class MyForm {
 }
 ```
 
-| Member                              | Description                                                                                                    |
-| ----------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `data()`                            | Current form data, with `computeValue` fields applied                                                          |
-| `errors()`                          | `Record<string, string[]>`, keyed like `validateFields`                                                        |
-| `isValid()` / `isDirty()`           | Current synchronous validity / any value has changed                                                           |
-| `baselineValues()`                  | Signal holding the values `dirty` is measured against - `initialValues` until `reset(newValues)` replaces them |
-| `getDirtyValues()`                  | Only the entries differing from `baselineValues`, for PATCH-style submits                                      |
-| `isValidating()`                    | An async validation pass is in flight                                                                          |
-| `isValidationComplete()`            | Every applicable validator finished and none is in flight                                                      |
-| `validationStatus()`                | `'valid'                                                                                                       | 'invalid' | 'pending'`— prefer it over`isValid`alone:`valid` cannot tell "nothing is wrong" from "nothing is wrong yet" |
-| `isSubmitting()` / `isSubmitted()`  | In-flight submit / at least one submit attempted                                                               |
-| `touched()`                         | Fields that have been blurred                                                                                  |
-| `handleChange(data)`                | Replace the whole form data — bind to `(onChange)`                                                             |
-| `setFieldValue(name, value)`        | Change one field                                                                                               |
-| `handleBlur(name)`                  | Mark touched, and validate when `validateOnBlur`                                                               |
-| `setFieldTouched(name, value?)`     | Set touched explicitly                                                                                         |
-| `touchAll()`                        | Mark every field touched — `handleSubmit` already calls it                                                     |
-| `resetTouched()`                    | Clear touched only, leaving data/errors/dirty alone                                                            |
-| `validate()`                        | Validate now, returns a boolean                                                                                |
-| `validateAsync()`                   | Validate now, awaiting Promise-based rules                                                                     |
-| `reset(values?)`                    | Back to `initialValues` (or the values given), clearing errors/touched/submission                              |
-| `handleSubmit(onValid, onInvalid?)` | Returns an async handler; calls `preventDefault`, validates, then dispatches                                   |
+| Member                              | Description                                                                                                                       |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `data()`                            | Current form data, with `computeValue` fields applied                                                                             |
+| `errors()`                          | `Record<string, string[]>`, keyed like `validateFields`                                                                           |
+| `isValid()` / `isDirty()`           | Current synchronous validity / any value has changed                                                                              |
+| `baselineValues()`                  | Signal holding the values `dirty` is measured against - `initialValues` until `reset(newValues)` replaces them                    |
+| `getDirtyValues()`                  | Only the entries differing from `baselineValues`, for PATCH-style submits                                                         |
+| `isValidating()`                    | An async validation pass is in flight                                                                                             |
+| `isValidationComplete()`            | Every applicable validator finished and none is in flight                                                                         |
+| `validationStatus()`                | `'valid'                                                                                                                          | 'invalid' | 'pending'`— prefer it over`isValid`alone:`valid` cannot tell "nothing is wrong" from "nothing is wrong yet" |
+| `isSubmitting()` / `isSubmitted()`  | In-flight submit / at least one submit attempted                                                                                  |
+| `submitCount()`                     | Submits that have run their validation, valid or not, since creation or `reset()`; read it in an `effect` to act once per attempt |
+| `touched()`                         | Fields that have been blurred                                                                                                     |
+| `handleChange(data)`                | Replace the whole form data — bind to `(onChange)`                                                                                |
+| `setFieldValue(name, value)`        | Change one field                                                                                                                  |
+| `handleBlur(name)`                  | Mark touched, and validate when `validateOnBlur`                                                                                  |
+| `setFieldTouched(name, value?)`     | Set touched explicitly                                                                                                            |
+| `touchAll()`                        | Mark every field touched — `handleSubmit` already calls it                                                                        |
+| `resetTouched()`                    | Clear touched only, leaving data/errors/dirty alone                                                                               |
+| `validate()`                        | Validate now, returns a boolean                                                                                                   |
+| `validateAsync()`                   | Validate now, awaiting Promise-based rules                                                                                        |
+| `reset(values?)`                    | Back to `initialValues` (or the values given), clearing errors/touched/submission                                                 |
+| `handleSubmit(onValid, onInvalid?)` | Returns an async handler; calls `preventDefault`, validates, then dispatches                                                      |
 
 `MultiFieldInput` emits `(onBlurField)` with the field's name, driven by a
 `focusout` listener — so it works with any renderer, without the renderer
