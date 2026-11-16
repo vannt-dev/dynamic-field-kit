@@ -4,8 +4,6 @@ on:
   push:
     branches: [master, main, develop]
   pull_request:
-  # Release workflow starts CI on its release branch: a PR it opens starts no workflow.
-  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
