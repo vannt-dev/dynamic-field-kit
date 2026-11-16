@@ -11,8 +11,8 @@ name: Release
 # The release commit goes through a PR because develop and master require the
 # "CI result" check, and that applies to direct pushes too: the Actions bot
 # cannot push the release commit to either. A PR opened by the Actions bot does
-# not start CI on its own, so the workflow starts CI on the release branch
-# itself. The version bump reaches master through the normal develop -> master PR.
+# not start CI on its own: close and reopen it once, and CI runs as for any PR.
+# The version bump reaches master through the normal develop -> master PR.
 #
 # If the publish fails part way (a token without access to one package, for
 # example), fix the cause and run this workflow on develop with `resume`
@@ -73,8 +73,6 @@ jobs:
       contents: write
       # The release PR.
       pull-requests: write
-      # Starting CI on the release branch.
-      actions: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with: # zizmor: ignore[artipacked] the job pushes the release branch with these
@@ -160,14 +158,10 @@ jobs:
             done
             echo
             echo 'Merging this PR publishes these versions to npm, then tags and releases them.'
-            echo 'If the CI result check does not start, close and reopen this PR.'
+            echo 'CI does not start on a PR the Actions bot opened: close and reopen this PR to run it.'
           } > "$RUNNER_TEMP/pr-body.md"
           gh pr create --base "$BASE" --head "$branch" \
             --title "chore(release): v$version" --body-file "$RUNNER_TEMP/pr-body.md"
-
-          # A push or a PR made with the workflow token starts no workflow, so CI
-          # would never report on the release PR. A dispatch is the exception.
-          gh workflow run ci.yml --ref "$branch"
 
   publish:
     name: Publish

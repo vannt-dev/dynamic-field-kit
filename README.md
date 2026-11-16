@@ -906,8 +906,9 @@ run it on `develop`, and fill in:
 The workflow runs the full quality gates first, then applies the bump, writes
 the CHANGELOGs, commits them to a `changeset-release/v<version>` branch and
 opens a PR into `develop`. Merging that PR publishes to npm, tags the release
-and writes the GitHub Release. If the PR shows no `CI result` check, close and
-reopen it.
+and writes the GitHub Release. CI does not start on a PR the Actions bot
+opened: close and reopen the release PR once, then merge it when `CI result`
+passes.
 
 Packages are versioned independently, so bumping only what changed is fine.
 Any changesets already committed (`npx changeset`, or
