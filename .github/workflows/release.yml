@@ -1,18 +1,27 @@
 name: Release
 
-# Manual only. Pick a bump, pick the packages, press Run - the workflow does
-# the version bump, the CHANGELOG, the commit and the npm publish. Nothing is
-# versioned by hand.
+# Manual start, publish on merge. Pick a bump, pick the packages, press Run on
+# `develop` - the workflow does the version bump and the CHANGELOGs, commits
+# them to a `changeset-release/v<version>` branch and opens a PR into develop.
+# Nothing is versioned by hand.
 #
-# Run it on `develop`. master requires status checks, and those apply to direct
-# pushes too, so the release commit cannot be pushed there by the Actions bot.
-# The version bump reaches master through the normal develop -> master PR.
+# Merging that PR publishes: the merge into develop runs the `publish` job,
+# which pushes to npm what npm does not have yet, then tags and releases.
 #
-# If the publish step fails part way (a token without access to one package,
-# for example), do not run it again as it is: that bumps every package a second
-# time. Fix the cause and run it with `resume` ticked. It skips the version
-# bump, publishes the packages npm does not have yet, then tags and releases.
+# The release commit goes through a PR because develop and master require the
+# "CI result" check, and that applies to direct pushes too: the Actions bot
+# cannot push the release commit to either. A PR opened by the Actions bot does
+# not start CI on its own, so the workflow starts CI on the release branch
+# itself. The version bump reaches master through the normal develop -> master PR.
+#
+# If the publish fails part way (a token without access to one package, for
+# example), fix the cause and run this workflow on develop with `resume`
+# ticked. It skips the version bump, publishes the packages npm does not have
+# yet, then tags and releases.
 on:
+  pull_request:
+    types: [closed]
+    branches: [develop]
   workflow_dispatch:
     inputs:
       bump:
@@ -45,34 +54,30 @@ on:
         default: false
         required: false
 
-# Deliberately no cancel-in-progress: cancelling mid-publish could leave some
-# packages on npm and others not.
-concurrency: ${{ github.workflow }}-${{ github.ref }}
-
 permissions:
   contents: read
 
 jobs:
-  # The exact gates a PR faces, so a release can never ship something CI would
-  # have rejected.
+  # The exact gates a PR faces, so a release PR is never opened for something
+  # CI would have rejected.
   gates:
+    if: ${{ github.event_name == 'workflow_dispatch' && !inputs.resume }}
     uses: ./.github/workflows/quality-gates.yml
 
-  release:
-    name: Release & Publish
+  prepare:
+    name: Open the release PR
     needs: [gates]
     runs-on: ubuntu-latest
     permissions:
-      # The release commit, the tags and the GitHub Release.
+      # The release branch.
       contents: write
-      # npm provenance: the publish signs each tarball with a short-lived OIDC
-      # token, which links the package on npm back to this exact run. Every
-      # package sets `publishConfig.provenance`, and npm fails the publish
-      # outright if it cannot mint the token.
-      id-token: write
+      # The release PR.
+      pull-requests: write
+      # Starting CI on the release branch.
+      actions: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with: # zizmor: ignore[artipacked] the job pushes the release commit and tags with these
+        with: # zizmor: ignore[artipacked] the job pushes the release branch with these
           ref: ${{ github.ref_name }}
           fetch-depth: 0
 
@@ -89,11 +94,7 @@ jobs:
       # Turns the dispatch inputs into a real changeset. Any changesets already
       # committed are consumed in the same pass, and the largest bump per
       # package wins.
-      # With `resume` the four versioning steps are skipped: the version commit
-      # of the failed release is already on the branch, and bumping again would
-      # put every package one version further than the one being finished.
       - name: Create changeset from inputs
-        if: ${{ !inputs.resume }}
         env:
           BUMP: ${{ inputs.bump }}
           PACKAGES: ${{ inputs.packages }}
@@ -105,13 +106,11 @@ jobs:
             --message "$MESSAGE"
 
       - name: Apply versions and changelogs
-        if: ${{ !inputs.resume }}
         run: npx changeset version
 
       # changeset version rewrites the workspace package.json versions, which
       # the lockfile records too - without this the next `npm ci` fails.
       - name: Sync lockfile
-        if: ${{ !inputs.resume }}
         run: npm install --package-lock-only --no-audit --no-fund
 
       - name: Show resulting versions
@@ -123,22 +122,102 @@ jobs:
       - name: Build packages
         run: npm run build
 
-      # Its own step, not part of the commit: the annotated tag needs an identity
-      # too, and a resumed release makes the tag without making the commit.
-      - name: Set the git identity
+      - name: Dry run summary
+        if: ${{ inputs.dry_run }}
+        run: |
+          echo 'Dry run - nothing was committed, opened or published.'
+          echo 'Versions that would have shipped are listed above.'
+          echo 'Packages that would get a tag and a Release of their own (tag, package, version):'
+          node scripts/own-release-packages.js
+          git --no-pager diff --stat
+
+      # The branch name starts with changeset-release/: ci.yml does not ask a
+      # release PR for a changeset (it consumes them), and the publish job
+      # only runs for a merged PR from such a branch.
+      - name: Open the release PR
         if: ${{ !inputs.dry_run }}
+        env:
+          BASE: ${{ github.ref_name }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(node -p "require('./packages/core/package.json').version")
+          branch="changeset-release/v$version"
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch -c "$branch"
+          git add -A
+          git commit -m "chore(release): v$version"
+          git push origin "$branch"
+
+          {
+            echo "Versions and CHANGELOGs for v$version, made by the Release workflow."
+            echo
+            for pkg in core react vue angular svelte; do
+              echo "- `@dynamic-field-kit/$pkg@$(node -p "require('./packages/$pkg/package.json').version")`"
+            done
+            echo
+            echo 'Merging this PR publishes these versions to npm, then tags and releases them.'
+            echo 'If the CI result check does not start, close and reopen this PR.'
+          } > "$RUNNER_TEMP/pr-body.md"
+          gh pr create --base "$BASE" --head "$branch" \
+            --title "chore(release): v$version" --body-file "$RUNNER_TEMP/pr-body.md"
+
+          # A push or a PR made with the workflow token starts no workflow, so CI
+          # would never report on the release PR. A dispatch is the exception.
+          gh workflow run ci.yml --ref "$branch"
+
+  publish:
+    name: Publish
+    # A merged release PR from this repository, or a resumed release.
+    if: >-
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.merged &&
+       startsWith(github.event.pull_request.head.ref, 'changeset-release/') &&
+       github.event.pull_request.head.repo.full_name == github.repository) ||
+      (github.event_name == 'workflow_dispatch' && inputs.resume && !inputs.dry_run)
+    runs-on: ubuntu-latest
+    # Deliberately no cancel-in-progress: cancelling mid-publish could leave some
+    # packages on npm and others not.
+    concurrency: release-publish
+    permissions:
+      # The tags and the GitHub Release.
+      contents: write
+      # npm provenance: the publish signs each tarball with a short-lived OIDC
+      # token, which links the package on npm back to this exact run. Every
+      # package sets `publishConfig.provenance`, and npm fails the publish
+      # outright if it cannot mint the token.
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: # zizmor: ignore[artipacked] the job pushes the release tags with these
+          # The merge commit of the release PR, or develop for a resumed release.
+          ref: ${{ github.event.pull_request.merge_commit_sha || github.ref_name }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Show versions to publish
+        run: |
+          for pkg in core react vue angular svelte; do
+            echo "$pkg -> $(node -p "require('./packages/$pkg/package.json').version")"
+          done
+
+      - name: Build packages
+        run: npm run build
+
+      - name: Set the git identity
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-
-      - name: Commit the release
-        if: ${{ !inputs.dry_run && !inputs.resume }}
-        env:
-          REF_NAME: ${{ github.ref_name }}
-        run: |
-          git add -A
-          git commit -m 'chore(release): version packages'
-          git push origin "HEAD:$REF_NAME"
 
       # changeset publish pushes each package that is not already on npm at its
       # current version. Its own tagging is off: it writes one tag per package,
@@ -148,7 +227,6 @@ jobs:
       # package in its body, which is what disambiguates the case where the
       # `linked` group lets one package move on its own.
       - name: Publish to npm
-        if: ${{ !inputs.dry_run }}
         run: |
           npx changeset publish --no-git-tag
 
@@ -190,7 +268,6 @@ jobs:
       # release is left alone, which makes re-running this workflow safe rather
       # than a hard failure at the last step.
       - name: Create the GitHub Release
-        if: ${{ !inputs.dry_run }}
         run: |
           version=$(node -p "require('./packages/core/package.json').version")
 
@@ -236,12 +313,3 @@ jobs:
           done <<< "$own"
         env:
           GH_TOKEN: ${{ github.token }}
-
-      - name: Dry run summary
-        if: ${{ inputs.dry_run }}
-        run: |
-          echo 'Dry run - nothing was committed, tagged or published.'
-          echo 'Versions that would have shipped are listed above.'
-          echo 'Packages that would get a tag and a Release of their own (tag, package, version):'
-          node scripts/own-release-packages.js
-          git --no-pager diff --stat

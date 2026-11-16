@@ -904,17 +904,23 @@ run it on `develop`, and fill in:
 | `dry_run`  | Version and print the result without committing, tagging or publishing |
 
 The workflow runs the full quality gates first, then applies the bump, writes
-the CHANGELOGs, commits `chore(release): version packages`, and publishes to
-npm.
+the CHANGELOGs, commits them to a `changeset-release/v<version>` branch and
+opens a PR into `develop`. Merging that PR publishes to npm, tags the release
+and writes the GitHub Release. If the PR shows no `CI result` check, close and
+reopen it.
 
 Packages are versioned independently, so bumping only what changed is fine.
 Any changesets already committed (`npx changeset`, or
 `npm run changeset:auto -- --bump minor --packages core --message "..."`) are
 consumed in the same run, and the largest bump per package wins.
 
-Run it on `develop`, not `master`: master requires status checks, and those
-apply to direct pushes too, so the Actions bot cannot push the release commit
-there. The new versions reach master through the usual `develop → master` PR.
+Run it on `develop`, not `master`. Both require the `CI result` check, also for
+direct pushes, so the release commit goes through a PR. The new versions reach
+master through the usual `develop → master` PR.
+
+If the publish fails part way, fix the cause and run the workflow on `develop`
+with `resume` ticked: it publishes what npm does not have yet, then tags and
+releases.
 
 ## 📄 License
 
