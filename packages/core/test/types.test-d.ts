@@ -152,8 +152,23 @@ test('FieldCondition takes exactly one comparison per field test', () => {
       { not: { all: [{ field: 'b', notEquals: 1 }] } },
     ],
   });
+  assertType<FieldCondition>({ field: 'country', notIn: ['US', 'CA'] });
+  assertType<FieldCondition>({ field: 'age', gt: 17 });
+  assertType<FieldCondition>({ field: 'age', gte: '18', root: true });
+  assertType<FieldCondition>({ field: 'age', lt: 65 });
+  assertType<FieldCondition>({ field: 'age', lte: 64 });
+  assertType<FieldCondition>({ field: 'tags', contains: 'urgent' });
+  assertType<FieldCondition>({ field: 'title', notContains: 'draft' });
   // @ts-expect-error two comparisons in one test
   assertType<FieldCondition>({ field: 'country', equals: 'US', in: ['CA'] });
+  // @ts-expect-error two comparisons in one test
+  assertType<FieldCondition>({ field: 'age', gt: 1, lt: 9 });
+  // @ts-expect-error `notIn` takes a list
+  assertType<FieldCondition>({ field: 'country', notIn: 'US' });
+  // @ts-expect-error `gt` takes a number or a numeric string
+  assertType<FieldCondition>({ field: 'age', gt: true });
+  // @ts-expect-error `lte` takes a number or a numeric string
+  assertType<FieldCondition>({ field: 'age', lte: [5] });
   // @ts-expect-error a comparison without a field
   assertType<FieldCondition>({ equals: 'US' });
   // @ts-expect-error `in` takes a list

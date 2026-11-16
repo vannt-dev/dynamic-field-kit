@@ -602,6 +602,10 @@ const stored = JSON.parse(JSON.stringify(fields));
 | `{ field, equals: value }`                    | the value equals `value`; arrays and objects compare by value, like JSON Schema     |
 | `{ field, notEquals: value }`                 | it does not (a missing value is not equal to anything)                              |
 | `{ field, in: [a, b] }`                       | it equals one of the list                                                           |
+| `{ field, notIn: [a, b] }`                    | it is there and equals none of the list                                             |
+| `{ field, gt: n }`, `gte`, `lt`, `lte`        | it is a number greater than `n` / at least `n` / less than `n` / at most `n`        |
+| `{ field, contains: x }`                      | a string has `x` as a substring (case-sensitive), or an array has `x` as a member   |
+| `{ field, notContains: x }`                   | it is a string or an array, and does not                                            |
 | `{ field, truthy: true }` / `false`           | it is truthy / falsy in JavaScript terms                                            |
 | `{ field, empty: true }` / `false`            | it is / is not empty: undefined, `null`, `''` or `[]`, as for `validators.required` |
 | `{ all: [...] }`, `{ any: [...] }`, `{ not }` | every one, at least one, or not the one inside (`all: []` is true, `any: []` false) |
@@ -610,6 +614,19 @@ const stored = JSON.parse(JSON.stringify(fields));
 group, the section's object inside a section. A dotted path reads deeper
 (`address.country`), and `root: true` reads the top-level form instead, the way
 `rootData` does for a function: `{ field: 'plan', equals: 'pro', root: true }`.
+
+`gt`, `gte`, `lt` and `lte` compare numbers only. A numeric string counts as
+its number on either side (`'18'`, as a text input stores it), so
+`{ field: 'age', gte: 18 }` and `{ field: 'age', gte: '18' }` read the same.
+Anything else, such as `''`, `true`, an array or a date string, is not a number
+and never matches; dates are not compared. `contains` on an array compares
+members by value, like `equals`.
+
+None of `notIn`, `gt`, `gte`, `lt`, `lte`, `contains` and `notContains` matches
+a value that is undefined or `null`: a field nobody filled in is neither over
+nor under a limit. That is unlike `notEquals`, which a missing value passes.
+Write `{ not: { field: 'tags', contains: 'x' } }` when a missing value should
+count.
 
 - **`appearWhen`** hides the field while the condition is false. A hidden field
   is not rendered, not validated and not in `collectFieldPaths`, exactly as
@@ -639,7 +656,10 @@ introduced them needs core from that release too.
 
 `fieldsToJsonSchema` writes both as `if` / `then`, and `fieldsFromJsonSchema`
 reads `dependentRequired` and simple `if` / `then` back into them; see
-[Fields from a JSON Schema](#fields-from-a-json-schema).
+[Fields from a JSON Schema](#fields-from-a-json-schema). A condition that uses
+`notIn`, `gt`, `gte`, `lt`, `lte`, `contains` or `notContains` is left out of
+the schema, with a warning: JSON Schema has no keyword that means the same
+(`minimum` passes for a value that is not a number, for one).
 
 ## Fields from a JSON Schema
 
@@ -746,7 +766,7 @@ const { schema, warnings } = fieldsToJsonSchema(fields, {
 }
 ```
 
-A field with `appearWhen` is defined under `then`, so its rules apply only while it is shown, and `true` holds its place in `properties` (and lets it through `strict`). A hidden field is not validated, so whatever value it still holds is allowed. A condition that reads the form root (`root: true`) from inside a group or section cannot be written on the nested object's schema, and is reported in `warnings`.
+A field with `appearWhen` is defined under `then`, so its rules apply only while it is shown, and `true` holds its place in `properties` (and lets it through `strict`). A hidden field is not validated, so whatever value it still holds is allowed. A condition that reads the form root (`root: true`) from inside a group or section cannot be written on the nested object's schema, and is reported in `warnings`. So is one that uses `notIn`, `gt`, `gte`, `lt`, `lte`, `contains` or `notContains`, which JSON Schema cannot say with the same meaning.
 
 A schema cannot hold a function, so `validate`, `appearCondition`, `readOnlyCondition` and option loaders are listed in `warnings` rather than guessed at; put the rules they enforce in `overrides`, keyed by the same paths (`username`, `contacts[].phone`). A field type the kit does not know accepts any value until `types` describes it, and a `file` field is left out.
 

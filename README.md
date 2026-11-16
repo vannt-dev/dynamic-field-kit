@@ -26,6 +26,15 @@ A lightweight, extensible **dynamic form engine** for React, Angular, Vue, and S
 
 `dynamic-field-kit` lets you define forms using **configuration objects** instead of hard-coded UI, and allows applications to **freely extend field types** across frameworks without modifying the library. Register custom renderers in React, Angular, or vanilla JS using a shared field registry.
 
+## How it works
+
+The core reads your field config; each framework adapter renders it, looking up every field's renderer in the shared registry.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/vannt-dev/dynamic-field-kit/develop/docs/diagrams/overview-dark.svg">
+  <img alt="A field config, written by hand or built from a JSON Schema, goes through the core's conditions, computed values and validation; a React, Vue, Angular or Svelte adapter renders it with renderers from the shared field registry, and handleSubmit hands the valid values to your app." src="https://raw.githubusercontent.com/vannt-dev/dynamic-field-kit/develop/docs/diagrams/overview-light.svg">
+</picture>
+
 ---
 
 ## ✨ Features
@@ -56,6 +65,7 @@ A lightweight, extensible **dynamic form engine** for React, Angular, Vue, and S
 - **Interactive Form DevTools**: Floating overlay component (`<DynamicFormDevTools />`) for realtime debugging.
 - **Blur wiring**: `MultiFieldInput` reports blur via `onBlurField` (an `@Output` in Angular), so a form store's `handleBlur` / `touched` / `validateOnBlur` can be connected to it. Pass `touched` back in to make the store its single source of truth.
 - **Unique field ids**: ids are namespaced per `MultiFieldInput` instance, so two forms holding a field of the same name do not collide. Override with `idPrefix`, or `FieldDescription.id` per field.
+- **Error summary (React)**: `<ErrorSummary />` lists the current errors as links that focus their field, is announced to screen readers on submit only, and can move focus to the first invalid field. Every form store has `submitCount` for doing that by hand. See the [React README](packages/react/README.md#error-summary).
 - **Group Array Manipulation Helpers**: `moveGroupItem`, `swapGroupItems`, `insertGroupItem`, and `focusFirstInvalidField`.
 
 #### Schema adapters
@@ -584,6 +594,7 @@ store.isSubmitting();
 | `errors`                            | `Record<string, string[]>`, keyed like `validateFields`                           |
 | `isValid` / `isDirty`               | No errors recorded / any value has changed                                        |
 | `isSubmitting` / `isSubmitted`      | In-flight submit / at least one submit attempted                                  |
+| `submitCount`                       | Submits that have run their validation, valid or not, since creation or `reset()` |
 | `touched`                           | Fields that have been blurred                                                     |
 | `handleChange(data)`                | Replace the whole form data — pass to `MultiFieldInput`'s `onChange`              |
 | `setFieldValue(name, value)`        | Change one field                                                                  |
@@ -893,17 +904,23 @@ run it on `develop`, and fill in:
 | `dry_run`  | Version and print the result without committing, tagging or publishing |
 
 The workflow runs the full quality gates first, then applies the bump, writes
-the CHANGELOGs, commits `chore(release): version packages`, and publishes to
-npm.
+the CHANGELOGs, commits them to a `changeset-release/v<version>` branch and
+opens a PR into `develop`. Merging that PR publishes to npm, tags the release
+and writes the GitHub Release. If the PR shows no `CI result` check, close and
+reopen it.
 
 Packages are versioned independently, so bumping only what changed is fine.
 Any changesets already committed (`npx changeset`, or
 `npm run changeset:auto -- --bump minor --packages core --message "..."`) are
 consumed in the same run, and the largest bump per package wins.
 
-Run it on `develop`, not `master`: master requires status checks, and those
-apply to direct pushes too, so the Actions bot cannot push the release commit
-there. The new versions reach master through the usual `develop → master` PR.
+Run it on `develop`, not `master`. Both require the `CI result` check, also for
+direct pushes, so the release commit goes through a PR. The new versions reach
+master through the usual `develop → master` PR.
+
+If the publish fails part way, fix the cause and run the workflow on `develop`
+with `resume` ticked: it publishes what npm does not have yet, then tags and
+releases.
 
 ## 📄 License
 

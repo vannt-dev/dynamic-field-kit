@@ -62,6 +62,14 @@ export interface UseDynamicFormResult {
   getDirtyValues: () => Properties;
   isSubmitting: boolean;
   isSubmitted: boolean;
+  /**
+   * How many submits have run their validation, valid or not, since the form
+   * was created or last `reset`. It changes in the same render as the
+   * `errors` of that submit, so an effect keyed on it runs once per attempt
+   * with the errors already on screen - the moment to move focus to the
+   * first invalid field. `ErrorSummary` reads it for the same reason.
+   */
+  submitCount: number;
   touched: Record<string, boolean>;
   setData: React.Dispatch<React.SetStateAction<Properties>>;
   setFieldValue: (name: string, value: unknown) => void;
@@ -154,6 +162,7 @@ export function useDynamicForm({
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submitCount, setSubmitCount] = useState(0);
   // Seeded from the initial data rather than from an effect: an effect never
   // runs on the server, so a server-rendered form would ship `isValid: true`
   // for an empty required field and never correct it. The initialiser runs
@@ -373,6 +382,7 @@ export function useDynamicForm({
       setTouched({});
       setIsSubmitting(false);
       setIsSubmitted(false);
+      setSubmitCount(0);
       validationAbortRef.current?.abort();
       validationRunRef.current += 1;
       setIsValidating(false);
@@ -439,6 +449,7 @@ export function useDynamicForm({
             commitSyncResult(live);
           }
           setIsSubmitted(true);
+          setSubmitCount((count) => count + 1);
           if (res.valid) {
             await onValid(snapshot);
           } else if (onInvalid) {
@@ -473,6 +484,7 @@ export function useDynamicForm({
     getDirtyValues,
     isSubmitting,
     isSubmitted,
+    submitCount,
     touched,
     setData,
     setFieldValue,

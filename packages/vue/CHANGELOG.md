@@ -1,5 +1,12 @@
 # @dynamic-field-kit/vue
 
+## 1.14.0
+
+### Minor Changes
+
+- Comparison conditions (gt, gte, lt, lte, contains, notContains, notIn), an error summary for React and submitCount on every form store
+- af42dda: An error summary for React, and `submitCount` on every form store. `<ErrorSummary fieldDescriptions={fields} form={form} idPrefix="signup" />` lists the form's current errors above it as links (label and first message, in the order of the field list) that focus their field and scroll it into view; give `MultiFieldInput` the same `idPrefix`. It shows after a submit that found errors and follows `form.errors` from then on. Only its heading is a live region, with text that does not depend on the errors, and only for the errors a submit found: a screen reader hears it on each submit that finds errors, and not while they are being fixed or when the list fills up again between two submits. `focusOnSubmit="first-invalid"` (or `"summary"`) moves focus after such a submit, and `listInvalidFields` returns the same ordered list for a summary of your own. `useDynamicForm` (React, Vue), `createDynamicForm` (Svelte) and `createDynamicFormStore` (Angular) gain `submitCount`: the submits that have run their validation since creation or `reset()`. It changes together with the errors of that submit, so an effect on it is the place to call core's `focusFirstInvalidField`; `onInvalid` runs before those errors are rendered. In React, fields inside a section or a repeatable group now take their ids from the form's prefix and their place (`signup-address-city`, `signup-contacts-1-phone`) instead of a generated one, so an id follows from the field's path. Vue, Svelte and Angular have no summary component yet. Core is unchanged.
+
 ## 1.13.0
 
 ### Minor Changes

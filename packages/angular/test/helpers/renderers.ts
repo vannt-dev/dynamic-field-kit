@@ -61,7 +61,7 @@ export class TextRendererComponent {
 }
 
 // What a renderer that names no strategy is from Angular 22, where OnPush is
-// the default. The workspace runs Angular 21, so the strategy is set by hand.
+// the default. Set by hand so the case stays explicit on any Angular.
 @Component({
   selector: 'dfk-test-text-on-push',
   standalone: true,

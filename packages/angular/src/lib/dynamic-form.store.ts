@@ -69,6 +69,11 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
   const touched = signal<Record<string, boolean>>({});
   const isSubmitting = signal<boolean>(false);
   const isSubmitted = signal<boolean>(false);
+  // Submits that have run their validation, valid or not, since creation or
+  // the last reset. It moves together with the errors of that submit, so
+  // watching it is how to act once per attempt - focusing the first invalid
+  // field, say - with those errors already on screen.
+  const submitCount = signal<number>(0);
   const validationResult = signal<ValidationResult>(
     validateFields(fields, data(), undefined, validationContext),
   );
@@ -227,6 +232,7 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
     touched.set({});
     isSubmitting.set(false);
     isSubmitted.set(false);
+    submitCount.set(0);
     validationController?.abort();
     validationRun += 1;
     isValidating.set(false);
@@ -292,6 +298,7 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
           validationResult.set(live);
         }
         isSubmitted.set(true);
+        submitCount.update((count) => count + 1);
         if (res.valid) {
           await onValid(snapshot);
         } else if (onInvalid) {
@@ -319,6 +326,7 @@ export function createDynamicFormStore(options: DynamicFormOptions) {
     touched,
     isSubmitting,
     isSubmitted,
+    submitCount,
     setFieldValue,
     setFieldTouched,
     touchAll,
