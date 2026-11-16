@@ -154,7 +154,8 @@ jobs:
             echo "Versions and CHANGELOGs for v$version, made by the Release workflow."
             echo
             for pkg in core react vue angular svelte; do
-              echo "- `@dynamic-field-kit/$pkg@$(node -p "require('./packages/$pkg/package.json').version")`"
+              v=$(node -p "require('./packages/$pkg/package.json').version")
+              printf -- '- `@dynamic-field-kit/%s@%s`\n' "$pkg" "$v"
             done
             echo
             echo 'Merging this PR publishes these versions to npm, then tags and releases them.'
