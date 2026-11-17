@@ -24,7 +24,13 @@ npm install @dynamic-field-kit/core @dynamic-field-kit/angular
 npm install @dynamic-field-kit/core @dynamic-field-kit/vue
 ```
 
-> **`@dynamic-field-kit/core` là peer dependency của mọi adapter** (cũng như framework của bạn: `react` + `react-dom`, `vue`, hoặc `@angular/*`). Hãy cài nó tường minh như trên — các adapter không còn tự kéo `core` về. Dùng chung một phiên bản `core` giúp mọi adapter cùng trỏ tới một field registry.
+**Với Svelte 5:**
+
+```bash
+npm install @dynamic-field-kit/core @dynamic-field-kit/svelte
+```
+
+> **`@dynamic-field-kit/core` là peer dependency của mọi adapter** (cũng như framework của bạn: `react` + `react-dom`, `vue`, `svelte`, hoặc `@angular/*`). Hãy cài nó tường minh như trên — các adapter không còn tự kéo `core` về. Dùng chung một phiên bản `core` giúp mọi adapter cùng trỏ tới một field registry.
 
 ## Ý tưởng cốt lõi
 
@@ -70,5 +76,5 @@ declare module '@dynamic-field-kit/core' {
 ## Bước tiếp theo
 
 - [Mô tả field](./fields) — các thuộc tính của một `FieldDescription`.
-- Trang riêng cho từng framework (tiếng Anh): [React](/frameworks/react), [Vue 3](/frameworks/vue), [Angular](/frameworks/angular).
-- [Demo trực tiếp](https://vannt-dev.github.io/dynamic-field-kit/) của cả ba framework.
+- Trang riêng cho từng framework (tiếng Anh): [React](/frameworks/react), [Vue 3](/frameworks/vue), [Angular](/frameworks/angular), [Svelte 5](/frameworks/svelte).
+- [Demo trực tiếp](https://vannt-dev.github.io/dynamic-field-kit/) của cả bốn framework.

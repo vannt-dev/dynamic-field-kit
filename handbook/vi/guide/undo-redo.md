@@ -28,7 +28,7 @@ function ProfileForm() {
 }
 ```
 
-Với Vue và Angular, đặt dữ liệu trở lại form bằng `form.handleChange(data)` / `store.handleChange(data)`.
+Với Vue và Svelte, đặt dữ liệu trở lại form bằng `form.handleChange(data)`; với Angular, bằng `store.handleChange(data)`.
 
 | Tuỳ chọn     | Ý nghĩa                                                                                                                   |
 | ------------ | ------------------------------------------------------------------------------------------------------------------------- |
