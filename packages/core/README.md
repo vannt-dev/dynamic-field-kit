@@ -117,11 +117,12 @@ export interface FieldRendererProps<T = any> {
 
 Each adapter feeds a renderer the same inbound props but reports changes with its
 framework's native idiom: React calls the `onValueChange` prop, Angular emits a
-`valueChange` (or `onValueChange`) `EventEmitter`, and Vue emits `update:value`.
+`valueChange` (or `onValueChange`) `EventEmitter`, Vue emits `update:value`, and
+Svelte calls the `onValueChange(value)` prop.
 
 ### The contract is enforced, not merely declared
 
-Every prop above reaches the renderer on **all three adapters**. That is not a
+Every prop above reaches the renderer on **all four adapters**. That is not a
 convention — the list lives in core as `FIELD_RENDERER_PROP_KEYS`, the bag is
 built once by `buildFieldRendererProps`, every adapter calls it, and
 `scripts/check-renderer-prop-parity.js` fails the build if one of them stops
