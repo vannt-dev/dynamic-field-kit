@@ -34,5 +34,13 @@ export * from './pathMaps';
 export * from './serverErrors';
 export * from './messages';
 export * from './optionsLoader';
-export * from './jsonSchema';
+// Listed by name: jsonSchema.ts also exports the generator openApi.ts shares.
+export {
+  fieldsFromJsonSchema,
+  type JsonSchema,
+  type JsonSchemaWarning,
+  type FieldsFromJsonSchemaOptions,
+  type FieldsFromJsonSchemaResult,
+} from './jsonSchema';
 export * from './jsonSchemaExport';
+export * from './openApi';

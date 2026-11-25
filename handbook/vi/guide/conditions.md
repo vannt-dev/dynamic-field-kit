@@ -4,7 +4,7 @@ title: Điều kiện dạng dữ liệu
 
 # Điều kiện dạng dữ liệu
 
-`appearCondition` là một hàm, nên danh sách field dùng nó không lưu được thành JSON, không gửi được từ server và không ghi được vào JSON Schema. `appearWhen` và `requiredWhen` nhận cùng loại quy tắc đó nhưng dưới dạng dữ liệu thuần:
+`appearCondition` là một hàm, nên danh sách field dùng nó không lưu được thành JSON, không gửi được từ server và không ghi được vào JSON Schema. `appearWhen` và `requiredWhen` nhận cùng loại quy tắc đó nhưng dưới dạng dữ liệu thuần (`disabledWhen` và `readOnlyWhen` cũng vậy, xem bên dưới):
 
 ```ts
 import type { FieldDescription } from '@dynamic-field-kit/core';
@@ -54,6 +54,7 @@ const stored = JSON.parse(JSON.stringify(fields));
 
 - **`appearWhen`** ẩn field khi điều kiện sai. Field bị ẩn không được render, không được validate và không có trong `collectFieldPaths`, đúng như với `appearCondition`. Nếu một field có cả hai thì **`appearCondition` thắng** và `appearWhen` bị bỏ qua, nên một hàm truyền qua `overrides` sẽ thay cho quy tắc đã lưu.
 - **`requiredWhen`** làm field bắt buộc khi điều kiện đúng: renderer nhận `required: true` (và `ariaRequired`), còn validation báo thông báo `required` lấy từ [bảng thông báo](./validation#thong-bao-validation) của form khi giá trị rỗng. Khi đã có giá trị, `validate` của field chạy như thường. **`required: true` thắng** `requiredWhen`: field đánh dấu `required` vẫn dựa vào hook `validate` của nó (`validators.required()`) như trước giờ.
+- **`disabledWhen`** và **`readOnlyWhen`** là `disabledCondition` và `readOnlyCondition` viết dưới dạng dữ liệu: renderer nhận `disabled` hoặc `readOnly` khi điều kiện đúng. `disabled: true` vẫn vô hiệu hoá field, và khi có cả hai thì hàm thắng quy tắc. Field bị vô hiệu hoá (hoặc section hay nhóm bị vô hiệu hoá qua `disabledWhen` đặt trên nó) không được validate. JSON Schema không diễn đạt được hai khoá này, nên `fieldsToJsonSchema` cảnh báo và bỏ chúng ra.
 
 Điều kiện không thuộc các dạng trên được coi là sai, kèm cảnh báo khi chạy ở chế độ development. `evaluateCondition(condition, data, rootData?)`, `resolveVisible` và `resolveRequired` được export để dùng ngoài form. Mọi adapter đọc hai khoá này qua `resolveVisible` của core, nên adapter từ bản phát hành có tính năng này cần core từ cùng bản đó trở lên.
 

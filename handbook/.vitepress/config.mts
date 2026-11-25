@@ -22,7 +22,7 @@ export default defineConfig({
       label: 'English',
       lang: 'en',
       description:
-        'Handbook for dynamic-field-kit: schema-driven forms for React, Vue and Angular.',
+        'Handbook for dynamic-field-kit: schema-driven forms for React, Vue, Angular and Svelte.',
       themeConfig: {
         nav: [
           {
@@ -107,7 +107,7 @@ export default defineConfig({
       label: 'Tiếng Việt',
       lang: 'vi',
       description:
-        'Sổ tay dynamic-field-kit: dựng form từ schema cho React, Vue và Angular.',
+        'Sổ tay dynamic-field-kit: dựng form từ schema cho React, Vue, Angular và Svelte.',
       themeConfig: {
         nav: [
           {

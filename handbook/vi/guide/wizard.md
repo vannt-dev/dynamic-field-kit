@@ -59,4 +59,4 @@ export interface WizardState {
 
 `goNext` không validate — hãy tự gọi `validateStep`, để luồng "lưu nháp rồi quay lại sau" vẫn khả thi.
 
-Xem chạy thật: tab **Wizard** trong [demo React](https://vannt-dev.github.io/dynamic-field-kit/react/wizard/), Vue và Angular.
+Xem chạy thật: tab **Wizard** trong [demo React](https://vannt-dev.github.io/dynamic-field-kit/react/wizard/), Vue, Angular và Svelte.
