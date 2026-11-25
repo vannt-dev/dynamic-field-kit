@@ -52,6 +52,35 @@ Những thứ không thành field và được báo trong `warnings`: object kh�
 
 `overrides` dùng khoá là đúng đường dẫn mà `warnings` dùng, và được trộn đè lên field sinh ra. Dùng nó để chọn `type` riêng của ứng dụng (`textarea`, một bộ chọn tuỳ biến), hoặc gắn các hook mà schema không diễn đạt được.
 
+## Field từ tài liệu OpenAPI
+
+`fieldsFromOpenApi` tìm schema trong một tài liệu OpenAPI 3.0 hoặc 3.1 và đọc nó theo cùng cách, với mọi `$ref` được lần theo trong cả tài liệu (`#/components/schemas/Pet`, `#/components/requestBodies/PetBody`, một path item trong `components.pathItems`). Truyền vào tài liệu đã parse (từ JSON, hoặc YAML qua thư viện YAML của bạn) và chỉ ra schema nào làm form:
+
+```ts
+import { fieldsFromOpenApi } from '@dynamic-field-kit/core';
+import openapi from './openapi.json';
+
+// Request body JSON của một operation, theo operationId...
+const { fields, defaults, warnings } = fieldsFromOpenApi(openapi, {
+  operationId: 'createPet',
+});
+
+// ...hoặc theo path template và method
+fieldsFromOpenApi(openapi, { path: '/pets/{petId}', method: 'put' });
+
+// ...hoặc lấy thẳng từ components.schemas
+fieldsFromOpenApi(openapi, { schema: 'Pet' }, { keepReadOnly: true });
+```
+
+Kết quả vẫn là `{ fields, defaults, warnings }`, và `overrides` dùng như trên. Ngoài những gì `fieldsFromJsonSchema` đọc:
+
+- Body là nội dung `application/json`, nếu không có thì là kiểu `+json` đầu tiên (`application/merge-patch+json`). `mediaType` chọn kiểu khác.
+- Thuộc tính `readOnly` bị bỏ ra ngoài, vì server đặt giá trị cho chúng và request không mang chúng (`id`, `createdAt`). `keepReadOnly: true` giữ chúng thành field bị khoá, cho form hiển thị cả một resource.
+- Đọc được cả hai phương ngữ: `nullable: true` và `nullable` đặt cạnh `allOf: [{ $ref }]` (3.0), mảng kiểu như `["string", "null"]` (3.1). Cận loại trừ, `exclusiveMinimum: true` (3.0) hay `exclusiveMinimum: 0` (3.1), được báo trong `warnings` như với JSON Schema.
+- `format: uri` vẫn là field `text`, vì kit không có kiểu `url`; nếu ứng dụng của bạn tự định nghĩa kiểu đó (thêm vào `FieldTypeMap`), đặt `{ homepage: { type: 'url' } }` trong `overrides`.
+
+Hàm ném lỗi, nêu rõ thứ nó tìm, khi operation, path, method hoặc schema không có trong tài liệu, khi operation không có request body hoặc không có body JSON, khi body không phải object có `properties` (ví dụ một mảng pet), và khi schema của body là `$ref` sang file khác. `$ref` ra ngoài tài liệu không được hỗ trợ: hãy gộp tài liệu thành một file trước (`redocly bundle`, `swagger-cli bundle`). Một `$ref` sang file khác nằm sâu hơn trong schema làm thuộc tính đó bị bỏ ra, kèm cảnh báo.
+
 ## JSON Schema từ field
 
 `fieldsToJsonSchema` đi theo chiều ngược lại: nó mô tả dữ liệu mà một danh sách field thu thập, để làm hợp đồng API, validator phía server hoặc tài liệu.

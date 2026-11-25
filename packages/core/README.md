@@ -23,7 +23,7 @@ documented below.
 - `collectFieldPaths` to expand a schema into the leaf paths that exist in the data (`contacts[0].email`), and `indexGroupPathMap` to index an error or touched map by group item
 - `isFieldGroup`, `createGroupItem`, `canAddGroupItem`, `canRemoveGroupItem` to work with repeatable field groups (`FieldDescription.fields`), plus `moveGroupItem`, `swapGroupItems`, `insertGroupItem` and `focusFirstInvalidField` for driving a group's array yourself
 - `zodValidator`, `yupValidator`, `valibotValidator` / `standardSchemaValidator` to validate with an existing schema library
-- `fieldsFromJsonSchema` to build the field list itself from a JSON Schema
+- `fieldsFromJsonSchema` to build the field list itself from a JSON Schema, and `fieldsFromOpenApi` to build it from an operation's request body in an OpenAPI 3.0 / 3.1 document
 - A multi-step wizard state machine: `createWizardState`, `validateStep`, `canGoNext` / `canGoPrev`, `goNext` / `goPrev` / `goToStep`, `markStepCompleted` / `isStepCompleted`
 
 ## Install
@@ -720,6 +720,35 @@ An `if` can test `const`, `enum` and presence (`required`) on one or more proper
 Not turned into fields, and reported in `warnings` instead: objects without `properties`, tuples, arrays of free-form values, remote `$ref`, and `exclusiveMinimum` / `exclusiveMaximum`. So are an `if` that tests anything else (`minimum`, `pattern`...), a `then` that adds rules to a property that is always there, and other conditional keywords (`dependentSchemas`); express those with `appearCondition` through `overrides`.
 
 `overrides` is keyed by the same path the warnings use and is merged over the generated field. Use it to choose an application-specific `type` (`textarea`, a custom picker), or to attach hooks a schema cannot express.
+
+### Fields from an OpenAPI document
+
+`fieldsFromOpenApi` finds the schema in an OpenAPI 3.0 or 3.1 document and reads it the same way, with every `$ref` resolved against the whole document (`#/components/schemas/Pet`, `#/components/requestBodies/PetBody`, a path item in `components.pathItems`). Pass the parsed document (from JSON, or YAML through your YAML parser) and say which schema makes the form:
+
+```ts
+import { fieldsFromOpenApi } from '@dynamic-field-kit/core';
+import openapi from './openapi.json';
+
+// The JSON request body of an operation, by operationId...
+const { fields, defaults, warnings } = fieldsFromOpenApi(openapi, {
+  operationId: 'createPet',
+});
+
+// ...or by its path template and method
+fieldsFromOpenApi(openapi, { path: '/pets/{petId}', method: 'put' });
+
+// ...or straight from components.schemas
+fieldsFromOpenApi(openapi, { schema: 'Pet' }, { keepReadOnly: true });
+```
+
+The result is the same `{ fields, defaults, warnings }`, and `overrides` works as above. On top of what `fieldsFromJsonSchema` reads:
+
+- The body is the `application/json` content, or else the first `+json` one (`application/merge-patch+json`). `mediaType` picks another.
+- `readOnly` properties are left out, since the server sets them and a request does not carry them (`id`, `createdAt`). `keepReadOnly: true` keeps them as locked fields, for a form that shows a whole resource.
+- Both dialects are read: `nullable: true` and `nullable` beside `allOf: [{ $ref }]` (3.0), type arrays such as `["string", "null"]` (3.1). An exclusive bound, `exclusiveMinimum: true` (3.0) or `exclusiveMinimum: 0` (3.1), is reported in `warnings` like in a JSON Schema.
+- `format: uri` stays a `text` field, as the kit has no `url` type; if your app [defines one](#define-field-types-in-your-app), set `{ homepage: { type: 'url' } }` in `overrides`.
+
+It throws, naming what it looked for, when the operation, path, method or schema is not in the document, when the operation has no request body or no JSON one, when the body is not an object with `properties` (an array of pets, say), and when the body schema is a `$ref` into another file. External references are not supported: bundle the document into one file first (`redocly bundle`, `swagger-cli bundle`). A `$ref` into another file deeper inside the schema leaves that property out, with a warning.
 
 ### A JSON Schema from fields
 
