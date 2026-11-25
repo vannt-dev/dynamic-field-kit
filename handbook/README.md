@@ -28,5 +28,5 @@ that point to the English ones. When a README section changes, update its page
 under `vi/guide/` too - nothing regenerates it. The locale, its navigation and
 its sidebar are set in `.vitepress/config.mts`.
 
-The Pages workflow builds the handbook next to the three example apps and
+The Pages workflow builds the handbook next to the four example apps and
 serves it under `/handbook/`.

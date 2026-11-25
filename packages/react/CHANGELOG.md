@@ -1,5 +1,11 @@
 # @dynamic-field-kit/react
 
+## 1.15.0
+
+### Minor Changes
+
+- Field lists from OpenAPI 3.0 / 3.1 documents with fieldsFromOpenApi in core; the adapters are unchanged
+
 ## 1.14.0
 
 ### Minor Changes

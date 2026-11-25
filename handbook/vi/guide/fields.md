@@ -42,6 +42,8 @@ export interface FieldDescription<T extends FieldTypeKey = FieldTypeKey> {
   // Cùng quy tắc đó dưới dạng dữ liệu, lưu được thành JSON (xem "Điều kiện dạng dữ liệu")
   appearWhen?: FieldCondition;
   requiredWhen?: FieldCondition;
+  disabledWhen?: FieldCondition; // dạng dữ liệu, bên cạnh disabledCondition
+  readOnlyWhen?: FieldCondition; // dạng dữ liệu, bên cạnh readOnlyCondition
   computeValue?: (
     data: Record<string, any>,
     rootData?: Record<string, any>,
@@ -101,11 +103,11 @@ export interface FieldRendererProps<T = any> {
 }
 ```
 
-Mỗi adapter đưa cho renderer cùng một bộ prop đầu vào, nhưng báo thay đổi theo cách quen thuộc của framework: React gọi prop `onValueChange`, Angular phát `EventEmitter` tên `valueChange` (hoặc `onValueChange`), còn Vue phát `update:value`.
+Mỗi adapter đưa cho renderer cùng một bộ prop đầu vào, nhưng báo thay đổi theo cách quen thuộc của framework: React gọi prop `onValueChange`, Angular phát `EventEmitter` tên `valueChange` (hoặc `onValueChange`), Vue phát `update:value`, còn Svelte gọi prop `onValueChange(value)`.
 
 ### Hợp đồng được kiểm tra, không chỉ khai báo
 
-Mọi prop ở trên đều tới được renderer trên **cả ba adapter**. Đó không phải quy ước suông: danh sách nằm trong core dưới tên `FIELD_RENDERER_PROP_KEYS`, bộ prop được dựng một lần bởi `buildFieldRendererProps`, mọi adapter đều gọi nó, và `scripts/check-renderer-prop-parity.js` làm hỏng build nếu một adapter ngừng chuyển một khoá qua ranh giới component của mình. Nhờ vậy renderer viết cho framework này chuyển được sang framework khác.
+Mọi prop ở trên đều tới được renderer trên **cả bốn adapter**. Đó không phải quy ước suông: danh sách nằm trong core dưới tên `FIELD_RENDERER_PROP_KEYS`, bộ prop được dựng một lần bởi `buildFieldRendererProps`, mọi adapter đều gọi nó, và `scripts/check-renderer-prop-parity.js` làm hỏng build nếu một adapter ngừng chuyển một khoá qua ranh giới component của mình. Nhờ vậy renderer viết cho framework này chuyển được sang framework khác.
 
 Còn một khác biệt có chủ ý, do ràng buộc của framework: **Vue nhận `className` dưới tên `class`**.
 

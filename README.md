@@ -57,6 +57,7 @@ The core reads your field config; each framework adapter renders it, looking up 
 - **Form State Hook / Composable / Signal Store**: `useDynamicForm` for React & Vue 3, `createDynamicForm` for Svelte 5, `createDynamicFormStore` for Angular Signals. All of them expose the same surface — including `isSubmitting` / `isSubmitted` — and `handleSubmit(onValid, onInvalid)` returns a submit handler in every framework.
 - **Extended HTML5 Renderers**: Built-in support for `radio`, `range`, `file`, `date`, `time`, `datetime-local`, and `switch`.
 - **Fields from JSON Schema**: `fieldsFromJsonSchema(schema)` builds the field list, the default values and the validators from a JSON Schema object, and reports what it could not map. See the [core README](packages/core/README.md#fields-from-a-json-schema).
+- **Fields from OpenAPI**: `fieldsFromOpenApi(doc, { operationId })` does the same for the JSON request body of an operation in an OpenAPI 3.0 / 3.1 document (or a `components.schemas` entry), resolving its `$ref`s and leaving out `readOnly` properties. See the [core README](packages/core/README.md#fields-from-an-openapi-document).
 - **Schema Validation Adapters**: Integrated `zodValidator`, `yupValidator`, `valibotValidator`, and Standard Schema adapters.
 - **Multi-Step Form Wizard Engine**: `createWizardState`, `validateStep`, `canGoNext`, `canGoPrev`, `goNext`, `goPrev`, `goToStep`, `markStepCompleted`, `isStepCompleted`. State is immutable — every navigation returns a new state, and `goNext` records the step it leaves in `completedSteps`.
 - **Draft Persistence**: `createFormDraft` keeps form data in `localStorage` (or any storage) with debounced writes, a version and an age limit, and never writes the fields you exclude. See the [core README](packages/core/README.md#saving-a-draft).
@@ -906,8 +907,9 @@ run it on `develop`, and fill in:
 The workflow runs the full quality gates first, then applies the bump, writes
 the CHANGELOGs, commits them to a `changeset-release/v<version>` branch and
 opens a PR into `develop`. Merging that PR publishes to npm, tags the release
-and writes the GitHub Release. If the PR shows no `CI result` check, close and
-reopen it.
+and writes the GitHub Release. CI does not start on a PR the Actions bot
+opened: close and reopen the release PR once, then merge it when `CI result`
+passes.
 
 Packages are versioned independently, so bumping only what changed is fine.
 Any changesets already committed (`npx changeset`, or

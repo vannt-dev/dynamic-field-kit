@@ -11,7 +11,7 @@
   "dependencies": {
     "@dynamic-field-kit/core": "file:../../packages/core",
     "@dynamic-field-kit/react": "file:../../packages/react",
-    "next": "16.4.2",
+    "next": "16.4.5",
     "react": "^19.2.3",
     "react-dom": "19.2.3"
   },
