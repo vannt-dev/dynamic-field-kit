@@ -196,6 +196,7 @@ class Generator {
   constructor(
     private readonly root: SchemaObject,
     private readonly overrides: Record<string, Partial<FieldDescription>>,
+    private readonly skipReadOnly = false,
   ) {}
 
   warn(path: string, message: string): void {
@@ -387,6 +388,10 @@ class Generator {
         return;
       }
       const property = this.unwrapNullable(resolved, path);
+      if (this.skipReadOnly && property.readOnly === true) {
+        // The server sets it; a request that carries it is wrong, not partial.
+        return;
+      }
       const field = this.fieldOf(name, property, path, isRequired, defaults);
       if (!field) {
         return;
@@ -641,7 +646,9 @@ class Generator {
       field.step = step;
     }
     for (const keyword of ['exclusiveMinimum', 'exclusiveMaximum']) {
-      if (typeof schema[keyword] === 'number') {
+      // A number in 2019-09 and later; `true` beside `minimum` / `maximum` in
+      // draft-04 and OpenAPI 3.0.
+      if (typeof schema[keyword] === 'number' || schema[keyword] === true) {
         this.warn(
           path,
           `"${keyword}" is not enforced; add a validator through \`overrides\``,
@@ -757,6 +764,35 @@ class Generator {
 }
 
 /**
+ * The generator behind `fieldsFromJsonSchema`, for a schema that sits inside a
+ * larger document its `$ref`s point into (an OpenAPI document). Not exported
+ * from the package.
+ */
+export function fieldsFromSchemaIn(
+  schema: JsonSchema,
+  root: { [keyword: string]: unknown },
+  options: {
+    overrides?: Record<string, Partial<FieldDescription>>;
+    /** Leave `readOnly` properties out instead of locking them. */
+    skipReadOnly?: boolean;
+    /** The message thrown when the schema is not an object with properties. */
+    notAnObject: string;
+  },
+): FieldsFromJsonSchemaResult {
+  const generator = new Generator(
+    root,
+    options.overrides ?? {},
+    options.skipReadOnly,
+  );
+  const resolved = generator.resolve(schema, '');
+  if (!resolved || generator.typeOf(resolved) !== 'object') {
+    throw new TypeError(options.notAnObject);
+  }
+  const { fields, defaults } = generator.fieldsOf(resolved, '');
+  return { fields, defaults, warnings: generator.warnings };
+}
+
+/**
  * Builds a field list from a JSON Schema object, so a form can be driven by
  * the schema an API already publishes.
  *
@@ -786,13 +822,9 @@ export function fieldsFromJsonSchema(
   if (!isObject(schema)) {
     throw new TypeError('fieldsFromJsonSchema expects a JSON Schema object');
   }
-  const generator = new Generator(schema, options.overrides ?? {});
-  const root = generator.resolve(schema, '');
-  if (!root || generator.typeOf(root) !== 'object') {
-    throw new TypeError(
+  return fieldsFromSchemaIn(schema, schema, {
+    overrides: options.overrides,
+    notAnObject:
       'fieldsFromJsonSchema expects a schema of type "object" with "properties"',
-    );
-  }
-  const { fields, defaults } = generator.fieldsOf(root, '');
-  return { fields, defaults, warnings: generator.warnings };
+  });
 }
