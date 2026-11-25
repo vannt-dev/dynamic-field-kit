@@ -31,7 +31,7 @@
     "jsdom": "^31.0.1",
     "svelte": "^5.57.3",
     "svelte-check": "^4.7.8",
-    "vitest": "^5.1.0"
+    "vitest": "^5.1.1"
   },
   "exports": {
     ".": {
