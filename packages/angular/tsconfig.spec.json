@@ -6,5 +6,5 @@
   "compilerOptions": {
     "outDir": "./out-tsc/spec"
   },
-  "include": ["src/**/*.ts", "test/**/*.ts"]
+  "include": ["src/**/*.ts", "signal-forms/src/**/*.ts", "test/**/*.ts"]
 }

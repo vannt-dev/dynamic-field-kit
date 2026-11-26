@@ -19,5 +19,5 @@
     "moduleResolution": "Bundler",
     "experimentalDecorators": true
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*", "signal-forms/src/**/*"]
 }

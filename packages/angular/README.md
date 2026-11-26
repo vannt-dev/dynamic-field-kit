@@ -32,6 +32,9 @@ npm install @dynamic-field-kit/core@^1.5.0 @dynamic-field-kit/angular@^1.5.0
 - `FieldRegistry` (class, for scoped registries)
 - `FIELD_REGISTRY` (injection token)
 - `createDynamicFormStore` (signal-based form state)
+- `createSignalFormStore` / `dynamicFieldsSchema` / `fieldTreeAt` from
+  `@dynamic-field-kit/angular/signal-forms`: the same form backed by an Angular
+  Signal Form (Angular 22+, opt-in; see [Signal Forms](#signal-forms-dynamic-field-kitangularsignal-forms-angular-22))
 - `DynamicFormDevToolsComponent`
 - `layoutRegistry` / `LayoutRegistry` (class, for a scoped layout registry)
 - `ColumnLayout` / `RowLayout` / `GridLayout` (the standalone layout components, registered for you)
@@ -242,6 +245,107 @@ clears touched the same way. Leave `[touched]` unbound and `MultiFieldInput`
 falls back to tracking it internally from blur alone; in that mode call its
 public `resetTouched()` / `setFieldTouched(name, value?)` (via a `@ViewChild`)
 to clear it, and listen to `(touchedChange)` for the next map.
+
+## Signal Forms (`@dynamic-field-kit/angular/signal-forms`, Angular 22+)
+
+Opt-in: a dynamic form whose state lives in an
+[Angular Signal Form](https://angular.dev/guide/forms/signals/overview)
+(`@angular/forms/signals`, stable since Angular 22). `createDynamicFormStore`
+above stays the default and does not change; this entry point is separate so
+the main one keeps working on Angular 16-21.
+
+```bash
+npm install @angular/forms
+```
+
+```ts
+import { Component } from '@angular/core';
+import { MultiFieldInput } from '@dynamic-field-kit/angular';
+import { createSignalFormStore } from '@dynamic-field-kit/angular/signal-forms';
+import { FieldDescription, validators } from '@dynamic-field-kit/core';
+import { required } from '@angular/forms/signals';
+
+type Signup = { email: string; nickname: string };
+
+const fields: FieldDescription[] = [
+  {
+    name: 'email',
+    type: 'text',
+    label: 'Email',
+    validate: validators.compose(validators.required(), validators.email()),
+  },
+  { name: 'nickname', type: 'text', label: 'Nickname' },
+];
+
+@Component({
+  standalone: true,
+  imports: [MultiFieldInput],
+  template: `
+    <form (ngSubmit)="onSubmit($event)">
+      <dfk-multi-field-input
+        [fieldDescriptions]="fields"
+        [properties]="store.data()"
+        [touched]="store.touched()"
+        [errors]="store.errors()"
+        (onChange)="store.handleChange($event)"
+        (onBlurField)="store.handleBlur($event)"
+      ></dfk-multi-field-input>
+      <p>Email valid: {{ store.form.email().valid() }}</p>
+      <button [disabled]="store.isSubmitting()">Save</button>
+    </form>
+  `,
+})
+export class SignupForm {
+  fields = fields;
+  // Create it in an injection context (here, a field initializer), or pass
+  // `injector`.
+  store = createSignalFormStore<Signup>({
+    fields,
+    initialValues: { email: '', nickname: '' },
+    // Optional: more Signal Forms rules on top of the field descriptions.
+    schema: (p) => required(p.nickname, { message: 'Pick a nickname' }),
+  });
+
+  // Return server errors by path and they stay on their field until it changes.
+  onSubmit = this.store.handleSubmit(async (data) => {
+    const res = await fetch('/api/signup', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return res.ok ? undefined : { email: 'Already registered' };
+  });
+}
+```
+
+What it does:
+
+- `dynamicFieldsSchema(fields)` is the Signal Forms schema behind it, also
+  exported for use with `form()` yourself. One tree validator runs core's
+  `validateFields` over the model, so conditions, cross-field rules,
+  repeatable groups and sections validate exactly as in the default store.
+  Each error lands on its Signal Forms field (`store.form.email().errors()`)
+  with `kind: 'dfk'` and the dfk `path` (`contacts[0].email`).
+- The top-level fields' `appearWhen`/`appearCondition`, `disabled`/
+  `disabledWhen` and `readOnlyWhen` become Signal Forms `hidden`, `disabled`
+  and `readonly` rules.
+- `errors()` holds the errors of touched fields, keyed by dfk path, so it binds
+  to `[errors]` as before; `allErrors()` has all of them. Errors from your own
+  `schema` rules show there too, under the path of the field they are on.
+- `handleSubmit(onValid, onInvalid?)` goes through Signal Forms `submit()`:
+  it touches every field, runs validators that return a Promise (Signal Forms
+  validation is synchronous, so they only run here), and calls `onValid` only
+  when everything passes.
+- The store also has `model` (the same signal as `data`), `isValid()`,
+  `isValidating()`, `isSubmitting()`, `isDirty()`, `submitCount()`,
+  `setFieldValue`, `setFieldTouched`, `touchAll`, `validate()` and
+  `reset(values?)`. It has no `setServerErrors`: return the errors from
+  `onValid` instead.
+
+Signal Forms only creates a field for a key whose value is defined. Give every
+field an initial value (`''`, `null`) to get `store.form.<name>` from the
+start; until then its errors sit on the root field, and `errors()`/`touched()`
+still report them under the field's path. `fieldTreeAt(store.form, path)`
+returns the field for a dfk path, or `undefined`.
 
 ## Field ids
 
