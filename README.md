@@ -102,13 +102,14 @@ every keystroke.
 
 ## 📦 Packages
 
-| Package                      | Description                                                  |
-| ---------------------------- | ------------------------------------------------------------ |
-| `@dynamic-field-kit/core`    | Core types and shared field registry                         |
-| `@dynamic-field-kit/react`   | React components (FieldInput, MultiFieldInput, DynamicInput) |
-| `@dynamic-field-kit/angular` | Angular components and module (standalone + NgModule)        |
-| `@dynamic-field-kit/vue`     | Vue 3 components and module                                  |
-| `@dynamic-field-kit/svelte`  | Svelte 5 components and form state (`createDynamicForm`)     |
+| Package                                            | Description                                                         |
+| -------------------------------------------------- | ------------------------------------------------------------------- |
+| `@dynamic-field-kit/core`                          | Core types and shared field registry                                |
+| `@dynamic-field-kit/react`                         | React components (FieldInput, MultiFieldInput, DynamicInput)        |
+| `@dynamic-field-kit/angular`                       | Angular components and module (standalone + NgModule)               |
+| `@dynamic-field-kit/vue`                           | Vue 3 components and module                                         |
+| `@dynamic-field-kit/svelte`                        | Svelte 5 components and form state (`createDynamicForm`)            |
+| [`@dynamic-field-kit/mcp`](packages/mcp/README.md) | MCP server for agents: validate a config, generate one from OpenAPI |
 
 ---
 

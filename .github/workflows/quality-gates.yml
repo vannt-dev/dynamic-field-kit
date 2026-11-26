@@ -35,6 +35,7 @@ jobs:
           npm run build --workspace=@dynamic-field-kit/vue
           npm run build --workspace=@dynamic-field-kit/angular
           npm run build --workspace=@dynamic-field-kit/svelte
+          npm run build --workspace=@dynamic-field-kit/mcp
 
       # Share the built dist with the verify and examples jobs so they don't
       # rebuild all four packages (ng-packagr's Angular build especially).
@@ -98,6 +99,11 @@ jobs:
             test-cmd: npm run test --workspace=@dynamic-field-kit/svelte -- --coverage
             coverage-file: packages/svelte/coverage/lcov.info
             coverage-name: svelte
+          - package: mcp
+            build-cmd: npm run build --workspace=@dynamic-field-kit/core
+            test-cmd: npm run test --workspace=@dynamic-field-kit/mcp -- --coverage
+            coverage-file: packages/mcp/coverage/lcov.info
+            coverage-name: mcp
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
