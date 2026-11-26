@@ -1,6 +1,6 @@
 {
   "name": "@dynamic-field-kit/mcp",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "MCP server that validates dynamic-field-kit form configs and generates them from OpenAPI",
   "license": "MIT",
   "//private": "Kept private until the package exists on npm: changeset publish would try to publish it on the next release, and a first publish cannot go through the trusted publisher the other packages use. Drop this flag after a first manual publish and the trusted-publisher setup.",
@@ -33,7 +33,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@dynamic-field-kit/core": "^1.15.0"
+    "@dynamic-field-kit/core": "^1.16.0"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
