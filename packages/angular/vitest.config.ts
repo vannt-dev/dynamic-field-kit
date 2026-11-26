@@ -17,7 +17,7 @@ export default defineConfig({
       provider: 'istanbul',
       reportsDirectory: 'coverage',
       reporter: ['lcov', 'text-summary'],
-      include: ['src/**/*.ts'],
+      include: ['src/**/*.ts', 'signal-forms/src/**/*.ts'],
       // Coverage floor — fails the run when coverage drops below these numbers.
       thresholds: {
         statements: 85,
