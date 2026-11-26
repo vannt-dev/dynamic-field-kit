@@ -102,13 +102,14 @@ every keystroke.
 
 ## 📦 Packages
 
-| Package                      | Description                                                  |
-| ---------------------------- | ------------------------------------------------------------ |
-| `@dynamic-field-kit/core`    | Core types and shared field registry                         |
-| `@dynamic-field-kit/react`   | React components (FieldInput, MultiFieldInput, DynamicInput) |
-| `@dynamic-field-kit/angular` | Angular components and module (standalone + NgModule)        |
-| `@dynamic-field-kit/vue`     | Vue 3 components and module                                  |
-| `@dynamic-field-kit/svelte`  | Svelte 5 components and form state (`createDynamicForm`)     |
+| Package                                            | Description                                                         |
+| -------------------------------------------------- | ------------------------------------------------------------------- |
+| `@dynamic-field-kit/core`                          | Core types and shared field registry                                |
+| `@dynamic-field-kit/react`                         | React components (FieldInput, MultiFieldInput, DynamicInput)        |
+| `@dynamic-field-kit/angular`                       | Angular components and module (standalone + NgModule)               |
+| `@dynamic-field-kit/vue`                           | Vue 3 components and module                                         |
+| `@dynamic-field-kit/svelte`                        | Svelte 5 components and form state (`createDynamicForm`)            |
+| [`@dynamic-field-kit/mcp`](packages/mcp/README.md) | MCP server for agents: validate a config, generate one from OpenAPI |
 
 ---
 
@@ -541,7 +542,10 @@ registry.register('text', myTextRenderer);
 Holds the data, errors, touched and submission state for a set of fields. React
 and Vue export `useDynamicForm`; Svelte exports `createDynamicForm`, built on
 runes; Angular exports `createDynamicFormStore`, built on signals. All of them
-expose the same surface.
+expose the same surface. On Angular 22+, `createSignalFormStore` from
+`@dynamic-field-kit/angular/signal-forms` backs the same bindings with an
+Angular Signal Form instead (opt-in; see the
+[Angular README](packages/angular/README.md#signal-forms-dynamic-field-kitangularsignal-forms-angular-22)).
 
 ```tsx
 // React
