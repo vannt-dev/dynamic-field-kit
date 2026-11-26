@@ -28,3 +28,10 @@ adapter starts calling something new: since 1.12.0 the adapters import
 `resolveVisible` and `makeLabelId`, so the range is `^1.12.0`. Tightening it on
 every core release would force consumers to upgrade core for features their
 adapter does not call.
+
+**`privatePackages`** turns on versioning for private workspace packages, which
+changesets 3 leaves off by default. `@dynamic-field-kit/mcp` is private until it
+has been published once by hand (a first publish cannot go through the trusted
+publisher), and without this its changesets would never be consumed. `tag` stays
+off, and `changeset publish` never publishes a private package. The smoke
+workspace is private too, and stays out through `ignore`.
