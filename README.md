@@ -542,7 +542,10 @@ registry.register('text', myTextRenderer);
 Holds the data, errors, touched and submission state for a set of fields. React
 and Vue export `useDynamicForm`; Svelte exports `createDynamicForm`, built on
 runes; Angular exports `createDynamicFormStore`, built on signals. All of them
-expose the same surface.
+expose the same surface. On Angular 22+, `createSignalFormStore` from
+`@dynamic-field-kit/angular/signal-forms` backs the same bindings with an
+Angular Signal Form instead (opt-in; see the
+[Angular README](packages/angular/README.md#signal-forms-dynamic-field-kitangularsignal-forms-angular-22)).
 
 ```tsx
 // React
