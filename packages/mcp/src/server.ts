@@ -65,7 +65,9 @@ export const TOOLS: Tool[] = [
       'conditions, conditions that read a field that does not exist, misspelt or ' +
       'unknown keys, and function-only keys (validate, computeValue, ...) given ' +
       'data. Pass "data" to also validate form values against the config with ' +
-      "core's validateFields. Returns { valid, problems[], dataErrors? }.",
+      "core's validateFields; a JSON config carries no validate functions, so " +
+      'dataErrors then covers requiredWhen only (required: true is reported as a ' +
+      'warning). Returns { valid, problems[], dataErrors? }.',
     inputSchema: {
       type: 'object',
       properties: {

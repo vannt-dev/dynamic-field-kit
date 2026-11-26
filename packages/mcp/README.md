@@ -69,6 +69,11 @@ Warnings:
 
 With `data`, it also runs core's `validateFields` over the values, once the
 config has no errors, and returns the messages by field path in `dataErrors`.
+A JSON config has no `validate` functions, so for one that came as JSON this
+covers `requiredWhen` only. `required: true` just marks a field until code
+attaches `validators.required()`, so with `data` each such field also gets a
+warning, and an empty `dataErrors` does not mean every required field is filled
+in.
 
 Core validates form data, not the field list itself, so these structural rules
 are this package's own. They follow `FieldDescription` and `FieldCondition` in

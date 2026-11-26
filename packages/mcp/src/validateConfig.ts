@@ -463,6 +463,42 @@ class Checker {
 }
 
 /**
+ * `required: true` only marks a field (an asterisk, `aria-required`); core
+ * enforces it through a `validate` rule such as `validators.required()`, which
+ * JSON cannot carry. Said out loud when data is checked, so an empty
+ * `dataErrors` is not read as "every required field is filled in".
+ */
+function unenforcedRequired(
+  fields: FieldDescription[],
+  at: string,
+): ConfigProblem[] {
+  return fields.flatMap((field, index) => {
+    const path = `${at}[${index}]`;
+    const own: ConfigProblem[] =
+      field.required === true &&
+      typeof field.validate !== 'function' &&
+      field.requiredWhen === undefined
+        ? [
+            {
+              path: `${path}.required`,
+              severity: 'warning',
+              message:
+                '"required": true has no validate rule, so dataErrors cannot report this ' +
+                'field missing; core enforces it with validators.required() attached in ' +
+                'code, or with "requiredWhen"',
+            },
+          ]
+        : [];
+    const nested = Array.isArray(field.fields)
+      ? unenforcedRequired(field.fields, `${path}.fields`)
+      : Array.isArray(field.section)
+        ? unenforcedRequired(field.section, `${path}.section`)
+        : [];
+    return [...own, ...nested];
+  });
+}
+
+/**
  * Checks a form config: a field list as JSON. It reports what core would
  * misread or silently ignore - a missing name or type, a duplicate name, a
  * condition that is not one (core treats it as false), a key that does not
@@ -502,10 +538,12 @@ export function validateConfig(
       });
       result.valid = false;
     } else if (valid) {
+      const fields = config as FieldDescription[];
       result.dataErrors = validateFields(
-        config as FieldDescription[],
+        fields,
         options.data as Properties,
       ).errors;
+      problems.push(...unenforcedRequired(fields, ''));
     }
   }
   return result;

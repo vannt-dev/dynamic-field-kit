@@ -296,6 +296,30 @@ describe('validateConfig', () => {
       validateConfig([{ name: 'a' }], { data: {} }).dataErrors,
     ).toBeUndefined();
 
+    // A JSON config cannot carry the validate rule that enforces `required`.
+    const marked = validateConfig(
+      [
+        { name: 'email', type: 'text', required: true },
+        { name: 'name', type: 'text', required: true, validate: () => 'x' },
+        {
+          name: 'g',
+          type: 'group',
+          fields: [{ name: 'a', type: 'text', required: true }],
+        },
+      ],
+      { data: {} },
+    );
+    expect(marked.valid).toBe(true);
+    expect(marked.dataErrors).toEqual({ name: ['x'] });
+    expect(marked.problems.map((problem) => problem.path)).toEqual([
+      '[0].required',
+      '[2].fields[0].required',
+    ]);
+    expect(
+      validateConfig([{ name: 'email', type: 'text', required: true }])
+        .problems,
+    ).toEqual([]);
+
     const notAnObject = validateConfig(config, { data: [] });
     expect(notAnObject.valid).toBe(false);
     expect(notAnObject.problems[0].path).toBe('data');
