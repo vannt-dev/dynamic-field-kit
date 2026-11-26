@@ -18,5 +18,9 @@
   "___experimentalUnsafeOptions_WILL_CHANGE_IN_PATCH": {
     "onlyUpdatePeerDependentsWhenOutOfRange": true
   },
-  "ignore": ["@dynamic-field-kit/smoke"]
+  "ignore": ["@dynamic-field-kit/smoke"],
+  "privatePackages": {
+    "version": true,
+    "tag": false
+  }
 }
