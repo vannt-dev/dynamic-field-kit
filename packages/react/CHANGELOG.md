@@ -1,5 +1,11 @@
 # @dynamic-field-kit/react
 
+## 1.16.0
+
+### Minor Changes
+
+- Angular Signal Forms adapter (@dynamic-field-kit/angular/signal-forms).
+
 ## 1.15.0
 
 ### Minor Changes

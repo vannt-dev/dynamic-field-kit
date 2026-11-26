@@ -1,0 +1,62 @@
+{
+  "name": "@dynamic-field-kit/mcp",
+  "version": "0.1.0",
+  "description": "MCP server that validates dynamic-field-kit form configs and generates them from OpenAPI",
+  "license": "MIT",
+  "//private": "Kept private until the package exists on npm: changeset publish would try to publish it on the next release, and a first publish cannot go through the trusted publisher the other packages use. Drop this flag after a first manual publish and the trusted-publisher setup.",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "dfk-mcp": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "CHANGELOG.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsup",
+    "clean": "rimraf dist coverage",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@dynamic-field-kit/core": "^1.16.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@vitest/coverage-v8": "^5.0.5",
+    "rimraf": "^6.1.4",
+    "tsup": "^9.0.0",
+    "vitest": "^5.1.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vannt-dev/dynamic-field-kit.git",
+    "directory": "packages/mcp"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "dynamic-forms",
+    "openapi",
+    "form-builder",
+    "dynamic-field-kit"
+  ],
+  "homepage": "https://vannt-dev.github.io/dynamic-field-kit/",
+  "bugs": {
+    "url": "https://github.com/vannt-dev/dynamic-field-kit/issues"
+  }
+}
