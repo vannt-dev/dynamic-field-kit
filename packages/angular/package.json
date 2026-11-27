@@ -54,8 +54,8 @@
     "lint": "eslint ."
   },
   "devDependencies": {
-    "@analogjs/vite-plugin-angular": "^2.9.7",
-    "@analogjs/vitest-angular": "^2.9.7",
+    "@analogjs/vite-plugin-angular": "^3.0.0",
+    "@analogjs/vitest-angular": "^3.0.0",
     "@angular-devkit/build-angular": "^22.3.0",
     "@angular/cdk": "^22.3.0",
     "@angular/common": "^22.3.0",
